@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bapora Library - Live Status</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; background-color: #f4f4f4; margin: 0; padding: 20px; }
+        .header { background: #003366; color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(45px, 1fr)); gap: 10px; max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .seat { width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; border-radius: 5px; font-weight: bold; color: white; font-size: 14px; }
+        .available { background-color: #28a745; } /* Green */
+        .occupied { background-color: #dc3545; } /* Red */
+        .legend { margin-top: 20px; display: flex; justify-content: center; gap: 20px; }
+        .legend-item { display: flex; align-items: center; gap: 5px; }
+        .box { width: 20px; height: 20px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h2>BAPORA LIBRARY</h2>
+        <p>Live Seat Availability Status</p>
+    </div>
+
+    <div class="legend">
+        <div class="legend-item"><div class="box available"></div> Available</div>
+        <div class="legend-item"><div class="box occupied"></div> Occupied</div>
+    </div>
+    <br>
+
+    <div class="grid" id="seatGrid">
+        </div>
+
+    <script>
+        const totalSeats = 57;
+        const seatGrid = document.getElementById('seatGrid');
+        
+        // Load Status from LocalStorage (Sync from Admin)
+        const savedData = JSON.parse(localStorage.getItem('libraryData')) || {};
+
+        for (let i = 1; i <= totalSeats; i++) {
+            const seat = document.createElement('div');
+            seat.classList.add('seat');
+            // If seat is occupied in admin, show Red, else Green
+            if (savedData[i] && savedData[i].status === 'occupied') {
+                seat.classList.add('occupied');
+            } else {
+                seat.classList.add('available');
+            }
+            seat.innerText = i;
+            seatGrid.appendChild(seat);
+        }
+    </script>
+</body>
+</html>
