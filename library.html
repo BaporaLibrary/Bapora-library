@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <title>Bapora Library - Student Portal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root { --navy: #002347; --gold: #c5a059; --green: #2ecc71; --red: #e74c3c; }
+        body { font-family: Arial, sans-serif; margin: 0; background: #f0f2f5; text-align: center; }
+        .header { background: var(--navy); color: white; padding: 20px; border-bottom: 4px solid var(--gold); }
+        .info-card { background: white; margin: 15px auto; padding: 15px; max-width: 450px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .section-title { background: var(--navy); color: var(--gold); padding: 8px; margin: 15px 0 10px; border-radius: 5px; font-weight: bold; font-size: 14px; }
+        .seat-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; padding: 10px; border: 1px dashed #ccc; border-radius: 8px; }
+        .seat { padding: 10px 2px; font-size: 11px; font-weight: bold; color: white; border-radius: 4px; background: var(--green); }
+        .seat.booked { background: var(--red); }
+        .legend { display: flex; justify-content: center; gap: 15px; margin-bottom: 10px; font-size: 13px; }
+        .btn-wa { background: #25D366; color: white; padding: 12px 25px; text-decoration: none; border-radius: 30px; display: inline-block; font-weight: bold; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h2>Bapora Library & Study Center</h2>
+    <p>सीट उपलब्धता (Live Status)</p>
+</div>
+
+<div class="info-card">
+    <div class="legend">
+        <span><b style="color:var(--green);">●</b> खाली</span>
+        <span><b style="color:var(--red);">●</b> भरी हुई</span>
+    </div>
+
+    <div class="section-title">SECTION - A (Seat 01-27)</div>
+    <div id="secA" class="seat-grid"></div>
+
+    <div class="section-title">SECTION - B (Seat 28-42)</div>
+    <div id="secB" class="seat-grid"></div>
+
+    <div class="section-title">SECTION - C (Seat 43-57)</div>
+    <div id="secC" class="seat-grid"></div>
+</div>
+
+<div class="info-card">
+    <p>सीट बुक करने के लिए संपर्क करें:</p>
+    <a href="https://wa.me/919393681565?text=नमस्ते सर, मुझे बापोरा लाइब्रेरी में सीट बुक करनी है।" class="btn-wa">WhatsApp: 9393681565</a>
+</div>
+
+<script>
+    // 🔴 भरी हुई सीटों के नंबर यहाँ लिखें
+    const bookedSeats = [1, 5, 27, 42, 57]; 
+
+    function buildSeats(start, end, containerId) {
+        const container = document.getElementById(containerId);
+        for (let i = start; i <= end; i++) {
+            const div = document.createElement('div');
+            let sNum = i < 10 ? '0' + i : i;
+            div.className = 'seat' + (bookedSeats.includes(i) ? ' booked' : '');
+            div.innerText = 'S-' + sNum;
+            container.appendChild(div);
+        }
+    }
+
+    buildSeats(1, 27, 'secA');
+    buildSeats(28, 42, 'secB');
+    buildSeats(43, 57, 'secC');
+</script>
+
+</body>
+</html>
