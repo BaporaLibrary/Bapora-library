@@ -2,111 +2,62 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Bapora Library - Live Status</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bapora Library - Live Status</title>
     <style>
-        :root { --navy: #002347; --gold: #c5a059; --green: #2ecc71; --red: #e74c3c; --blue: #3498db; --white: #ffffff; }
-        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; background: #f4f7f9; text-align: center; color: #333; }
-        .header { background: var(--navy); color: var(--white); padding: 20px 15px; border-bottom: 5px solid var(--gold); }
-        
-        /* Stats Dashboard */
-        .stats-container { 
-            display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
-            background: var(--white); margin: -15px auto 20px; max-width: 420px; 
-            padding: 15px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); 
-        }
-        .stat-box { padding: 10px; border-radius: 8px; background: #f8f9fa; }
-        .stat-num { display: block; font-size: 20px; font-weight: bold; color: var(--navy); }
-        .stat-label { font-size: 10px; text-transform: uppercase; color: #666; font-weight: bold; }
-
-        .info-card { background: var(--white); margin: 10px auto; padding: 15px; max-width: 450px; border-radius: 10px; }
-        .section-title { background: #eceff1; color: var(--navy); padding: 10px; margin: 20px 0 10px; border-radius: 5px; font-weight: bold; font-size: 13px; border-left: 5px solid var(--gold); text-align: left; }
-        .seat-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; padding: 10px; }
-        .seat { padding: 12px 0; font-size: 11px; font-weight: bold; color: var(--white); border-radius: 6px; background: var(--green); }
-        .seat.booked { background: var(--red); box-shadow: inset 0 0 8px rgba(0,0,0,0.2); }
-        
-        .legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 15px 0; font-size: 12px; }
-        .btn-wa { background: #25D366; color: var(--white); padding: 15px 25px; text-decoration: none; border-radius: 50px; display: inline-block; font-weight: bold; margin: 15px 0; font-size: 14px; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; text-align: center; background-color: #f0f2f5; margin: 0; padding: 15px; }
+        .header { background: #003366; color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h2 { margin: 0; font-size: 22px; letter-spacing: 1px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(50px, 1fr)); gap: 12px; max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 2px 15px rgba(0,0,0,0.1); }
+        .seat { width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-weight: bold; color: white; font-size: 16px; transition: 0.3s; }
+        .available { background-color: #28a745; border: 2px solid #1e7e34; } /* Green */
+        .occupied { background-color: #dc3545; border: 2px solid #bd2130; } /* Red */
+        .legend { margin: 20px auto; display: flex; justify-content: center; gap: 25px; background: white; padding: 10px; width: fit-content; border-radius: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .legend-item { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; }
+        .box { width: 18px; height: 18px; border-radius: 4px; }
+        .footer { margin-top: 30px; font-size: 12px; color: #666; }
     </style>
 </head>
 <body>
 
-<div class="header">
-    <h2 style="margin:0;">Bapora Library & Study Center</h2>
-    <p style="margin:5px 0 0; opacity:0.8; font-size: 14px;">Live Admission & Seat Status</p>
-</div>
+    <div class="header">
+        <h2>BAPORA LIBRARY</h2>
+        <p style="margin: 5px 0 0 0; font-size: 14px; opacity: 0.9;">Live Seat Availability</p>
+    </div>
 
-<div class="stats-container">
-    <div class="stat-box">
-        <span class="stat-num">57</span>
-        <span class="stat-label">Total Capacity</span>
-    </div>
-    <div class="stat-box">
-        <span class="stat-num" id="totalAdmissions" style="color: var(--blue);">43</span>
-        <span class="stat-label">Total Admissions</span>
-    </div>
-    <div class="stat-box" style="background: #fff5f5;">
-        <span class="stat-num" id="resCount" style="color: var(--red);">14</span>
-        <span class="stat-label">Reserved Seats</span>
-    </div>
-    <div class="stat-box" style="background: #f0fff4;">
-        <span class="stat-num" id="availCount" style="color: var(--green);">14</span>
-        <span class="stat-label">Seats Available</span>
-    </div>
-</div>
-
-<div class="info-card">
     <div class="legend">
-        <span><b style="color:var(--green);">■</b> Available</span>
-        <span><b style="color:var(--red);">■</b> Reserved (Fixed)</span>
+        <div class="legend-item"><div class="box available"></div> Khali (Free)</div>
+        <div class="legend-item"><div class="box occupied"></div> Full (Reserved)</div>
     </div>
-    
-    <p style="font-size: 13px; color: #555; background: #e3f2fd; padding: 8px; border-radius: 5px;">
-        <b>Notice:</b> Total <b>43</b> students enrolled. 14 seats are Fixed, others use General seating. 
-        <b>Only <span id="finalAvail">14</span> slots left!</b>
-    </p>
 
-    <div class="section-title">SECTION - A (01-27)</div>
-    <div id="secA" class="seat-grid"></div>
+    <div class="grid" id="seatGrid">
+        </div>
 
-    <div class="section-title">SECTION - B (28-42)</div>
-    <div id="secB" class="seat-grid"></div>
+    <div class="footer">
+        <p>© Bapora Library & Study Center | Bhiwani</p>
+    </div>
 
-    <div class="section-title">SECTION - C (43-57)</div>
-    <div id="secC" class="seat-grid"></div>
+    <script>
+        const totalSeats = 57;
+        const seatGrid = document.getElementById('seatGrid');
+        
+        // Admin panel se sync kiya gaya data uthayega
+        const syncData = JSON.parse(localStorage.getItem('bapora_seats')) || {};
 
-    <a href="https://wa.me/919393681565?text=Hello Sir, I want to reserve a seat in Bapora Library. Please share admission details." class="btn-wa">
-        📩 RESERVE YOUR SEAT NOW
-    </a>
-</div>
-
-<script>
-    // आपकी 14 रिजर्व्ड सीटें
-    const reservedSeats = [1, 3, 12, 14, 18, 19, 20, 21, 32, 33, 45, 46, 51, 53]; 
-    const totalAdmissions = 43;
-    const totalCapacity = 57;
-
-    function buildSeats(start, end, containerId) {
-        const container = document.getElementById(containerId);
-        for (let i = start; i <= end; i++) {
-            const div = document.createElement('div');
-            let sNum = i < 10 ? '0' + i : i;
-            const isReserved = reservedSeats.includes(i);
-            div.className = 'seat' + (isReserved ? ' booked' : '');
-            div.innerText = 'S-' + sNum;
-            container.appendChild(div);
+        for (let i = 1; i <= totalSeats; i++) {
+            const seat = document.createElement('div');
+            seat.classList.add('seat');
+            
+            // Agar seat occupied hai toh Red dikhayega, warna Green
+            if (syncData[i] === 'red') {
+                seat.classList.add('occupied');
+            } else {
+                seat.classList.add('available');
+            }
+            
+            seat.innerText = i;
+            seatGrid.appendChild(seat);
         }
-    }
-
-    // कैलकुलेशन: कुल खाली जगह = कुल क्षमता - कुल एडमिशन
-    const available = totalCapacity - totalAdmissions;
-    document.getElementById('availCount').innerText = available;
-    document.getElementById('finalAvail').innerText = available;
-
-    buildSeats(1, 27, 'secA');
-    buildSeats(28, 42, 'secB');
-    buildSeats(43, 57, 'secC');
-</script>
-
+    </script>
 </body>
-        </html>
+</html>
