@@ -1,103 +1,95 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bapora Library - Status</title>
+    <title>Bapora Library Status</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background: #f0f2f5; margin: 0; padding: 15px; }
-        .header { background: #003366; color: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .legend { display: flex; justify-content: center; gap: 20px; background: white; padding: 10px; border-radius: 30px; margin: 10px auto; width: fit-content; box-shadow: 0 2px 5px rgba(0,0,0,0.05); font-weight: bold; font-size: 14px; }
-        .box { width: 18px; height: 18px; border-radius: 4px; display: inline-block; vertical-align: middle; margin-right: 5px; }
-        .available-bg { background: #28a745; border: 1px solid #1e7e34; }
-        .occupied-bg { background: #dc3545; border: 1px solid #bd2130; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(48px, 1fr)); gap: 10px; max-width: 550px; margin: 20px auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 2px 15px rgba(0,0,0,0.1); }
-        .seat { width: 48px; height: 48px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 16px; box-shadow: inset 0 -3px 0 rgba(0,0,0,0.2); }
-        .available { background: #28a745; } 
-        .occupied { background: #dc3545; }
-        #adminArea { display: none; margin-top: 30px; background: white; padding: 20px; border-radius: 15px; border: 2px dashed #003366; }
-        .admin-trigger { margin-top: 50px; color: #ccc; font-size: 10px; border: none; background: none; cursor: pointer; }
-        .control-btn { padding: 8px 12px; margin: 3px; border: 1px solid #ddd; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; }
+        body { font-family: sans-serif; text-align: center; background: #f4f7f6; padding: 10px; margin: 0; }
+        .header { background: #003366; color: white; padding: 10px; border-radius: 0 0 15px 15px; margin-bottom: 15px; }
+        
+        /* Dashboard Section */
+        .dash { display: flex; justify-content: space-around; background: white; padding: 15px; margin: 10px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .dash div { font-weight: bold; }
+        .green { color: #28a745; } .red { color: #dc3545; } .blue { color: #003366; }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(45px, 1fr)); gap: 8px; max-width: 500px; margin: auto; padding: 15px; background: white; border-radius: 10px; }
+        .seat { width: 45px; height: 45px; border-radius: 5px; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        .st-free { background: #28a745; } .st-full { background: #dc3545; }
+        
+        #admin { display: none; margin-top: 30px; border: 2px solid #003366; padding: 15px; background: white; border-radius: 10px; }
+        .adm-btn { margin-top: 40px; color: #ccc; border: none; background: none; font-size: 10px; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <div class="header">
         <h2 style="margin:0;">BAPORA LIBRARY</h2>
-        <p style="margin:5px 0 0; font-size:14px; opacity:0.9;">Live Seat Availability Status</p>
     </div>
 
-    <div class="legend">
-        <div><span class="box available-bg"></span> Khali (Free)</div>
-        <div><span class="box occupied-bg"></span> Full (Reserved)</div>
+    <div class="dash">
+        <div><span class="blue">57</span><br><small>TOTAL</small></div>
+        <div><span id="f" class="green">0</span><br><small>FREE</small></div>
+        <div><span id="o" class="red">0</span><br><small>FULL</small></div>
     </div>
 
-    <div class="grid" id="seatGrid"></div>
+    <div class="grid" id="g"></div>
 
-    <p style="font-size: 12px; color: #888;">© Bapora Library | Bhiwani</p>
+    <button class="adm-btn" onclick="document.getElementById('admin').style.display='block'">[ Admin ]</button>
 
-    <button class="admin-trigger" onclick="showLogin()">[ Admin Login ]</button>
-
-    <div id="adminArea">
-        <h3>Admin Control Panel</h3>
-        <input type="password" id="pin" placeholder="Enter PIN" style="padding:10px; width:60%; margin-bottom:10px;">
-        <button onclick="login()" style="padding:10px 20px; background:#003366; color:white; border:none; border-radius:5px;">Login</button>
-        
-        <div id="controls" style="display:none; margin-top:20px;">
-            <p style="font-size:14px; color:red;">Click on numbers to toggle Red/Green:</p>
-            <div id="adminGrid"></div>
-            <button onclick="saveChanges()" style="background:#28a745; color:white; padding:15px; margin-top:20px; width:100%; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">UPDATE LIVE STATUS NOW</button>
+    <div id="admin">
+        <input type="password" id="p" placeholder="PIN" style="padding:10px; width:100px;">
+        <button onclick="login()">Login</button>
+        <div id="ctrl" style="display:none; margin-top:20px;">
+            <div id="ag"></div>
+            <button onclick="save()" style="background:green; color:white; padding:15px; margin-top:20px; width:100%; border:none; border-radius:5px; font-weight:bold;">SAVE STATUS</button>
         </div>
     </div>
 
     <script>
-        const total = 57;
-        // Data LocalStorage se load hoga
-        let seatStatus = JSON.parse(localStorage.getItem('bapora_final_data')) || {};
+        let s = JSON.parse(localStorage.getItem('bl_db')) || {};
+        const g = document.getElementById('g');
+        const f = document.getElementById('f');
+        const o = document.getElementById('o');
 
-        function drawUserGrid() {
-            const grid = document.getElementById('seatGrid');
-            grid.innerHTML = "";
-            for(let i=1; i<=total; i++) {
-                const s = document.createElement('div');
-                s.className = `seat ${seatStatus[i] === 'red' ? 'occupied' : 'available'}`;
-                s.innerText = i;
-                grid.appendChild(s);
+        function draw() {
+            g.innerHTML = ""; let full = 0;
+            for(let i=1; i<=57; i++){
+                const d = document.createElement('div');
+                const isR = s[i] === 'r';
+                if(isR) full++;
+                d.className = `seat ${isR ? 'st-full' : 'st-free'}`;
+                d.innerText = i;
+                g.appendChild(d);
             }
+            o.innerText = full; f.innerText = 57 - full;
         }
-
-        function showLogin() { document.getElementById('adminArea').style.display = 'block'; window.scrollTo(0, document.body.scrollHeight); }
 
         function login() {
-            if(document.getElementById('pin').value === "939291") {
-                document.getElementById('controls').style.display = 'block';
-                drawAdminGrid();
-            } else { alert("Wrong PIN!"); }
+            if(document.getElementById('p').value === "939291") {
+                document.getElementById('ctrl').style.display = 'block';
+                drawA();
+            } else { alert("Wrong!"); }
         }
 
-        function drawAdminGrid() {
-            const ag = document.getElementById('adminGrid');
-            ag.innerHTML = "";
-            for(let i=1; i<=total; i++) {
+        function drawA() {
+            const ag = document.getElementById('ag'); ag.innerHTML = "";
+            for(let i=1; i<=57; i++){
                 const b = document.createElement('button');
-                b.className = 'control-btn';
-                b.innerText = i;
-                b.style.background = seatStatus[i] === 'red' ? '#dc3545' : '#28a745';
-                b.onclick = () => { 
-                    seatStatus[i] = (seatStatus[i] === 'red' ? 'green' : 'red'); 
-                    drawAdminGrid(); 
-                };
+                b.innerText = i; b.style.margin="2px"; b.style.padding="5px";
+                b.style.background = s[i] === 'r' ? 'red' : 'green';
+                b.style.color = "white";
+                b.onclick = () => { s[i] = s[i] === 'r' ? 'g' : 'r'; drawA(); };
                 ag.appendChild(b);
             }
         }
 
-        function saveChanges() {
-            localStorage.setItem('bapora_final_data', JSON.stringify(seatStatus));
-            alert("Mission Accomplished! Status Updated.");
-            location.reload();
+        function save() {
+            localStorage.setItem('bl_db', JSON.stringify(s));
+            alert("Updated!"); location.reload();
         }
 
-        drawUserGrid();
+        draw();
     </script>
 </body>
 </html>
