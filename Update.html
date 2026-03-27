@@ -1,16 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Bapora Admin v10.6</title>
+    <title>Bapora Admin v10.7</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
+        #adminMainContent { display: none; }
         :root { --navy: #002347; --gold: #c5a059; --bg: #f4f4f9; --card: #ffffff; --text: #222; --safe: #1b5e20; --danger: #b71c1c; }
         body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); color: var(--text); padding: 8px; margin: 0; }
         .container { max-width: 480px; margin: auto; background: var(--card); border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border-top: 5px solid var(--navy); overflow: hidden; }
-        
-        /* नया बटन: पब्लिक व्यू के लिए */
-        .btn-view-public { background: var(--gold); color: black; border: none; padding: 12px; width: 100%; font-weight: bold; cursor: pointer; text-decoration: none; display: block; text-align: center; margin-bottom: 2px; }
-        
+        .btn-public-view { background: var(--gold); color: black; border: none; padding: 15px; width: 100%; font-weight: bold; cursor: pointer; text-decoration: none; display: block; text-align: center; border-bottom: 2px solid var(--navy); }
         .tabs { display: flex; background: #eceff1; }
         .tab-btn { flex: 1; padding: 14px 5px; border: none; background: none; font-weight: bold; cursor: pointer; color: #546e7a; font-size: 12px; border-bottom: 3px solid transparent; }
         .tab-btn.active { color: var(--navy); border-bottom: 3px solid var(--navy); background: #fff; }
@@ -18,200 +16,80 @@
         .tab-content.active { display: block; }
         .section { background: #fafafa; padding: 12px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #e0e0e0; }
         input, select { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #cfd8dc; border-radius: 4px; box-sizing: border-box; }
-        .record-item { background: white; padding: 12px; border-radius: 6px; margin-top: 8px; border: 1px solid #eceff1; position: relative; border-left: 4px solid var(--navy); }
-        .due-alert { border-left-color: var(--danger) !important; background: #fff5f5; }
-        .wa-btn-group { display: flex; gap: 4px; margin-top: 8px; }
-        .wa-btn { flex: 1; color: white; padding: 8px 2px; border-radius: 4px; font-size: 10px; font-weight: bold; text-align: center; border: none; cursor: pointer; }
-        .btn-rcpt { background: var(--safe); }
-        .btn-due { background: #ff9800; }
-        .btn-lunch { background: #007bff; }
+        .record-item { background: white; padding: 12px; border-radius: 6px; margin-top: 8px; border: 1px solid #eceff1; border-left: 4px solid var(--navy); }
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
         .stat { background: #fff; border: 1px solid var(--navy); padding: 8px; border-radius: 6px; text-align: center; color: var(--navy); }
         .btn-main { padding: 12px; width: 100%; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; color: white; margin-top: 5px; }
-        .filter-bar { display: flex; gap: 4px; margin-bottom: 10px; }
-        .btn-filter { flex: 1; font-size: 9px; padding: 8px 2px; border: 1px solid var(--navy); background: white; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        .btn-filter.active { background: var(--navy); color: white; }
     </style>
 </head>
-<body onload="loadData()">
+<body>
 
-<div class="container">
-    <a href="library.html" target="_blank" class="btn-view-public">🌐 OPEN STUDENT VIEW (PUBLIC)</a>
+<script>
+    function checkAccess() {
+        let pin = prompt("Bapora Admin PIN दर्ज करें:");
+        if (pin === "939291") {
+            document.getElementById('adminMainContent').style.display = "block";
+            loadData();
+        } else {
+            alert("गलत पासवर्ड!");
+            window.location.href = "library.html";
+        }
+    }
+    window.onload = checkAccess;
+</script>
 
-    <div class="tabs">
-        <button id="tabL" class="tab-btn active" onclick="switchTab('lib-tab')">LIBRARIAN</button>
-        <button id="tabE" class="tab-btn" onclick="switchTab('exp-tab')">FINANCE</button>
-    </div>
-
-    <div id="lib-tab" class="tab-content active">
-        <div class="stat-grid">
-            <div class="stat"><small>Students</small><b id="countTotal">0</b></div>
-            <div class="stat" style="color:var(--danger);"><small>Due Now</small><b id="countDue">0</b></div>
-            <div class="stat" style="color:var(--safe); border-color:var(--safe);"><small>Fees</small><b id="sumFees">₹0</b></div>
-            <div class="stat" style="color:var(--danger); border-color:var(--danger);"><small>Exp</small><b id="sumExp">₹0</b></div>
+<div id="adminMainContent">
+    <div class="container">
+        <a href="library.html" class="btn-public-view">🌐 OPEN STUDENT PUBLIC VIEW</a>
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('lib-tab')">LIBRARIAN</button>
+            <button class="tab-btn" onclick="switchTab('exp-tab')">FINANCE</button>
         </div>
-
-        <div class="section">
-            <input type="hidden" id="editId">
-            <input type="text" id="stuName" placeholder="Student Name">
-            <div style="display:flex; gap:5px;">
-                <input type="text" id="stuSeat" placeholder="Seat (S-01)" style="flex:1;">
-                <input type="number" id="stuAmt" placeholder="Fee (₹)" style="flex:1;">
+        <div id="lib-tab" class="tab-content active">
+            <div class="stat-grid">
+                <div class="stat"><small>Students</small><b id="countTotal">0</b></div>
+                <div class="stat"><small>Fees</small><b id="sumFees">₹0</b></div>
             </div>
-            <input type="tel" id="stuPhone" placeholder="9393681565">
-            <input type="date" id="stuFeeDate">
-            <button id="saveBtn" class="btn-main" style="background:var(--navy);" onclick="saveStudent()">SAVE RECORD</button>
-            <button id="cancelBtn" class="btn-main" style="background:#666; display:none;" onclick="clearForms()">CANCEL</button>
+            <div class="section">
+                <input type="text" id="stuName" placeholder="Student Name">
+                <input type="text" id="stuSeat" placeholder="Seat No">
+                <input type="number" id="stuAmt" placeholder="Fee Paid (₹)">
+                <input type="tel" id="stuPhone" placeholder="WhatsApp Number">
+                <input type="date" id="stuFeeDate">
+                <button class="btn-main" style="background:var(--navy);" onclick="saveStudent()">SAVE RECORD</button>
+            </div>
+            <div id="stuList"></div>
+            <div class="section" style="text-align:center;">
+                <button class="btn-main" style="background:var(--gold); color:#000;" onclick="exportData()">💾 DOWNLOAD BACKUP</button>
+            </div>
         </div>
-
-        <input type="text" id="stuSearch" placeholder="🔍 Search Student..." onkeyup="render()">
-        
-        <div class="filter-bar">
-            <button id="fAll" class="btn-filter active" onclick="setF('all')">ALL</button>
-            <button id="fDue" class="btn-filter" onclick="setF('due')">DUE</button>
+        <div id="exp-tab" class="tab-content">
+            <div class="stat" style="background:var(--navy); color:white; padding:15px;"><small>Profit</small><b id="netProfit">₹0</b></div>
+            <div class="section">
+                <input type="date" id="expDate"><input type="number" id="expAmt" placeholder="Amt"><input type="text" id="expNote" placeholder="Note">
+                <button class="btn-main" style="background:var(--danger);" onclick="addExpense()">LOG EXPENSE</button>
+            </div>
         </div>
-
-        <div id="stuList"></div>
-
-        <div class="section" style="margin-top:20px; text-align:center; background:#eee;">
-            <button class="btn-main" style="background:var(--gold); color:#000;" onclick="exportData()">💾 DOWNLOAD BACKUP</button>
-        </div>
-    </div>
-
-    <div id="exp-tab" class="tab-content">
-        <div class="stat" style="background:var(--navy); color:white; margin-bottom:15px; padding:15px; border-radius:6px; text-align:center;">
-            <small>Net Library Profit</small><b id="netProfit" style="font-size:24px;">₹0</b>
-        </div>
-        
-        <div class="section">
-            <p style="margin:0 0 5px 0; font-weight:bold;">➕ Log Expense</p>
-            <input type="hidden" id="editExpId">
-            <input type="date" id="expDate">
-            <input type="number" id="expAmt" placeholder="Amount (₹)">
-            <input type="text" id="expNote" placeholder="Note (Rent, Electricity...)">
-            <button id="saveExpBtn" class="btn-main" style="background:var(--danger);" onclick="addExpense()">LOG EXPENSE</button>
-        </div>
-        <div id="historyList"></div>
-        <hr><div id="expList"></div>
     </div>
 </div>
 
 <script>
-    // आपका ओरिजिनल JavaScript लॉजिक यहाँ रहेगा
-    let students = [], expenses = [], history = [], curF = 'all';
-
-    function switchTab(t) {
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(t).classList.add('active');
-    }
-
-    function setF(f) {
-        curF = f;
-        document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
-        if(f=='all') document.getElementById('fAll').classList.add('active');
-        if(f=='due') document.getElementById('fDue').classList.add('active');
-        render();
-    }
-
+    let students = [], expenses = [];
+    function switchTab(t) { document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active')); document.getElementById(t).classList.add('active'); }
     function saveStudent() {
-        const id = document.getElementById('editId').value || Date.now();
-        const name = document.getElementById('stuName').value;
-        const phone = document.getElementById('stuPhone').value;
-        const fee = document.getElementById('stuFeeDate').value;
-        const amount = document.getElementById('stuAmt').value;
-        const seat = document.getElementById('stuSeat').value;
-        if(!name || !phone || !fee) return alert("नाम, फोन और तारीख भरें");
-        const idx = students.findIndex(s => s.id == id);
-        const data = { id: parseInt(id), name, phone, fee, amount, seat };
-        if(idx > -1) students[idx] = data; else students.push(data);
-        saveToLocal(); render(); clearForms();
-    }
-
-    function render() {
-        const q = document.getElementById('stuSearch').value.toLowerCase();
-        let sH = "", dCnt = 0, tFees = 0;
-        const now = new Date();
-
-        students.forEach(s => {
-            const fVal = parseFloat(s.amount) || 0;
-            tFees += fVal;
-            const isDue = (s.fee && now >= new Date(s.fee));
-            if(isDue) dCnt++;
-
-            if(s.name.toLowerCase().includes(q) && (curF=='all' || (curF=='due' && isDue))) {
-                sH += `<div class="record-item ${isDue ? 'due-alert' : ''}">
-                    <b>${s.name}</b> <span style="float:right; color:var(--safe);">₹${fVal}</span><br>
-                    <small>Seat: ${s.seat} | Valid: ${s.fee}</small>
-                    <div class="wa-btn-group">
-                        <button onclick="wa(${s.id}, 1)" class="wa-btn btn-rcpt">Receipt</button>
-                        <button onclick="wa(${s.id}, 2)" class="wa-btn btn-due">Due</button>
-                    </div>
-                    <span style="font-size:10px; color:blue; cursor:pointer;" onclick="editStu(${s.id})">✎ EDIT</span>
-                    <span style="font-size:10px; color:red; cursor:pointer; margin-left:15px;" onclick="delStu(${s.id})">✖ DELETE</span>
-                </div>`;
-            }
-        });
-
-        let tE = expenses.reduce((a, b) => a + (parseFloat(b.amt) || 0), 0);
-        document.getElementById('countTotal').innerText = students.length;
-        document.getElementById('countDue').innerText = dCnt;
-        document.getElementById('sumFees').innerText = '₹' + tFees;
-        document.getElementById('sumExp').innerText = '₹' + tE;
-        document.getElementById('netProfit').innerText = '₹' + (tFees - tE);
-        document.getElementById('stuList').innerHTML = sH || "<center>No records</center>";
-    }
-
-    function editStu(id) {
-        const s = students.find(x => x.id == id);
-        document.getElementById('editId').value = s.id;
-        document.getElementById('stuName').value = s.name;
-        document.getElementById('stuPhone').value = s.phone;
-        document.getElementById('stuFeeDate').value = s.fee;
-        document.getElementById('stuAmt').value = s.amount;
-        document.getElementById('stuSeat').value = s.seat;
-        document.getElementById('saveBtn').innerText = "UPDATE RECORD";
-        document.getElementById('cancelBtn').style.display = "block";
-        window.scrollTo(0,0);
-    }
-
-    function delStu(id) { if(confirm("Delete student?")) { students = students.filter(s => s.id != id); saveToLocal(); render(); } }
-    
-    function wa(id, type) {
-        const s = students.find(x => x.id == id);
-        let msg = type==1 ? `नमस्ते ${s.name}, आपकी फीस ₹${s.amount} जमा हो गई है। धन्यवाद!` : `नमस्ते ${s.name}, आपकी लाइब्रेरी फीस बकाया है। कृपया जमा करें।`;
-        window.open(`https://wa.me/91${s.phone}?text=${encodeURIComponent(msg)}`);
-    }
-
-    function addExpense() {
-        const amt = document.getElementById('expAmt').value;
-        const note = document.getElementById('expNote').value;
-        const date = document.getElementById('expDate').value;
-        if(!amt || !date) return alert("रकम और तारीख भरें");
-        expenses.push({ id: Date.now(), amt, note, date });
+        const name = document.getElementById('stuName').value, phone = document.getElementById('stuPhone').value, fee = document.getElementById('stuFeeDate').value, amount = document.getElementById('stuAmt').value, seat = document.getElementById('stuSeat').value;
+        if(!name || !phone || !fee) return alert("Fill details");
+        students.push({ id: Date.now(), name, phone, fee, amount, seat });
         saveToLocal(); render();
-        document.getElementById('expAmt').value = ''; document.getElementById('expNote').value = '';
     }
-
-    function saveToLocal() { localStorage.setItem('bapora_v10_6', JSON.stringify({students, expenses, history})); }
-    
-    function loadData() { 
-        let raw = localStorage.getItem('bapora_v10_6'); 
-        if(raw) { 
-            const p = JSON.parse(raw); 
-            students = p.students || []; 
-            expenses = p.expenses || []; 
-            render(); 
-        } 
+    function render() {
+        let sH = "", tF = 0;
+        students.forEach(s => { tF += parseFloat(s.amount) || 0; sH += `<div class="record-item"><b>${s.name} (${s.seat})</b><br><small>Till: ${s.fee}</small></div>`; });
+        document.getElementById('countTotal').innerText = students.length; document.getElementById('sumFees').innerText = '₹' + tF; document.getElementById('stuList').innerHTML = sH;
     }
-
-    function clearForms() { document.getElementById('editId').value = ''; document.querySelectorAll('input').forEach(i => i.value = ''); document.getElementById('saveBtn').innerText = "SAVE RECORD"; document.getElementById('cancelBtn').style.display = "none"; }
-    
-    function exportData() { 
-        const blob = new Blob([JSON.stringify({students, expenses, history})], {type: 'text/plain'}); 
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); 
-        a.download = `bapora_backup.txt`; a.click(); 
-    }
+    function saveToLocal() { localStorage.setItem('bapora_v10_7', JSON.stringify({students, expenses})); }
+    function loadData() { let raw = localStorage.getItem('bapora_v10_7'); if(raw) { const p = JSON.parse(raw); students = p.students || []; expenses = p.expenses || []; render(); } }
+    function exportData() { const blob = new Blob([JSON.stringify({students, expenses})], {type: 'text/plain'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `bapora_backup.txt`; a.click(); }
 </script>
 </body>
-                                                                                                 </html>
+                    </html>
