@@ -7,59 +7,45 @@
     <style>
         body { font-family: sans-serif; text-align: center; background: #f4f7f6; margin: 0; padding: 10px; }
         .header { background: #003366; color: white; padding: 15px; border-radius: 0 0 20px 20px; }
-        
-        /* 3-Way Dashboard */
         .dash { display: flex; justify-content: space-around; background: white; padding: 15px; margin: 15px 10px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .dash div { font-weight: bold; font-size: 16px; flex: 1; }
         .lbl { font-size: 9px; color: #666; display: block; text-transform: uppercase; margin-top: 5px; }
-        
-        /* Aapki choice ke colors */
         .c-total { color: #555; } 
-        .c-general { color: #007bff; } /* Blue */
-        .c-reserved { color: #dc3545; } /* Red */
-        .c-available { color: #28a745; } /* Green */
-
+        .c-general { color: #007bff; } 
+        .c-reserved { color: #dc3545; } 
+        .c-available { color: #28a745; } 
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(45px, 1fr)); gap: 8px; max-width: 500px; margin: auto; padding: 15px; background: white; border-radius: 15px; }
         .seat { width: 45px; height: 45px; border-radius: 8px; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; }
-        
-        /* Seat Status Colors */
-        .st-available { background: #28a745; border-bottom: 3px solid #1e7e34; }
-        .st-general { background: #007bff; border-bottom: 3px solid #0056b3; }
-        .st-reserved { background: #dc3545; border-bottom: 3px solid #bd2130; }
-
+        .st-available { background: #28a745; }
+        .st-general { background: #007bff; }
+        .st-reserved { background: #dc3545; }
         #admin { display: none; margin-top: 30px; border: 2px dashed #003366; padding: 20px; background: white; border-radius: 15px; }
         .adm-trigger { margin-top: 50px; color: #ccc; border: none; background: none; font-size: 10px; cursor: pointer; }
     </style>
 </head>
 <body>
-
-    <div class="header">
-        <h2 style="margin:0;">BAPORA LIBRARY</h2>
-    </div>
-
+    <div class="header"><h2>BAPORA LIBRARY</h2></div>
     <div class="dash">
         <div><span class="c-total">57</span><br><span class="lbl">Total</span></div>
         <div><span id="gen" class="c-general">0</span><br><span class="lbl">General</span></div>
         <div><span id="res" class="c-reserved">0</span><br><span class="lbl">Reserved</span></div>
         <div><span id="av" class="c-available">0</span><br><span class="lbl">Available</span></div>
     </div>
-
     <div class="grid" id="g"></div>
-
     <button class="adm-trigger" onclick="document.getElementById('admin').style.display='block'">[ Admin Login ]</button>
-
     <div id="admin">
-        <input type="password" id="p" placeholder="Enter PIN" style="padding:10px; width:100px;">
+        <input type="password" id="p" placeholder="Enter PIN" style="padding:10px; width:120px;">
         <button onclick="login()">Login</button>
         <div id="ctrl" style="display:none; margin-top:20px;">
-            <p style="font-size:12px; color:#333;">Click to cycle: <br><span style="color:green">Green (Free)</span> -> <span style="color:blue">Blue (General)</span> -> <span style="color:red">Red (Reserved)</span></p>
+            <p style="font-size:12px;">Click to change: <br><span style="color:blue">Blue (Gen)</span> -> <span style="color:red">Red (Res)</span> -> <span style="color:green">Green (Free)</span></p>
             <div id="ag"></div>
             <button onclick="save()" style="background:#28a745; color:white; padding:15px; margin-top:20px; width:100%; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">SAVE LIVE STATUS</button>
         </div>
     </div>
 
     <script>
-        const DB_KEY = 'bapora_v5_colors';
+        // Database Key
+        const DB_KEY = 'bapora_v7_final_pin';
         let s = JSON.parse(localStorage.getItem(DB_KEY)) || {};
         
         function draw() {
@@ -68,9 +54,8 @@
             for(let i=1; i<=57; i++){
                 const d = document.createElement('div');
                 let cls = 'st-available';
-                if(s[i] === 'b') { cls = 'st-general'; gen++; }
-                else if(s[i] === 'r') { cls = 'st-reserved'; r++; }
-                
+                if(s[i] === 'blue') { cls = 'st-general'; gen++; }
+                else if(s[i] === 'red') { cls = 'st-reserved'; r++; }
                 d.className = `seat ${cls}`;
                 d.innerText = i;
                 g.appendChild(d);
@@ -81,7 +66,8 @@
         }
 
         function login() {
-            if(document.getElementById('p').value === "939291") {
+            // Naya PIN: 681565
+            if(document.getElementById('p').value === "681565") {
                 document.getElementById('ctrl').style.display = 'block';
                 drawAdmin();
             } else { alert("Wrong PIN!"); }
@@ -92,15 +78,15 @@
             for(let i=1; i<=57; i++){
                 const b = document.createElement('button');
                 b.innerText = i; b.style.margin="2px"; b.style.width="40px"; b.style.color="white"; b.style.padding="8px"; b.style.borderRadius="5px"; b.style.border="none";
-                let bg = '#28a745'; // Green default
-                if(s[i] === 'b') bg = '#007bff'; // Blue
-                else if(s[i] === 'r') bg = '#dc3545'; // Red
+                let bg = '#28a745';
+                if(s[i] === 'blue') bg = '#007bff';
+                else if(s[i] === 'red') bg = '#dc3545';
                 b.style.background = bg;
                 
                 b.onclick = () => { 
-                    if(!s[i]) s[i] = 'b'; // First click -> Blue
-                    else if(s[i] === 'b') s[i] = 'r'; // Second click -> Red
-                    else delete s[i]; // Third click -> Green
+                    if(!s[i]) s[i] = 'blue'; 
+                    else if(s[i] === 'blue') s[i] = 'red'; 
+                    else delete s[i]; 
                     drawAdmin(); 
                 };
                 ag.appendChild(b);
@@ -109,10 +95,9 @@
 
         function save() {
             localStorage.setItem(DB_KEY, JSON.stringify(s));
-            alert("Success! Status updated on your screen.");
+            alert("Mission Accomplished! Data Updated.");
             location.reload();
         }
-
         draw();
     </script>
 </body>
