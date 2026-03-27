@@ -1,66 +1,90 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Bapora Library - Student Portal</title>
+    <title>Bapora Library - Live Status</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        :root { --navy: #002347; --gold: #c5a059; --green: #2ecc71; --red: #e74c3c; }
-        body { font-family: Arial, sans-serif; margin: 0; background: #f0f2f5; text-align: center; }
-        .header { background: var(--navy); color: white; padding: 20px; border-bottom: 4px solid var(--gold); }
-        .info-card { background: white; margin: 15px auto; padding: 15px; max-width: 450px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        .section-title { background: var(--navy); color: var(--gold); padding: 8px; margin: 15px 0 10px; border-radius: 5px; font-weight: bold; font-size: 14px; }
-        .seat-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; padding: 10px; border: 1px dashed #ccc; border-radius: 8px; }
-        .seat { padding: 10px 2px; font-size: 11px; font-weight: bold; color: white; border-radius: 4px; background: var(--green); }
-        .seat.booked { background: var(--red); }
-        .legend { display: flex; justify-content: center; gap: 15px; margin-bottom: 10px; font-size: 13px; }
-        .btn-wa { background: #25D366; color: white; padding: 12px 25px; text-decoration: none; border-radius: 30px; display: inline-block; font-weight: bold; margin-top: 10px; }
+        :root { --navy: #002347; --gold: #c5a059; --green: #2ecc71; --red: #e74c3c; --white: #ffffff; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; background: #f4f7f9; text-align: center; color: #333; }
+        .header { background: var(--navy); color: var(--white); padding: 25px 15px; border-bottom: 5px solid var(--gold); }
+        .stats-container { 
+            display: flex; justify-content: space-around; background: var(--white); 
+            margin: -20px auto 20px; max-width: 400px; padding: 15px; 
+            border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); 
+        }
+        .stat-box { flex: 1; }
+        .stat-num { display: block; font-size: 22px; font-weight: bold; color: var(--navy); }
+        .stat-label { font-size: 11px; text-transform: uppercase; color: #666; letter-spacing: 1px; }
+        .info-card { background: var(--white); margin: 10px auto; padding: 15px; max-width: 450px; border-radius: 10px; }
+        .section-title { background: #eceff1; color: var(--navy); padding: 10px; margin: 20px 0 10px; border-radius: 5px; font-weight: bold; font-size: 13px; border-left: 5px solid var(--gold); text-align: left; }
+        .seat-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; padding: 10px; }
+        .seat { padding: 12px 0; font-size: 12px; font-weight: bold; color: var(--white); border-radius: 6px; background: var(--green); transition: 0.3s; }
+        .seat.booked { background: var(--red); box-shadow: inset 0 0 10px rgba(0,0,0,0.2); }
+        .legend { display: flex; justify-content: center; gap: 20px; margin: 15px 0; font-size: 14px; font-weight: 500; }
+        .btn-wa { background: #25D366; color: var(--white); padding: 15px 30px; text-decoration: none; border-radius: 50px; display: inline-block; font-weight: bold; margin: 20px 0; box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3); }
     </style>
 </head>
 <body>
 
 <div class="header">
-    <h2>Bapora Library & Study Center</h2>
-    <p>सीट उपलब्धता (Live Status)</p>
+    <h2 style="margin:0;">Bapora Library</h2>
+    <p style="margin:5px 0 20px; opacity:0.8;">Smart Study Environment</p>
+</div>
+
+<div class="stats-container">
+    <div class="stat-box">
+        <span class="stat-num">57</span>
+        <span class="stat-label">Total</span>
+    </div>
+    <div class="stat-box" style="border-left: 1px solid #eee; border-right: 1px solid #eee;">
+        <span class="stat-num" id="occupiedCount" style="color: var(--red);">0</span>
+        <span class="stat-label">Occupied</span>
+    </div>
+    <div class="stat-box">
+        <span class="stat-num" id="availableCount" style="color: var(--green);">0</span>
+        <span class="stat-label">Available</span>
+    </div>
 </div>
 
 <div class="info-card">
     <div class="legend">
-        <span><b style="color:var(--green);">●</b> खाली</span>
-        <span><b style="color:var(--red);">●</b> भरी हुई</span>
+        <span><b style="color:var(--green); font-size: 18px;">■</b> Available</span>
+        <span><b style="color:var(--red); font-size: 18px;">■</b> Occupied</span>
     </div>
 
-    <div class="section-title">SECTION - A (Seat 01-27)</div>
+    <div class="section-title">SECTION - A (Front Row)</div>
     <div id="secA" class="seat-grid"></div>
 
-    <div class="section-title">SECTION - B (Seat 28-42)</div>
+    <div class="section-title">SECTION - B (Middle Row)</div>
     <div id="secB" class="seat-grid"></div>
 
-    <div class="section-title">SECTION - C (Seat 43-57)</div>
+    <div class="section-title">SECTION - C (Back Row)</div>
     <div id="secC" class="seat-grid"></div>
-</div>
 
-<div class="info-card" style="text-align:center;">
-    <p style="font-size:14px; color:#555;">To request a seat reservation, please message us on WhatsApp:</p>
-    <a href="https://wa.me/919393681565?text=Hello Sir, I would like to check availability and reserve a seat in Bapora Library. Please provide the current status." class="btn-wa">
-        📩 RESERVE SEAT via WHATSAPP
+    <a href="https://wa.me/919393681565?text=Hello Sir, I would like to check availability and reserve a seat in Bapora Library." class="btn-wa">
+        📩 RESERVE YOUR SEAT NOW
     </a>
 </div>
 
 <script>
-    // 🔴 भरी हुई सीटों के नंबर यहाँ लिखें
-    const bookedSeats = [1, 3,12,14,18,19,20,21,32,33,45,46,51,53]; 
+    // 🔴 आपकी बुक की हुई सीटें यहाँ अपडेट कर दी गई हैं
+    const bookedSeats = [1, 3, 12, 14, 18, 19, 20, 21, 32, 33, 45, 46, 51, 53]; 
 
     function buildSeats(start, end, containerId) {
         const container = document.getElementById(containerId);
         for (let i = start; i <= end; i++) {
             const div = document.createElement('div');
             let sNum = i < 10 ? '0' + i : i;
-            div.className = 'seat' + (bookedSeats.includes(i) ? ' booked' : '');
+            const isBooked = bookedSeats.includes(i);
+            div.className = 'seat' + (isBooked ? ' booked' : '');
             div.innerText = 'S-' + sNum;
             container.appendChild(div);
         }
     }
+
+    document.getElementById('occupiedCount').innerText = bookedSeats.length;
+    document.getElementById('availableCount').innerText = 57 - bookedSeats.length;
 
     buildSeats(1, 27, 'secA');
     buildSeats(28, 42, 'secB');
@@ -68,4 +92,4 @@
 </script>
 
 </body>
-</html>
+        </html>
