@@ -3,49 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bapora Library Status</title>
+    <title>Bapora Library | Live Dashboard</title>
     <style>
-        body { font-family: sans-serif; text-align: center; background: #f4f7f6; margin: 0; padding: 10px; }
-        .header { background: #003366; color: white; padding: 15px; border-radius: 0 0 20px 20px; }
-        .dash { display: flex; justify-content: space-around; background: white; padding: 15px; margin: 15px 10px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .dash div { font-weight: bold; font-size: 16px; flex: 1; }
-        .lbl { font-size: 9px; color: #666; display: block; text-transform: uppercase; margin-top: 5px; }
-        .c-total { color: #555; } 
-        .c-general { color: #007bff; } 
-        .c-reserved { color: #dc3545; } 
-        .c-available { color: #28a745; } 
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(45px, 1fr)); gap: 8px; max-width: 500px; margin: auto; padding: 15px; background: white; border-radius: 15px; }
-        .seat { width: 45px; height: 45px; border-radius: 8px; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; }
-        .st-available { background: #28a745; }
-        .st-general { background: #007bff; }
-        .st-reserved { background: #dc3545; }
-        #admin { display: none; margin-top: 30px; border: 2px dashed #003366; padding: 20px; background: white; border-radius: 15px; }
-        .adm-trigger { margin-top: 50px; color: #ccc; border: none; background: none; font-size: 10px; cursor: pointer; }
+        :root { --navy: #003366; --gold: #d4af37; --green: #28a745; --blue: #007bff; --red: #dc3545; }
+        body { font-family: 'Segoe UI', sans-serif; text-align: center; background: #f0f4f8; margin: 0; padding-bottom: 50px; }
+        
+        /* Premium Header */
+        .header { background: var(--navy); color: white; padding: 25px 15px; border-bottom: 5px solid var(--gold); }
+        .header h1 { margin: 0; font-size: 24px; letter-spacing: 1px; }
+        .tagline { font-size: 12px; color: var(--gold); font-weight: bold; text-transform: uppercase; margin-top: 5px; }
+
+        /* Status Dashboard */
+        .dash { display: flex; justify-content: space-around; background: white; padding: 20px; margin: -20px 15px 20px; border-radius: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+        .dash div { flex: 1; border-right: 1px solid #eee; }
+        .dash div:last-child { border: none; }
+        .num { font-size: 20px; font-weight: bold; display: block; }
+        .lbl { font-size: 10px; color: #777; font-weight: bold; }
+
+        /* Grid System */
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(45px, 1fr)); gap: 10px; max-width: 600px; margin: auto; padding: 20px; background: white; border-radius: 20px; }
+        .seat { width: 45px; height: 45px; border-radius: 10px; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; transition: 0.3s; box-shadow: 0 3px 6px rgba(0,0,0,0.1); }
+        
+        .st-available { background: var(--green); }
+        .st-general { background: var(--blue); }
+        .st-reserved { background: var(--red); }
+
+        /* WhatsApp Floating Button */
+        .wa-btn { position: fixed; bottom: 20px; right: 20px; background: #25d366; color: white; padding: 12px 20px; border-radius: 50px; text-decoration: none; font-weight: bold; display: flex; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 100; }
+
+        /* Admin Section */
+        #admin { display: none; margin: 30px 15px; padding: 20px; background: #fff; border: 2px dashed var(--navy); border-radius: 15px; }
+        .adm-btn { background: #ccc; border: none; font-size: 10px; padding: 5px 10px; cursor: pointer; border-radius: 5px; margin-top: 40px; }
+        .save-btn { background: var(--navy); color: white; padding: 15px; width: 100%; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 15px; }
     </style>
 </head>
 <body>
-    <div class="header"><h2>BAPORA LIBRARY</h2></div>
-    <div class="dash">
-        <div><span class="c-total">57</span><br><span class="lbl">Total</span></div>
-        <div><span id="gen" class="c-general">0</span><br><span class="lbl">General</span></div>
-        <div><span id="res" class="c-reserved">0</span><br><span class="lbl">Reserved</span></div>
-        <div><span id="av" class="c-available">0</span><br><span class="lbl">Available</span></div>
+
+    <div class="header">
+        <h1>BAPORA LIBRARY</h1>
+        <div class="tagline">⚓ Managed by Indian Navy Veteran ⚓</div>
     </div>
+
+    <div class="dash">
+        <div><span class="num" style="color:#555">57</span><span class="lbl">TOTAL</span></div>
+        <div><span id="gen" class="num" style="color:var(--blue)">0</span><span class="lbl">GENERAL</span></div>
+        <div><span id="res" class="num" style="color:var(--red)">0</span><span class="lbl">RESERVED</span></div>
+        <div><span id="av" class="num" style="color:var(--green)">0</span><span class="lbl">EMPTY</span></div>
+    </div>
+
     <div class="grid" id="g"></div>
-    <button class="adm-trigger" onclick="document.getElementById('admin').style.display='block'">[ Admin Login ]</button>
+
+    <a href="https://wa.me/91[YOUR_NUMBER_HERE]" class="wa-btn">
+        💬 Message Us
+    </a>
+
+    <button class="adm-btn" onclick="document.getElementById('admin').style.display='block'">[ Staff Login ]</button>
+
     <div id="admin">
-        <input type="password" id="p" placeholder="Enter PIN" style="padding:10px; width:120px;">
-        <button onclick="login()">Login</button>
+        <h3>Admin Console</h3>
+        <input type="password" id="p" placeholder="Enter PIN" style="padding:12px; border-radius:8px; border:1px solid #ddd; width:150px;">
+        <button onclick="login()" style="padding:12px 20px; border-radius:8px; background:var(--navy); color:white; border:none;">Login</button>
+        
         <div id="ctrl" style="display:none; margin-top:20px;">
-            <p style="font-size:12px;">Click to change: <br><span style="color:blue">Blue (Gen)</span> -> <span style="color:red">Red (Res)</span> -> <span style="color:green">Green (Free)</span></p>
+            <p style="font-size:12px; color:red; font-weight:bold;">Tap to Cycle: Blue → Red → Green</p>
             <div id="ag"></div>
-            <button onclick="save()" style="background:#28a745; color:white; padding:15px; margin-top:20px; width:100%; border:none; border-radius:10px; font-weight:bold; cursor:pointer;">SAVE LIVE STATUS</button>
+            <button onclick="save()" class="save-btn">UPDATE LIVE STATUS</button>
         </div>
     </div>
 
     <script>
-        // Database Key
-        const DB_KEY = 'bapora_v7_final_pin';
+        const DB_KEY = 'bapora_v8_pro';
         let s = JSON.parse(localStorage.getItem(DB_KEY)) || {};
         
         function draw() {
@@ -66,18 +93,17 @@
         }
 
         function login() {
-            // Naya PIN: 681565
             if(document.getElementById('p').value === "681565") {
                 document.getElementById('ctrl').style.display = 'block';
                 drawAdmin();
-            } else { alert("Wrong PIN!"); }
+            } else { alert("Access Denied!"); }
         }
 
         function drawAdmin() {
             const ag = document.getElementById('ag'); ag.innerHTML = "";
             for(let i=1; i<=57; i++){
                 const b = document.createElement('button');
-                b.innerText = i; b.style.margin="2px"; b.style.width="40px"; b.style.color="white"; b.style.padding="8px"; b.style.borderRadius="5px"; b.style.border="none";
+                b.innerText = i; b.style.margin="3px"; b.style.width="42px"; b.style.height="42px"; b.style.color="white"; b.style.borderRadius="8px"; b.style.border="none";
                 let bg = '#28a745';
                 if(s[i] === 'blue') bg = '#007bff';
                 else if(s[i] === 'red') bg = '#dc3545';
@@ -95,7 +121,7 @@
 
         function save() {
             localStorage.setItem(DB_KEY, JSON.stringify(s));
-            alert("Mission Accomplished! Data Updated.");
+            alert("System Synchronized! Dashboard Updated.");
             location.reload();
         }
         draw();
