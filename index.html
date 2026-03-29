@@ -8,7 +8,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
     <style>
         :root { --navy: #002b5b; --gold: #c5a059; --green: #2ecc71; --blue: #3498db; --red: #e74c3c; }
-        body { font-family: sans-serif; background: #f4f7f9; margin: 0; padding-bottom: 80px; text-align: center; }
+        body { font-family: sans-serif; background: #f4f7f9; margin: 0; padding-bottom: 100px; text-align: center; }
         
         .header { background: var(--navy); color: white; padding: 20px; border-bottom: 4px solid var(--gold); }
         .tagline { font-size: 10px; color: var(--gold); font-weight: bold; margin-top: 5px; }
@@ -20,19 +20,33 @@
         .section-box { background: white; margin: 15px; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .section-title { font-size: 14px; font-weight: bold; color: var(--navy); text-align: left; margin-bottom: 15px; border-left: 4px solid var(--gold); padding-left: 10px; }
         
-        /* Grid Fix */
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); gap: 10px; min-height: 50px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); gap: 10px; }
         .seat { width: 50px; height: 50px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; border: 1px solid #ddd; }
         
         .st-vacant { background: #fff; color: var(--green); border: 2px solid var(--green); }
-        .st-general { background: var(--blue); color: white; }
-        .st-reserved { background: var(--red); color: white; }
+        .st-general { background: var(--blue); color: white; border: none; }
+        .st-reserved { background: var(--red); color: white; border: none; }
         .icon { font-size: 18px; line-height: 1; }
 
-        /* More Visible Admin Button (Blurry) */
-        .admin-trigger { background: #eee; border: 1px solid #ddd; color: #aaa; padding: 10px; margin: 40px auto; cursor: pointer; border-radius: 5px; font-size: 11px; display: block; width: 200px; }
+        /* Secret Admin Button - Almost Invisible */
+        .admin-trigger { 
+            background: none; 
+            border: none; 
+            color: rgba(0,0,0,0.05); /* Extremely Faint */
+            padding: 20px; 
+            margin: 50px auto; 
+            cursor: pointer; 
+            font-size: 9px; 
+            display: block; 
+            width: 100%;
+            text-decoration: none;
+        }
+        .admin-trigger:hover { color: rgba(0,0,0,0.2); } /* Slightly visible on hover for you */
+
         #admin-panel { display: none; margin: 20px; padding: 20px; background: #fff; border: 2px solid var(--navy); border-radius: 15px; }
         .save-btn { background: var(--navy); color: white; width: 100%; padding: 15px; border: none; border-radius: 10px; font-weight: bold; margin-top: 15px; cursor: pointer; }
+        
+        .adm-btn-small { padding: 8px; margin: 2px; border: none; border-radius: 4px; color: white; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -63,48 +77,46 @@
         <div class="grid" id="sec3"></div>
     </div>
 
-    <button class="admin-trigger" onclick="showAdmin()">[ STAFF MAINTENANCE ]</button>
+    <button class="admin-trigger" onclick="showAdmin()">Admin login</button>
 
     <div id="admin-panel">
-        <h3>Master Control</h3>
-        <input type="password" id="pin" placeholder="PIN" style="padding:10px; width:100px; margin-bottom:10px;">
-        <button onclick="login()" style="padding:10px; background:var(--navy); color:white; border:none; border-radius:5px;">Login</button>
+        <h3>Master Control Panel</h3>
+        <input type="password" id="pin" placeholder="PIN" style="padding:12px; width:120px; border-radius:8px; border:1px solid #ccc; margin-bottom:10px;">
+        <button onclick="login()" style="padding:12px 20px; background:var(--navy); color:white; border:none; border-radius:8px; cursor:pointer;">Access</button>
         
         <div id="admin-controls" style="display:none; margin-top:20px;">
-            <div id="admin-grid" style="display:grid; grid-template-columns: repeat(5, 1fr); gap:5px; margin-bottom:10px;"></div>
-            <button class="save-btn" onclick="updateCloud()">SYNC TO CLOUD</button>
+            <p style="font-size:11px; color:var(--red); font-weight:bold;">Tap to Change Status</p>
+            <div id="admin-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); gap:5px; margin-bottom:15px;"></div>
+            <button class="save-btn" onclick="updateCloud()">SYNC TO DATABASE ⚓</button>
         </div>
     </div>
 
     <script>
-        // Use your URL
+        // Database Link
         const firebaseConfig = { databaseURL: "https://baporalibrary-fea16-default-rtdb.firebaseio.com/" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database().ref('seats');
 
         let seatData = {};
 
-        // Auto-refresh when data changes
+        // Real-time Update
         db.on('value', (snap) => {
             seatData = snap.val() || {};
             render();
-        }, (error) => {
-            console.error("Firebase Error: ", error);
-            alert("Security Error! Check Firebase Rules.");
         });
 
         function render() {
             const s1=document.getElementById('sec1'), s2=document.getElementById('sec2'), s3=document.getElementById('sec3');
             s1.innerHTML=s2.innerHTML=s3.innerHTML="";
-            let g=0, r=0;
+            let gCount=0, rCount=0;
 
             for(let i=1; i<=57; i++){
                 let div = document.createElement('div');
                 let status = seatData[i] || 'v';
                 let content = `<span>${i}</span>`;
                 
-                if(status === 'g') { div.className='seat st-general'; content=`<span class="icon">👤</span>`+content; g++; }
-                else if(status === 'r') { div.className='seat st-reserved'; content=`<span class="icon">👤</span>`+content; r++; }
+                if(status === 'g') { div.className='seat st-general'; content=`<span class="icon">👤</span>`+content; gCount++; }
+                else if(status === 'r') { div.className='seat st-reserved'; content=`<span class="icon">👤</span>`+content; rCount++; }
                 else { div.className='seat st-vacant'; }
 
                 div.innerHTML = content;
@@ -112,25 +124,26 @@
                 else if(i <= 42) s2.appendChild(div);
                 else s3.appendChild(div);
             }
-            document.getElementById('gen-count').innerText = g;
-            document.getElementById('res-count').innerText = r;
-            document.getElementById('vac-count').innerText = 57 - (g + r);
+            document.getElementById('gen-count').innerText = gCount;
+            document.getElementById('res-count').innerText = rCount;
+            document.getElementById('vac-count').innerText = 57 - (gCount + rCount);
         }
 
-        function showAdmin() { document.getElementById('admin-panel').style.display='block'; }
+        function showAdmin() { document.getElementById('admin-panel').style.display='block'; window.scrollTo(0,document.body.scrollHeight); }
 
         function login() {
-            if(document.getElementById('pin').value === "681565") {
+            if(document.getElementById('pin').value === "123456") {
                 document.getElementById('admin-controls').style.display='block';
                 renderAdmin();
-            } else { alert("Wrong PIN!"); }
+            } else { alert("Incorrect Access PIN"); }
         }
 
         function renderAdmin() {
             const ag = document.getElementById('admin-grid'); ag.innerHTML = "";
             for(let i=1; i<=57; i++){
                 const b = document.createElement('button');
-                b.innerText = i; b.style.padding="10px 0"; b.style.border="1px solid #ddd"; b.style.color="white";
+                b.className = "adm-btn-small";
+                b.innerText = i;
                 let status = seatData[i] || 'v';
                 b.style.background = (status==='g')?'var(--blue)':(status==='r')?'var(--red)':'var(--green)';
                 b.onclick = () => {
@@ -145,9 +158,9 @@
 
         function updateCloud() {
             db.set(seatData).then(() => {
-                alert("Success! Cloud Updated.");
+                alert("Database Synchronized! MC updated.");
                 document.getElementById('admin-panel').style.display='none';
-            }).catch(e => alert("Permission Denied! Check Firebase Rules."));
+            });
         }
     </script>
 </body>
