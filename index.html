@@ -9,22 +9,31 @@
     <style>
         :root { --navy: #002b5b; --gold: #c5a059; --green: #2ecc71; --blue: #3498db; --red: #e74c3c; }
         body { font-family: sans-serif; background: #f4f7f9; margin: 0; padding-bottom: 100px; text-align: center; }
+        
         .header { background: var(--navy); color: white; padding: 20px; border-bottom: 4px solid var(--gold); }
         .tagline { font-size: 10px; color: var(--gold); font-weight: bold; margin-top: 5px; }
+
+        /* Dashboard */
         .dash { display: flex; justify-content: space-around; background: white; padding: 15px; margin: 10px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .dash div { flex: 1; border-right: 1px solid #eee; }
         .dash div:last-child { border: none; }
         .num { font-size: 18px; font-weight: bold; display: block; }
         .lbl { font-size: 9px; color: #888; text-transform: uppercase; font-weight: bold; }
+
         .section-box { background: white; margin: 15px; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .section-title { font-size: 14px; font-weight: bold; color: var(--navy); text-align: left; margin-bottom: 15px; border-left: 4px solid var(--gold); padding-left: 10px; }
+        
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); gap: 10px; }
         .seat { width: 50px; height: 50px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; border: 1px solid #ddd; }
+        
         .st-vacant { background: #fff; color: var(--green); border: 2px solid var(--green); }
         .st-general { background: var(--blue); color: white; border: none; }
         .st-reserved { background: var(--red); color: white; border: none; }
         .icon { font-size: 18px; line-height: 1; }
+
+        /* Invisible Admin Button */
         .admin-trigger { background: none; border: none; color: rgba(0,0,0,0.02); padding: 20px; margin-top: 60px; cursor: pointer; font-size: 8px; width: 100%; }
+        
         #admin-panel { display: none; margin: 20px; padding: 20px; background: #fff; border: 2px solid var(--navy); border-radius: 15px; }
         .save-btn { background: var(--navy); color: white; width: 100%; padding: 15px; border: none; border-radius: 10px; font-weight: bold; margin-top: 15px; cursor: pointer; }
     </style>
@@ -53,6 +62,7 @@
         <h3>Master Control Panel</h3>
         <input type="password" id="pin" placeholder="PIN" style="padding:12px; width:100px; border-radius:8px; border:1px solid #ccc; margin-bottom:10px;">
         <button onclick="login()" style="padding:12px 20px; background:var(--navy); color:white; border:none; border-radius:8px;">Access</button>
+        
         <div id="admin-controls" style="display:none; margin-top:20px;">
             <div id="admin-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); gap:5px; margin-bottom:15px;"></div>
             <button class="save-btn" onclick="updateCloud()">SYNC TO DATABASE ⚓</button>
@@ -66,7 +76,7 @@
 
         let seatData = {};
 
-        // Fetch Live Data
+        // Real-time Fetch
         db.ref('seats').on('value', (snap) => {
             seatData = snap.val() || {};
             render();
@@ -76,13 +86,16 @@
             const s1=document.getElementById('sec1'), s2=document.getElementById('sec2'), s3=document.getElementById('sec3');
             s1.innerHTML=s2.innerHTML=s3.innerHTML="";
             let g=0, r=0;
+
             for(let i=1; i<=57; i++){
                 let div = document.createElement('div');
                 let status = seatData[i] || 'v';
                 let content = `<span>${i}</span>`;
+                
                 if(status==='g'){ div.className='seat st-general'; content=`<span class="icon">👤</span>`+content; g++; }
                 else if(status==='r'){ div.className='seat st-reserved'; content=`<span class="icon">👤</span>`+content; r++; }
                 else { div.className='seat st-vacant'; }
+
                 div.innerHTML = content;
                 if(i<=27) s1.appendChild(div); else if(i<=42) s2.appendChild(div); else s3.appendChild(div);
             }
@@ -92,7 +105,7 @@
         }
 
         function showAdmin() { document.getElementById('admin-panel').style.display='block'; window.scrollTo(0,document.body.scrollHeight); }
-        function login() { if(document.getElementById('pin').value === "681565") { document.getElementById('admin-controls').style.display='block'; renderAdmin(); } else { alert("Wrong PIN"); } }
+        function login() { if(document.getElementById('pin').value === "123456") { document.getElementById('admin-controls').style.display='block'; renderAdmin(); } else { alert("Wrong PIN"); } }
 
         function renderAdmin() {
             const ag = document.getElementById('admin-grid'); ag.innerHTML = "";
@@ -107,15 +120,17 @@
         }
 
         function updateCloud() {
-            // Secret Handshake: Sending the key and data together
             const updates = {};
             updates['/seats'] = seatData;
-            updates['/admin_auth'] = 'BaporaNavy9393';
+            updates['/admin_auth'] = 'BaporaNavy9393'; // Secret Security Key
 
             db.ref().update(updates).then(() => {
                 alert("Database Updated Securely!");
                 document.getElementById('admin-panel').style.display='none';
-            }).catch(e => alert("Access Denied! Security Bridge Blocked."));
+            }).catch(e => {
+                console.error(e);
+                alert("Access Denied! Check Firebase Rules & Publish.");
+            });
         }
     </script>
 </body>
