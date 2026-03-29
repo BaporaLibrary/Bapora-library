@@ -11,27 +11,30 @@
         :root { --navy: #002b5b; --gold: #c5a059; --green: #2ecc71; --blue: #3498db; --red: #e74c3c; }
         body { font-family: sans-serif; background: #f4f7f9; margin: 0; padding-bottom: 50px; text-align: center; }
         .header { background: var(--navy); color: white; padding: 20px; border-bottom: 4px solid var(--gold); }
+        .tagline { font-size: 10px; color: var(--gold); font-weight: bold; margin-top: 5px; }
         .dash { display: flex; justify-content: space-around; background: white; padding: 15px; margin: 10px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .num { font-size: 18px; font-weight: bold; display: block; }
         .lbl { font-size: 9px; color: #888; text-transform: uppercase; }
-        .section-box { background: white; margin: 15px; padding: 15px; border-radius: 10px; }
+        .section-box { background: white; margin: 15px; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); gap: 10px; }
         .seat { width: 50px; height: 50px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; border: 1px solid #ddd; }
         .st-vacant { background: #fff; color: var(--green); border: 2px solid var(--green); }
         .st-general { background: var(--blue); color: white; border: none; }
         .st-reserved { background: var(--red); color: white; border: none; }
-        /* Invisible Login */
+        
+        /* Hidden Admin Trigger */
         .admin-trigger { background: none; border: none; color: rgba(0,0,0,0.01); padding: 20px; width: 100%; cursor: pointer; }
-        #admin-panel { display: none; margin: 20px; padding: 20px; background: #fff; border: 3px solid var(--navy); border-radius: 15px; }
-        input { padding: 12px; margin: 8px; width: 85%; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; }
-        .btn { padding: 12px 25px; background: var(--navy); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-    </script>
+        #admin-panel { display: none; margin: 20px; padding: 20px; background: #fff; border: 3px solid var(--navy); border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        input { padding: 12px; margin: 8px; width: 85%; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; outline: none; }
+        .btn { padding: 12px 25px; background: var(--navy); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .btn:active { transform: scale(0.95); }
+    </style>
 </head>
 <body>
 
     <div class="header">
         <h2 style="margin:0;">BAPORA LIBRARY</h2>
-        <div style="font-size:10px; color:var(--gold);">⚓ VETERAN SECURE SYSTEM ⚓</div>
+        <div class="tagline">⚓ VETERAN SECURE CONTROL SYSTEM ⚓</div>
     </div>
 
     <div class="dash">
@@ -40,29 +43,34 @@
         <div><span id="vac-count" class="num" style="color:var(--green)">0</span><span class="lbl">Vacant</span></div>
     </div>
 
-    <div class="section-box"><div class="grid" id="seat-grid"></div></div>
+    <div class="section-box">
+        <div class="grid" id="seat-grid"></div>
+    </div>
 
-    <button class="admin-trigger" onclick="showAdmin()">Admin Access</button>
+    <button class="admin-trigger" onclick="showAdmin()">Admin Portal</button>
 
     <div id="admin-panel">
-        <h3 style="color:var(--navy);">MASTER LOGIN</h3>
-        <p style="font-size:11px; color:red;">Enter Email & Password to unlock database</p>
-        <input type="email" id="email" placeholder="Admin Email">
+        <h3 style="color:var(--navy); margin-top:0;">MASTER CONTROL 🔐</h3>
+        <p style="font-size:12px; color:#666;">Enter authorized credentials to modify data</p>
+        <input type="email" id="email" placeholder="Email Address">
         <input type="password" id="pass" placeholder="Password">
         <button class="btn" onclick="handleLogin()">LOGIN ⚓</button>
         
         <div id="admin-controls" style="display:none; margin-top:20px; border-top: 2px solid #eee; padding-top:20px;">
+            <p style="font-size:11px; color:var(--navy); font-weight:bold;">Tap seats to change status, then Sync.</p>
             <div id="admin-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); gap:5px; margin-bottom:15px;"></div>
             <button class="btn" style="width:100%; background:var(--green);" onclick="updateCloud()">SYNC TO DATABASE</button>
-            <button class="btn" style="width:100%; background:var(--red); margin-top:10px;" onclick="location.reload()">LOGOUT</button>
+            <button class="btn" style="width:100%; background:var(--red); margin-top:10px;" onclick="location.reload()">LOGOUT & LOCK</button>
         </div>
     </div>
 
     <script>
-        // Use your Project ID here
+        // Updated with your API Key
         const firebaseConfig = { 
+            apiKey: "AIzaSyAsF3o3S7fpvTumwVVL_exuqMlAUS5MKXE", 
+            authDomain: "baporalibrary-fea16.firebaseapp.com",
             databaseURL: "https://baporalibrary-fea16-default-rtdb.firebaseio.com/",
-            authDomain: "baporalibrary-fea16.firebaseapp.com"
+            projectId: "baporalibrary-fea16"
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
@@ -70,7 +78,7 @@
 
         let seatData = {};
 
-        // Fetch Live Data
+        // Real-time listener for public view
         db.ref('seats').on('value', (snap) => {
             seatData = snap.val() || {};
             render();
@@ -92,18 +100,21 @@
             document.getElementById('vac-count').innerText=57-(g+r);
         }
 
-        function showAdmin() { document.getElementById('admin-panel').style.display='block'; window.scrollTo(0,document.body.scrollHeight); }
+        function showAdmin() { 
+            document.getElementById('admin-panel').style.display='block'; 
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        }
 
         function handleLogin() {
             const email = document.getElementById('email').value;
             const pass = document.getElementById('pass').value;
             auth.signInWithEmailAndPassword(email, pass)
                 .then(() => {
-                    alert("Welcome Petty Officer! System Unlocked.");
+                    alert("Welcome Petty Officer! Authentication Successful.");
                     document.getElementById('admin-controls').style.display='block';
                     renderAdmin();
                 })
-                .catch(e => alert("ACCESS DENIED: Authentication Failed."));
+                .catch(e => alert("ACCESS DENIED: Unauthorized Personnel."));
         }
 
         function renderAdmin() {
@@ -124,9 +135,10 @@
         }
 
         function updateCloud() {
+            // Only logged-in users can write to Database
             db.ref('seats').set(seatData).then(() => {
-                alert("Database Updated Successfully!");
-            }).catch(e => alert("Error: You must be logged in to modify data."));
+                alert("Mission Successful: Database Updated!");
+            }).catch(e => alert("CRITICAL ERROR: Permission Denied. Check Rules."));
         }
     </script>
 </body>
