@@ -3,101 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bapora Library Dashboard</title>
+    <title>Bapora Library - Secure Control</title>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-auth-compat.js"></script>
     <style>
         :root { --navy: #002b5b; --gold: #c5a059; --green: #2ecc71; --blue: #3498db; --red: #e74c3c; }
-        body { font-family: sans-serif; background: #f4f7f9; margin: 0; padding-bottom: 100px; text-align: center; }
-        
+        body { font-family: sans-serif; background: #f4f7f9; margin: 0; padding-bottom: 50px; text-align: center; }
         .header { background: var(--navy); color: white; padding: 20px; border-bottom: 4px solid var(--gold); }
-        .tagline { font-size: 10px; color: var(--gold); font-weight: bold; margin-top: 5px; }
-
-        /* Dashboard */
         .dash { display: flex; justify-content: space-around; background: white; padding: 15px; margin: 10px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .dash div { flex: 1; border-right: 1px solid #eee; }
-        .dash div:last-child { border: none; }
         .num { font-size: 18px; font-weight: bold; display: block; }
-        .lbl { font-size: 9px; color: #888; text-transform: uppercase; font-weight: bold; }
-
-        .section-box { background: white; margin: 15px; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .section-title { font-size: 14px; font-weight: bold; color: var(--navy); text-align: left; margin-bottom: 15px; border-left: 4px solid var(--gold); padding-left: 10px; }
-        
+        .lbl { font-size: 9px; color: #888; text-transform: uppercase; }
+        .section-box { background: white; margin: 15px; padding: 15px; border-radius: 10px; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); gap: 10px; }
-        .seat { width: 50px; height: 50px; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; border: 1px solid #ddd; }
-        
+        .seat { width: 50px; height: 50px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; border: 1px solid #ddd; }
         .st-vacant { background: #fff; color: var(--green); border: 2px solid var(--green); }
         .st-general { background: var(--blue); color: white; border: none; }
         .st-reserved { background: var(--red); color: white; border: none; }
-        .icon { font-size: 18px; line-height: 1; }
-
-        /* Invisible Admin Button */
-        .admin-trigger { background: none; border: none; color: rgba(0,0,0,0.02); padding: 20px; margin-top: 60px; cursor: pointer; font-size: 8px; width: 100%; }
-        
-        #admin-panel { display: none; margin: 20px; padding: 20px; background: #fff; border: 2px solid var(--navy); border-radius: 15px; }
-        .save-btn { background: var(--navy); color: white; width: 100%; padding: 15px; border: none; border-radius: 10px; font-weight: bold; margin-top: 15px; cursor: pointer; }
-    </style>
+        /* Invisible Login */
+        .admin-trigger { background: none; border: none; color: rgba(0,0,0,0.01); padding: 20px; width: 100%; cursor: pointer; }
+        #admin-panel { display: none; margin: 20px; padding: 20px; background: #fff; border: 3px solid var(--navy); border-radius: 15px; }
+        input { padding: 12px; margin: 8px; width: 85%; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; }
+        .btn { padding: 12px 25px; background: var(--navy); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+    </script>
 </head>
 <body>
 
     <div class="header">
         <h2 style="margin:0;">BAPORA LIBRARY</h2>
-        <div class="tagline">⚓ INDIAN NAVY VETERAN ENTERPRISE ⚓</div>
+        <div style="font-size:10px; color:var(--gold);">⚓ VETERAN SECURE SYSTEM ⚓</div>
     </div>
 
     <div class="dash">
-        <div><span class="num" style="color:#555">57</span><span class="lbl">Total</span></div>
         <div><span id="gen-count" class="num" style="color:var(--blue)">0</span><span class="lbl">General</span></div>
         <div><span id="res-count" class="num" style="color:var(--red)">0</span><span class="lbl">Reserved</span></div>
         <div><span id="vac-count" class="num" style="color:var(--green)">0</span><span class="lbl">Vacant</span></div>
     </div>
 
-    <div class="section-box"><div class="section-title">Section 1 (1-27)</div><div class="grid" id="sec1"></div></div>
-    <div class="section-box"><div class="section-title">Section 2 (28-42)</div><div class="grid" id="sec2"></div></div>
-    <div class="section-box"><div class="section-title">Section 3 (43-57)</div><div class="grid" id="sec3"></div></div>
+    <div class="section-box"><div class="grid" id="seat-grid"></div></div>
 
-    <button class="admin-trigger" onclick="showAdmin()">Admin login</button>
+    <button class="admin-trigger" onclick="showAdmin()">Admin Access</button>
 
     <div id="admin-panel">
-        <h3>Master Control Panel</h3>
-        <input type="password" id="pin" placeholder="PIN" style="padding:12px; width:100px; border-radius:8px; border:1px solid #ccc; margin-bottom:10px;">
-        <button onclick="login()" style="padding:12px 20px; background:var(--navy); color:white; border:none; border-radius:8px;">Access</button>
+        <h3 style="color:var(--navy);">MASTER LOGIN</h3>
+        <p style="font-size:11px; color:red;">Enter Email & Password to unlock database</p>
+        <input type="email" id="email" placeholder="Admin Email">
+        <input type="password" id="pass" placeholder="Password">
+        <button class="btn" onclick="handleLogin()">LOGIN ⚓</button>
         
-        <div id="admin-controls" style="display:none; margin-top:20px;">
+        <div id="admin-controls" style="display:none; margin-top:20px; border-top: 2px solid #eee; padding-top:20px;">
             <div id="admin-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); gap:5px; margin-bottom:15px;"></div>
-            <button class="save-btn" onclick="updateCloud()">SYNC TO DATABASE ⚓</button>
+            <button class="btn" style="width:100%; background:var(--green);" onclick="updateCloud()">SYNC TO DATABASE</button>
+            <button class="btn" style="width:100%; background:var(--red); margin-top:10px;" onclick="location.reload()">LOGOUT</button>
         </div>
     </div>
 
     <script>
-        const firebaseConfig = { databaseURL: "https://baporalibrary-fea16-default-rtdb.firebaseio.com/" };
+        // Use your Project ID here
+        const firebaseConfig = { 
+            databaseURL: "https://baporalibrary-fea16-default-rtdb.firebaseio.com/",
+            authDomain: "baporalibrary-fea16.firebaseapp.com"
+        };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
+        const auth = firebase.auth();
 
         let seatData = {};
 
-        // Real-time Fetch
+        // Fetch Live Data
         db.ref('seats').on('value', (snap) => {
             seatData = snap.val() || {};
             render();
         });
 
         function render() {
-            const s1=document.getElementById('sec1'), s2=document.getElementById('sec2'), s3=document.getElementById('sec3');
-            s1.innerHTML=s2.innerHTML=s3.innerHTML="";
+            const grid = document.getElementById('seat-grid'); grid.innerHTML = "";
             let g=0, r=0;
-
             for(let i=1; i<=57; i++){
                 let div = document.createElement('div');
                 let status = seatData[i] || 'v';
-                let content = `<span>${i}</span>`;
-                
-                if(status==='g'){ div.className='seat st-general'; content=`<span class="icon">👤</span>`+content; g++; }
-                else if(status==='r'){ div.className='seat st-reserved'; content=`<span class="icon">👤</span>`+content; r++; }
-                else { div.className='seat st-vacant'; }
-
-                div.innerHTML = content;
-                if(i<=27) s1.appendChild(div); else if(i<=42) s2.appendChild(div); else s3.appendChild(div);
+                div.className = status==='g'?'seat st-general':status==='r'?'seat st-reserved':'seat st-vacant';
+                div.innerHTML = i;
+                if(status==='g') g++; if(status==='r') r++;
+                grid.appendChild(div);
             }
             document.getElementById('gen-count').innerText=g;
             document.getElementById('res-count').innerText=r;
@@ -105,7 +93,18 @@
         }
 
         function showAdmin() { document.getElementById('admin-panel').style.display='block'; window.scrollTo(0,document.body.scrollHeight); }
-        function login() { if(document.getElementById('pin').value === "123456") { document.getElementById('admin-controls').style.display='block'; renderAdmin(); } else { alert("Wrong PIN"); } }
+
+        function handleLogin() {
+            const email = document.getElementById('email').value;
+            const pass = document.getElementById('pass').value;
+            auth.signInWithEmailAndPassword(email, pass)
+                .then(() => {
+                    alert("Welcome Petty Officer! System Unlocked.");
+                    document.getElementById('admin-controls').style.display='block';
+                    renderAdmin();
+                })
+                .catch(e => alert("ACCESS DENIED: Authentication Failed."));
+        }
 
         function renderAdmin() {
             const ag = document.getElementById('admin-grid'); ag.innerHTML = "";
@@ -114,23 +113,20 @@
                 b.innerText = i; b.style.padding="8px"; b.style.border="none"; b.style.color="white"; b.style.borderRadius="4px";
                 let status = seatData[i] || 'v';
                 b.style.background = (status==='g')?'#3498db':(status==='r')?'#e74c3c':'#2ecc71';
-                b.onclick = () => { if(!seatData[i] || seatData[i]==='v') seatData[i]='g'; else if(seatData[i]==='g') seatData[i]='r'; else delete seatData[i]; renderAdmin(); };
+                b.onclick = () => {
+                    if(!seatData[i] || seatData[i]==='v') seatData[i]='g';
+                    else if(seatData[i]==='g') seatData[i]='r';
+                    else delete seatData[i];
+                    renderAdmin();
+                };
                 ag.appendChild(b);
             }
         }
 
         function updateCloud() {
-            const updates = {};
-            updates['/seats'] = seatData;
-            updates['/admin_auth'] = 'BaporaNavy9393'; // Secret Security Key
-
-            db.ref().update(updates).then(() => {
-                alert("Database Updated Securely!");
-                document.getElementById('admin-panel').style.display='none';
-            }).catch(e => {
-                console.error(e);
-                alert("Access Denied! Check Firebase Rules & Publish.");
-            });
+            db.ref('seats').set(seatData).then(() => {
+                alert("Database Updated Successfully!");
+            }).catch(e => alert("Error: You must be logged in to modify data."));
         }
     </script>
 </body>
