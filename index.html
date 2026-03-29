@@ -13,9 +13,12 @@
         .header { background: var(--navy); color: white; padding: 20px; border-bottom: 4px solid var(--gold); }
         .tagline { font-size: 10px; color: var(--gold); font-weight: bold; margin-top: 5px; }
 
+        /* Dashboard with 4 Columns */
         .dash { display: flex; justify-content: space-around; background: white; padding: 15px; margin: 10px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .num { font-size: 20px; font-weight: bold; display: block; }
-        .lbl { font-size: 10px; color: #888; text-transform: uppercase; }
+        .dash div { flex: 1; border-right: 1px solid #eee; }
+        .dash div:last-child { border: none; }
+        .num { font-size: 18px; font-weight: bold; display: block; }
+        .lbl { font-size: 9px; color: #888; text-transform: uppercase; font-weight: bold; }
 
         .section-box { background: white; margin: 15px; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .section-title { font-size: 14px; font-weight: bold; color: var(--navy); text-align: left; margin-bottom: 15px; border-left: 4px solid var(--gold); padding-left: 10px; }
@@ -28,25 +31,11 @@
         .st-reserved { background: var(--red); color: white; border: none; }
         .icon { font-size: 18px; line-height: 1; }
 
-        /* Secret Admin Button - Almost Invisible */
-        .admin-trigger { 
-            background: none; 
-            border: none; 
-            color: rgba(0,0,0,0.05); /* Extremely Faint */
-            padding: 20px; 
-            margin: 50px auto; 
-            cursor: pointer; 
-            font-size: 9px; 
-            display: block; 
-            width: 100%;
-            text-decoration: none;
-        }
-        .admin-trigger:hover { color: rgba(0,0,0,0.2); } /* Slightly visible on hover for you */
-
+        /* Admin Login - Nearly Invisible (0.02 opacity) */
+        .admin-trigger { background: none; border: none; color: rgba(0,0,0,0.02); padding: 20px; margin-top: 60px; cursor: pointer; font-size: 8px; width: 100%; }
+        
         #admin-panel { display: none; margin: 20px; padding: 20px; background: #fff; border: 2px solid var(--navy); border-radius: 15px; }
         .save-btn { background: var(--navy); color: white; width: 100%; padding: 15px; border: none; border-radius: 10px; font-weight: bold; margin-top: 15px; cursor: pointer; }
-        
-        .adm-btn-small { padding: 8px; margin: 2px; border: none; border-radius: 4px; color: white; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -57,6 +46,7 @@
     </div>
 
     <div class="dash">
+        <div><span class="num" style="color:#555">57</span><span class="lbl">Total</span></div>
         <div><span id="gen-count" class="num" style="color:var(--blue)">0</span><span class="lbl">General</span></div>
         <div><span id="res-count" class="num" style="color:var(--red)">0</span><span class="lbl">Reserved</span></div>
         <div><span id="vac-count" class="num" style="color:var(--green)">0</span><span class="lbl">Vacant</span></div>
@@ -81,25 +71,22 @@
 
     <div id="admin-panel">
         <h3>Master Control Panel</h3>
-        <input type="password" id="pin" placeholder="PIN" style="padding:12px; width:120px; border-radius:8px; border:1px solid #ccc; margin-bottom:10px;">
-        <button onclick="login()" style="padding:12px 20px; background:var(--navy); color:white; border:none; border-radius:8px; cursor:pointer;">Access</button>
+        <input type="password" id="pin" placeholder="PIN" style="padding:12px; width:100px; border-radius:8px; border:1px solid #ccc; margin-bottom:10px;">
+        <button onclick="login()" style="padding:12px 20px; background:var(--navy); color:white; border:none; border-radius:8px;">Access</button>
         
         <div id="admin-controls" style="display:none; margin-top:20px;">
-            <p style="font-size:11px; color:var(--red); font-weight:bold;">Tap to Change Status</p>
             <div id="admin-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); gap:5px; margin-bottom:15px;"></div>
             <button class="save-btn" onclick="updateCloud()">SYNC TO DATABASE ⚓</button>
         </div>
     </div>
 
     <script>
-        // Database Link
         const firebaseConfig = { databaseURL: "https://baporalibrary-fea16-default-rtdb.firebaseio.com/" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database().ref('seats');
 
         let seatData = {};
 
-        // Real-time Update
         db.on('value', (snap) => {
             seatData = snap.val() || {};
             render();
@@ -135,17 +122,16 @@
             if(document.getElementById('pin').value === "123456") {
                 document.getElementById('admin-controls').style.display='block';
                 renderAdmin();
-            } else { alert("Incorrect Access PIN"); }
+            } else { alert("Wrong PIN"); }
         }
 
         function renderAdmin() {
             const ag = document.getElementById('admin-grid'); ag.innerHTML = "";
             for(let i=1; i<=57; i++){
                 const b = document.createElement('button');
-                b.className = "adm-btn-small";
-                b.innerText = i;
+                b.innerText = i; b.style.padding="8px"; b.style.border="none"; b.style.color="white"; b.style.borderRadius="4px";
                 let status = seatData[i] || 'v';
-                b.style.background = (status==='g')?'var(--blue)':(status==='r')?'var(--red)':'var(--green)';
+                b.style.background = (status==='g')?'#3498db':(status==='r')?'#e74c3c':'#2ecc71';
                 b.onclick = () => {
                     if(!seatData[i] || seatData[i]==='v') seatData[i]='g';
                     else if(seatData[i]==='g') seatData[i]='r';
@@ -158,7 +144,7 @@
 
         function updateCloud() {
             db.set(seatData).then(() => {
-                alert("Database Synchronized! MC updated.");
+                alert("Database Updated!");
                 document.getElementById('admin-panel').style.display='none';
             });
         }
