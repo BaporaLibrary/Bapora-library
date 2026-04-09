@@ -11,7 +11,7 @@
         :root { --navy: #002b5b; --gold: #c5a059; --green: #2ecc71; --blue: #3498db; --red: #e74c3c; }
         body { font-family: sans-serif; background: #f4f7f9; margin: 0; padding-bottom: 50px; text-align: center; }
         
-        /* UPDATED: 3D PREMIUM HEADER */
+        /* 3D PREMIUM HEADER */
         .header { 
             background: linear-gradient(135deg, #001f3f, #004080); 
             color: white; 
@@ -24,7 +24,7 @@
             margin: 0;
             font-size: 28px;
             letter-spacing: 2px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.6); /* 3D Text Effect */
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.6); 
         }
         .tagline { 
             font-size: 11px; 
@@ -37,7 +37,7 @@
             background: rgba(0,0,0,0.25); 
             display: inline-block;
             padding: 5px 15px;
-            border-radius: 20px; /* Badge Look */
+            border-radius: 20px; 
             border: 1px solid rgba(197, 160, 89, 0.4);
             box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
         }
@@ -54,14 +54,47 @@
         .num { font-size: 24px; font-weight: 900; margin-bottom: 2px; }
         .lbl { font-size: 10px; color: #7f8c8d; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px;}
 
-        /* SEAT GRID */
+        /* UPDATED: 3D SEAT GRID WITH ICONS */
         .section-box { background: white; margin: 15px; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); gap: 10px; }
-        .seat { width: 50px; height: 50px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; border: 1px solid #ddd; transition: 0.2s;}
-        .st-vacant { background: #fff; color: var(--green); border: 2px solid var(--green); }
-        .st-general { background: var(--blue); color: white; border: none; box-shadow: 0 3px 6px rgba(52, 152, 219, 0.3);}
-        .st-reserved { background: var(--red); color: white; border: none; box-shadow: 0 3px 6px rgba(231, 76, 60, 0.3);}
         
+        .seat { 
+            width: 50px; 
+            height: 55px; 
+            border-radius: 8px; 
+            display: flex; 
+            flex-direction: column;
+            align-items: center; 
+            justify-content: center; 
+            font-size: 13px; 
+            font-weight: bold; 
+            transition: 0.2s;
+        }
+        
+        /* Vacant: Clean and simple */
+        .st-vacant { 
+            background: #fff; 
+            color: var(--green); 
+            border: 2px dashed var(--green); 
+        }
+        
+        /* Occupied: 3D Gradients and Shadows */
+        .st-general { 
+            background: linear-gradient(145deg, #3498db, #2980b9); 
+            color: white; 
+            border: none; 
+            box-shadow: 2px 4px 8px rgba(0,0,0,0.2), inset 1px 1px 2px rgba(255,255,255,0.4);
+        }
+        .st-reserved { 
+            background: linear-gradient(145deg, #e74c3c, #c0392b); 
+            color: white; 
+            border: none; 
+            box-shadow: 2px 4px 8px rgba(0,0,0,0.2), inset 1px 1px 2px rgba(255,255,255,0.4);
+        }
+
+        .icon-stu { font-size: 18px; margin-bottom: 2px; line-height: 1; }
+        .seat-no { font-size: 12px; line-height: 1; }
+
         /* Admin Section */
         .admin-trigger { background: none; border: none; color: rgba(0,0,0,0.01); padding: 20px; width: 100%; cursor: pointer; }
         #admin-panel { display: none; margin: 20px; padding: 20px; background: #fff; border: 3px solid var(--navy); border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
@@ -159,7 +192,15 @@
                 let div = document.createElement('div');
                 let status = seatData[i] || 'v';
                 div.className = status==='g'?'seat st-general':status==='r'?'seat st-reserved':'seat st-vacant';
-                div.innerHTML = i;
+                
+                // NAYA LOGIC: Agar occupied hai toh icon dikhao
+                if(status === 'g' || status === 'r') {
+                    div.innerHTML = `<div class="icon-stu">👤</div><div class="seat-no">${i}</div>`;
+                } else {
+                    // Khali seat par sirf number dikhega
+                    div.innerHTML = `<div class="seat-no" style="font-size:16px;">${i}</div>`;
+                }
+
                 if(status==='g') g++; if(status==='r') r++;
                 grid.appendChild(div);
             }
