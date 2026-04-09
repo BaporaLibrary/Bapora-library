@@ -74,8 +74,8 @@
         <div><span id="vac-count" class="num" style="color:var(--green)">0</span><span class="lbl">Vacant</span></div>
     </div>
 
-    <div id="live-status-box" style="text-align:center; margin: 15px; padding: 10px; border-radius: 8px; font-weight: bold; font-size: 1.2rem; background-color: #f8f9fa;">
-        Status: <span id="seat-status">Checking...</span>
+    <div id="live-status-box" style="text-align:center; margin: 15px; padding: 10px; border-radius: 8px; font-weight: bold; font-size: 1.1rem; transition: 0.3s;">
+        <span id="seat-status">Checking Status...</span>
     </div>
 
     <div class="section-box">
@@ -140,11 +140,11 @@
             document.getElementById('res-count').innerText = r;
             document.getElementById('vac-count').innerText = total - (g+r);
 
-            // NAYA LOGIC CALL (Jaise hi data update ho, color badal jaye)
+            // LOGIC CALL
             updateLiveStatus(g + r);
         }
 
-        // NAYA FUNCTION YAHAN JODA GAYA HAI
+        // UPDATED FUNCTION: ENGLISH TEXT & COLOR THEMES
         function updateLiveStatus(totalOccupied) {
             const totalSeats = 57;
             const available = totalSeats - totalOccupied;
@@ -152,17 +152,20 @@
             const statusBox = document.getElementById("live-status-box");
 
             if (available > 10) {
-                statusText.innerText = available + " Seats Khali Hain (GREEN)";
-                statusText.style.color = "green";
-                statusBox.style.border = "2px solid green";
+                statusText.innerText = "🟢 STATUS: SEATS AVAILABLE";
+                statusText.style.color = "#196f3d"; // Dark Green Text
+                statusBox.style.border = "2px solid #2ecc71";
+                statusBox.style.backgroundColor = "#eaeded"; // Light background
             } else if (available > 0) {
-                statusText.innerText = "Sirf " + available + " Seats Bachi Hain! (YELLOW)";
-                statusText.style.color = "orange";
+                statusText.innerText = "🟡 STATUS: FILLING FAST (Only " + available + " Left)";
+                statusText.style.color = "#d68910"; // Dark Orange Text
                 statusBox.style.border = "2px solid orange";
+                statusBox.style.backgroundColor = "#fef9e7"; // Light Yellow background
             } else {
-                statusText.innerText = "Library FULL Hai (RED)";
-                statusText.style.color = "red";
+                statusText.innerText = "🔴 STATUS: FULLY OCCUPIED";
+                statusText.style.color = "#c0392b"; // Dark Red Text
                 statusBox.style.border = "2px solid red";
+                statusBox.style.backgroundColor = "#fdedec"; // Light Red background
             }
         }
 
