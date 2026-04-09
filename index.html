@@ -11,21 +11,44 @@
         :root { --navy: #002b5b; --gold: #c5a059; --green: #2ecc71; --blue: #3498db; --red: #e74c3c; }
         body { font-family: sans-serif; background: #f4f7f9; margin: 0; padding-bottom: 50px; text-align: center; }
         .header { background: var(--navy); color: white; padding: 20px; border-bottom: 4px solid var(--gold); }
-        .tagline { font-size: 10px; color: var(--gold); font-weight: bold; margin-top: 5px; }
+        .tagline { font-size: 10px; color: var(--gold); font-weight: bold; margin-top: 5px; text-transform: uppercase; letter-spacing: 1px;}
         
-        /* Dashboard Fix */
-        .dash { display: flex; justify-content: space-around; background: white; padding: 15px; margin: 10px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .dash div { flex: 1; border-right: 1px solid #eee; }
-        .dash div:last-child { border: none; }
-        .num { font-size: 18px; font-weight: bold; display: block; }
-        .lbl { font-size: 9px; color: #888; text-transform: uppercase; font-weight: bold; }
+        /* UPDATED: MODERN DASHBOARD CARDS */
+        .dash { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 12px; 
+            margin: 15px; 
+        }
+        .stat-card { 
+            background: white; 
+            padding: 15px 10px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.06); 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            border-bottom: 4px solid #ccc;
+            transition: transform 0.2s;
+        }
+        .stat-card:active { transform: scale(0.98); }
+        
+        /* Card Specific Colors */
+        .stat-card.total { border-color: #555; }
+        .stat-card.general { border-color: var(--blue); }
+        .stat-card.reserved { border-color: var(--red); }
+        .stat-card.vacant { border-color: var(--green); }
+
+        .stat-icon { font-size: 22px; margin-bottom: 5px; }
+        .num { font-size: 24px; font-weight: 900; margin-bottom: 2px; }
+        .lbl { font-size: 10px; color: #7f8c8d; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px;}
 
         .section-box { background: white; margin: 15px; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); gap: 10px; }
-        .seat { width: 50px; height: 50px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; border: 1px solid #ddd; }
+        .seat { width: 50px; height: 50px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; border: 1px solid #ddd; transition: 0.2s;}
         .st-vacant { background: #fff; color: var(--green); border: 2px solid var(--green); }
-        .st-general { background: var(--blue); color: white; border: none; }
-        .st-reserved { background: var(--red); color: white; border: none; }
+        .st-general { background: var(--blue); color: white; border: none; box-shadow: 0 3px 6px rgba(52, 152, 219, 0.3);}
+        .st-reserved { background: var(--red); color: white; border: none; box-shadow: 0 3px 6px rgba(231, 76, 60, 0.3);}
         
         /* Admin Section */
         .admin-trigger { background: none; border: none; color: rgba(0,0,0,0.01); padding: 20px; width: 100%; cursor: pointer; }
@@ -35,29 +58,10 @@
 
         /* WhatsApp Floating Button */
         .whatsapp-float {
-            position: fixed;
-            width: 60px;
-            height: 60px;
-            bottom: 20px;
-            right: 20px;
-            background-color: #25d366;
-            color: #FFF;
-            border-radius: 50px;
-            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.3);
-            z-index: 1000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            text-decoration: none;
-            transition: transform 0.3s ease;
+            position: fixed; width: 60px; height: 60px; bottom: 20px; right: 20px; background-color: #25d366; color: #FFF; border-radius: 50px; box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.3); z-index: 1000; display: flex; justify-content: center; align-items: center; text-decoration: none; transition: transform 0.3s ease;
         }
-        .whatsapp-float:hover {
-            transform: scale(1.1);
-        }
-        .whatsapp-icon {
-            width: 35px;
-            height: 35px;
-        }
+        .whatsapp-float:hover { transform: scale(1.1); }
+        .whatsapp-icon { width: 35px; height: 35px; }
     </style>
 </head>
 <body>
@@ -68,13 +72,29 @@
     </div>
 
     <div class="dash">
-        <div><span id="total-count" class="num" style="color:#555">57</span><span class="lbl">Total</span></div>
-        <div><span id="gen-count" class="num" style="color:var(--blue)">0</span><span class="lbl">General</span></div>
-        <div><span id="res-count" class="num" style="color:var(--red)">0</span><span class="lbl">Reserved</span></div>
-        <div><span id="vac-count" class="num" style="color:var(--green)">0</span><span class="lbl">Vacant</span></div>
+        <div class="stat-card total">
+            <div class="stat-icon">🏛️</div>
+            <span id="total-count" class="num" style="color:#555">57</span>
+            <span class="lbl">Total Seats</span>
+        </div>
+        <div class="stat-card general">
+            <div class="stat-icon">📘</div>
+            <span id="gen-count" class="num" style="color:var(--blue)">0</span>
+            <span class="lbl">General</span>
+        </div>
+        <div class="stat-card reserved">
+            <div class="stat-icon">📕</div>
+            <span id="res-count" class="num" style="color:var(--red)">0</span>
+            <span class="lbl">Reserved</span>
+        </div>
+        <div class="stat-card vacant">
+            <div class="stat-icon">✅</div>
+            <span id="vac-count" class="num" style="color:var(--green)">0</span>
+            <span class="lbl">Vacant</span>
+        </div>
     </div>
 
-    <div id="live-status-box" style="text-align:center; margin: 15px; padding: 10px; border-radius: 8px; font-weight: bold; font-size: 1.1rem; transition: 0.3s;">
+    <div id="live-status-box" style="text-align:center; margin: 15px; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 1.1rem; transition: 0.3s;">
         <span id="seat-status">Checking Status...</span>
     </div>
 
@@ -144,7 +164,7 @@
             updateLiveStatus(g + r);
         }
 
-        // UPDATED FUNCTION: ENGLISH TEXT & COLOR THEMES
+        // ENGLISH TEXT & COLOR THEMES
         function updateLiveStatus(totalOccupied) {
             const totalSeats = 57;
             const available = totalSeats - totalOccupied;
@@ -153,19 +173,19 @@
 
             if (available > 10) {
                 statusText.innerText = "🟢 STATUS: SEATS AVAILABLE";
-                statusText.style.color = "#196f3d"; // Dark Green Text
+                statusText.style.color = "#196f3d"; 
                 statusBox.style.border = "2px solid #2ecc71";
-                statusBox.style.backgroundColor = "#eaeded"; // Light background
+                statusBox.style.backgroundColor = "#eaeded"; 
             } else if (available > 0) {
                 statusText.innerText = "🟡 STATUS: FILLING FAST (Only " + available + " Left)";
-                statusText.style.color = "#d68910"; // Dark Orange Text
+                statusText.style.color = "#d68910"; 
                 statusBox.style.border = "2px solid orange";
-                statusBox.style.backgroundColor = "#fef9e7"; // Light Yellow background
+                statusBox.style.backgroundColor = "#fef9e7"; 
             } else {
                 statusText.innerText = "🔴 STATUS: FULLY OCCUPIED";
-                statusText.style.color = "#c0392b"; // Dark Red Text
+                statusText.style.color = "#c0392b"; 
                 statusBox.style.border = "2px solid red";
-                statusBox.style.backgroundColor = "#fdedec"; // Light Red background
+                statusBox.style.backgroundColor = "#fdedec"; 
             }
         }
 
@@ -208,7 +228,8 @@
                 alert("Database Synced! ✅");
             }).catch(e => alert("Permission Denied! Log in first."));
         }
-        // SECURITY ANTI-SNOOPING SCRIPT (Public Site)
+        
+        // SECURITY ANTI-SNOOPING SCRIPT 
         document.addEventListener('contextmenu', event => event.preventDefault()); 
         document.onkeydown = function(e) {
             if(e.keyCode == 123) { return false; } 
