@@ -440,6 +440,21 @@
         };
         r.readAsText(f);
     };
+    // SECURITY ANTI-SNOOPING SCRIPT (The Barbed Wire)
+    document.addEventListener('contextmenu', event => event.preventDefault()); // Blocks Right Click
+    
+    document.onkeydown = function(e) {
+        // Blocks F12
+        if(e.keyCode == 123) { return false; } 
+        // Blocks Ctrl + Shift + I
+        if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) { return false; } 
+        // Blocks Ctrl + Shift + C
+        if(e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) { return false; } 
+        // Blocks Ctrl + Shift + J
+        if(e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) { return false; } 
+        // Blocks Ctrl + U (View Source)
+        if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) { return false; } 
+    };
 </script>
 </body>
 </html>
