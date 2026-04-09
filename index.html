@@ -74,6 +74,10 @@
         <div><span id="vac-count" class="num" style="color:var(--green)">0</span><span class="lbl">Vacant</span></div>
     </div>
 
+    <div id="live-status-box" style="text-align:center; margin: 15px; padding: 10px; border-radius: 8px; font-weight: bold; font-size: 1.2rem; background-color: #f8f9fa;">
+        Status: <span id="seat-status">Checking...</span>
+    </div>
+
     <div class="section-box">
         <div class="grid" id="seat-grid"></div>
     </div>
@@ -135,6 +139,31 @@
             document.getElementById('gen-count').innerText = g;
             document.getElementById('res-count').innerText = r;
             document.getElementById('vac-count').innerText = total - (g+r);
+
+            // NAYA LOGIC CALL (Jaise hi data update ho, color badal jaye)
+            updateLiveStatus(g + r);
+        }
+
+        // NAYA FUNCTION YAHAN JODA GAYA HAI
+        function updateLiveStatus(totalOccupied) {
+            const totalSeats = 57;
+            const available = totalSeats - totalOccupied;
+            const statusText = document.getElementById("seat-status");
+            const statusBox = document.getElementById("live-status-box");
+
+            if (available > 10) {
+                statusText.innerText = available + " Seats Khali Hain (GREEN)";
+                statusText.style.color = "green";
+                statusBox.style.border = "2px solid green";
+            } else if (available > 0) {
+                statusText.innerText = "Sirf " + available + " Seats Bachi Hain! (YELLOW)";
+                statusText.style.color = "orange";
+                statusBox.style.border = "2px solid orange";
+            } else {
+                statusText.innerText = "Library FULL Hai (RED)";
+                statusText.style.color = "red";
+                statusBox.style.border = "2px solid red";
+            }
         }
 
         function showAdmin() { 
