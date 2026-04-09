@@ -10,39 +10,51 @@
     <style>
         :root { --navy: #002b5b; --gold: #c5a059; --green: #2ecc71; --blue: #3498db; --red: #e74c3c; }
         body { font-family: sans-serif; background: #f4f7f9; margin: 0; padding-bottom: 50px; text-align: center; }
-        .header { background: var(--navy); color: white; padding: 20px; border-bottom: 4px solid var(--gold); }
-        .tagline { font-size: 10px; color: var(--gold); font-weight: bold; margin-top: 5px; text-transform: uppercase; letter-spacing: 1px;}
         
-        /* UPDATED: MODERN DASHBOARD CARDS */
-        .dash { 
-            display: grid; 
-            grid-template-columns: repeat(2, 1fr); 
-            gap: 12px; 
-            margin: 15px; 
+        /* UPDATED: 3D PREMIUM HEADER */
+        .header { 
+            background: linear-gradient(135deg, #001f3f, #004080); 
+            color: white; 
+            padding: 25px 20px; 
+            border-bottom: 5px solid var(--gold); 
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3); 
+            margin-bottom: 15px;
         }
-        .stat-card { 
-            background: white; 
-            padding: 15px 10px; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 8px rgba(0,0,0,0.06); 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            border-bottom: 4px solid #ccc;
-            transition: transform 0.2s;
+        .header h2 {
+            margin: 0;
+            font-size: 28px;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.6); /* 3D Text Effect */
         }
+        .tagline { 
+            font-size: 11px; 
+            color: var(--gold); 
+            font-weight: bold; 
+            margin-top: 10px; 
+            text-transform: uppercase; 
+            letter-spacing: 2px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.25); 
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px; /* Badge Look */
+            border: 1px solid rgba(197, 160, 89, 0.4);
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+        }
+        
+        /* MODERN DASHBOARD CARDS */
+        .dash { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 15px; }
+        .stat-card { background: white; padding: 15px 10px; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.06); display: flex; flex-direction: column; align-items: center; border-bottom: 4px solid #ccc; transition: transform 0.2s; }
         .stat-card:active { transform: scale(0.98); }
-        
-        /* Card Specific Colors */
         .stat-card.total { border-color: #555; }
         .stat-card.general { border-color: var(--blue); }
         .stat-card.reserved { border-color: var(--red); }
         .stat-card.vacant { border-color: var(--green); }
-
         .stat-icon { font-size: 22px; margin-bottom: 5px; }
         .num { font-size: 24px; font-weight: 900; margin-bottom: 2px; }
         .lbl { font-size: 10px; color: #7f8c8d; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px;}
 
+        /* SEAT GRID */
         .section-box { background: white; margin: 15px; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); gap: 10px; }
         .seat { width: 50px; height: 50px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; border: 1px solid #ddd; transition: 0.2s;}
@@ -56,10 +68,8 @@
         input { padding: 12px; margin: 8px; width: 85%; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; outline: none; }
         .btn { padding: 12px 25px; background: var(--navy); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
 
-        /* WhatsApp Floating Button */
-        .whatsapp-float {
-            position: fixed; width: 60px; height: 60px; bottom: 20px; right: 20px; background-color: #25d366; color: #FFF; border-radius: 50px; box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.3); z-index: 1000; display: flex; justify-content: center; align-items: center; text-decoration: none; transition: transform 0.3s ease;
-        }
+        /* WhatsApp */
+        .whatsapp-float { position: fixed; width: 60px; height: 60px; bottom: 20px; right: 20px; background-color: #25d366; color: #FFF; border-radius: 50px; box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.3); z-index: 1000; display: flex; justify-content: center; align-items: center; text-decoration: none; transition: transform 0.3s ease; }
         .whatsapp-float:hover { transform: scale(1.1); }
         .whatsapp-icon { width: 35px; height: 35px; }
     </style>
@@ -67,7 +77,7 @@
 <body>
 
     <div class="header">
-        <h2 style="margin:0;">BAPORA LIBRARY</h2>
+        <h2>BAPORA LIBRARY</h2>
         <div class="tagline">⚓ VETERAN SECURE SYSTEM ⚓</div>
     </div>
 
@@ -154,17 +164,14 @@
                 grid.appendChild(div);
             }
             
-            // Dashboard Updates
             document.getElementById('total-count').innerText = total;
             document.getElementById('gen-count').innerText = g;
             document.getElementById('res-count').innerText = r;
             document.getElementById('vac-count').innerText = total - (g+r);
 
-            // LOGIC CALL
             updateLiveStatus(g + r);
         }
 
-        // ENGLISH TEXT & COLOR THEMES
         function updateLiveStatus(totalOccupied) {
             const totalSeats = 57;
             const available = totalSeats - totalOccupied;
@@ -229,7 +236,6 @@
             }).catch(e => alert("Permission Denied! Log in first."));
         }
         
-        // SECURITY ANTI-SNOOPING SCRIPT 
         document.addEventListener('contextmenu', event => event.preventDefault()); 
         document.onkeydown = function(e) {
             if(e.keyCode == 123) { return false; } 
