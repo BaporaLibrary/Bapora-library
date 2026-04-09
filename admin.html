@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bapora Command v10.13 (Cloud Secure)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root { --navy: #002347; --gold: #c5a059; --bg: #f4f4f9; --card: #ffffff; --text: #222; --safe: #1b5e20; --danger: #b71c1c; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); color: var(--text); padding: 0; margin: 0; }
+        .container { max-width: 480px; margin: auto; background: var(--card); border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border-top: 5px solid var(--navy); overflow: hidden; padding: 8px; }
+        .tabs { display: flex; background: #eceff1; }
+        .tab-btn { flex: 1; padding: 14px 5px; border: none; background: none; font-weight: bold; cursor: pointer; color: #546e7a; font-size: 12px; border-bottom: 3px solid transparent; }
+        .tab-btn.active { color: var(--navy); border-bottom: 3px solid var(--navy); background: #fff; }
+        .tab-content { display: none; padding: 12px; }
+        .tab-content.active { display: block; }
+        .section { background: #fafafa; padding: 12px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #e0e0e0; }
+        input, select { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #cfd8dc; border-radius: 4px; box-sizing: border-box; }
+        .record-item { background: white; padding: 12px; border-radius: 6px; margin-top: 8px; border: 1px solid #eceff1; position: relative; border-left: 4px solid var(--navy); }
+        .due-alert { border-left-color: var(--danger) !important; background: #fff5f5; }
+        .follow-up { background: #fff3e0; color: #ef6c00; font-weight: bold; padding: 4px; border-radius: 4px; font-size: 10px; display: inline-block; margin-top: 5px; border: 1px solid #ffe0b2; }
+        .remind-date { font-size: 9px; color: #666; display: block; margin-top: 2px; }
+        .wa-btn-group { display: flex; gap: 4px; margin-top: 8px; }
+        .wa-btn { flex: 1; color: white; padding: 8px 2px; border-radius: 4px; font-size: 10px; font-weight: bold; text-align: center; border: none; cursor: pointer; }
+        .btn-rcpt { background: var(--safe); }
+        .btn-due { background: #ff9800; }
+        .btn-lunch { background: #007bff; }
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+        .stat { background: #fff; border: 1px solid var(--navy); padding: 8px; border-radius: 6px; text-align: center; color: var(--navy); }
+        .stat b { font-size: 14px; display: block; }
+        .btn-main { padding: 12px; width: 100%; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; color: white; margin-top: 5px; }
+        .filter-bar { display: flex; gap: 4px; margin-bottom: 10px; }
+        .btn-filter { flex: 1; font-size: 9px; padding: 8px 2px; border: 1px solid var(--navy); background: white; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-filter.active { background: var(--navy); color: white; }
+        .action-link { font-size: 10px; font-weight: bold; cursor: pointer; margin-top: 8px; display: inline-block; margin-right: 15px; }
+        .history-card { background: #e3f2fd; padding: 10px; border-radius: 6px; margin-top: 8px; font-size: 11px; border-left: 4px solid var(--gold); }
+        
+        /* Login Screen Styles */
+        #login-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; background:var(--navy); }
+        .login-box { background:white; padding:30px; border-radius:10px; text-align:center; width:280px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+    </style>
+</head>
+<body>
+
+<div id="login-screen">
+    <div class="login-box">
+        <h2 style="color:var(--navy); margin-top:0;">Bapora Command</h2>
+        <p style="font-size:12px; color:#666; font-weight:bold;">SECURE CLOUD ACCESS</p>
+        <input type="email" id="loginEmail" placeholder="Admin Email">
+        <input type="password" id="loginPass" placeholder="Master Password">
+        <button id="loginBtn" class="btn-main" style="background:var(--gold); color:black;" onclick="window.login()">UNLOCK SYSTEM</button>
+        <p id="loginError" style="color:red; font-size:11px; display:none;"></p>
+    </div>
+</div>
+
+<div id="app-screen" style="display:none; padding:8px;">
+    <div class="container">
+        <div class="tabs">
+            <button id="tabL" class="tab-btn active" onclick="window.switchTab('lib-tab')">LIBRARIAN</button>
+            <button id="tabE" class="tab-btn" onclick="window.switchTab('exp-tab')">FINANCE</button>
+        </div>
+
+        <div id="lib-tab" class="tab-content active">
+            <div class="stat-grid">
+                <div class="stat"><small>Students</small><b id="countTotal">0</b></div>
+                <div class="stat" style="color:var(--danger);"><small>Due Now</small><b id="countDue">0</b></div>
+                <div class="stat" style="color:var(--safe); border-color:var(--safe);"><small>Fees This Mnt</small><b id="sumFees">₹0</b></div>
+                <div class="stat" style="color:var(--danger); border-color:var(--danger);"><small>Exp This Mnt</small><b id="sumExp">₹0</b></div>
+            </div>
+
+            <div class="section">
+                <input type="hidden" id="editId">
+                <input type="text" id="stuName" placeholder="Student Name">
+                <div style="display:flex; gap:5px;">
+                    <input type="text" id="stuSeat" placeholder="Seat" style="flex:1;">
+                    <input type="number" id="stuAmt" placeholder="Fee Paid (₹)" style="flex:1;">
+                </div>
+                <input type="tel" id="stuPhone" placeholder="WhatsApp No">
+                <input type="date" id="stuFeeDate">
+                <button id="saveBtn" class="btn-main" style="background:var(--navy);" onclick="window.saveStudent()">SAVE TO CLOUD</button>
+                <button id="cancelBtn" class="btn-main" style="background:#666; display:none;" onclick="window.clearForms()">CANCEL</button>
+            </div>
+
+            <input type="text" id="stuSearch" placeholder="🔍 Search..." onkeyup="window.render()">
+            
+            <div class="filter-bar">
+                <button id="fAll" class="btn-filter active" onclick="window.setF('all')">ALL</button>
+                <button id="fDue" class="btn-filter" onclick="window.setF('due')">DUE</button>
+                <button id="fFol" class="btn-filter" style="border-color:#ef6c00;" onclick="window.setF('fol')">⚠️ FOLLOW-UP</button>
+            </div>
+
+            <div id="stuList"></div>
+
+            <div class="section" style="margin-top:20px; text-align:center; background:#eee;">
+                <div style="display:flex; gap:5px; margin-bottom:10px;">
+                    <button class="btn-main" style="background:var(--gold); color:#000; flex:1;" onclick="window.exportData()">💾 DOWNLOAD</button>
+                    <button class="btn-main" style="background:#28a745; color:#fff; flex:1;" onclick="window.exportToExcel()">📊 EXCEL</button>
+                </div>
+                <div style="border-top:1px solid #ccc; padding-top:10px;">
+                    <input type="file" id="importFile" style="font-size:10px;" accept=".txt">
+                    <button class="btn-main" style="background:var(--navy);" onclick="window.importData()">🔄 UPLOAD/RESTORE TO CLOUD</button>
+                </div>
+                <button class="btn-main" style="background:#b71c1c; margin-top:15px;" onclick="window.logout()">LOGOUT</button>
+            </div>
+        </div>
+
+        <div id="exp-tab" class="tab-content">
+            <div class="stat" style="background:var(--navy); color:white; margin-bottom:15px; padding:15px; border-radius:6px; text-align:center;">
+                <small>Net Profit (This Month)</small><b id="netProfit" style="font-size:24px;">₹0</b>
+            </div>
+            
+            <div class="section">
+                <p style="margin:0 0 5px 0; font-weight:bold;">➕ Add / Edit Expense</p>
+                <input type="hidden" id="editExpId">
+                <input type="date" id="expDate">
+                <input type="number" id="expAmt" placeholder="Amount (₹)">
+                <input type="text" id="expNote" placeholder="Note (Electricity etc.)">
+                <button id="saveExpBtn" class="btn-main" style="background:var(--danger);" onclick="window.addExpense()">LOG TO CLOUD</button>
+                <button id="cancelExpBtn" class="btn-main" style="background:#666; display:none;" onclick="window.clearExpForm()">CANCEL EDIT</button>
+            </div>
+
+            <div class="section" style="background:#fff3e0; border: 1px solid #ef6c00;">
+                <p style="margin:0; font-weight:bold; color:#e65100;">🏁 End Current Month</p>
+                <button class="btn-main" style="background:#ef6c00;" onclick="window.archiveMonth()">CLOSE & LOG MONTH</button>
+            </div>
+            <div id="historyList"></div>
+            <hr><div id="expList"></div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    // 1. FIREBASE SETUP
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAsF3o3S7fpvTumwVVL_exuqMlAUS5MKXE",
+      authDomain: "baporalibrary-fea16.firebaseapp.com",
+      databaseURL: "https://baporalibrary-fea16-default-rtdb.firebaseio.com",
+      projectId: "baporalibrary-fea16",
+      storageBucket: "baporalibrary-fea16.firebasestorage.app",
+      messagingSenderId: "306379749744",
+      appId: "1:306379749744:web:b24df642f287947ed2b7b5",
+      measurementId: "G-JPQVM3HS88"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+    const MASTER_UID = "SDMZEUimL9RVB7oGxxD6klxROA22"; // The Iron Gate Lock
+
+    let students = [], expenses = [], history = [], curF = 'all';
+
+    // 2. AUTHENTICATION LOGIC (THE IRON GATE)
+    window.login = function() {
+        const email = document.getElementById('loginEmail').value;
+        const pass = document.getElementById('loginPass').value;
+        document.getElementById('loginBtn').innerText = "Verifying...";
+        
+        signInWithEmailAndPassword(auth, email, pass).catch((error) => {
+            document.getElementById('loginError').style.display = "block";
+            document.getElementById('loginError').innerText = "Wrong Email or Password!";
+            document.getElementById('loginBtn').innerText = "UNLOCK SYSTEM";
+        });
+    };
+
+    window.logout = function() {
+        signOut(auth);
+    };
+
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            if(user.uid === MASTER_UID) {
+                // Success! Mahesh ji logged in.
+                document.getElementById('login-screen').style.display = "none";
+                document.getElementById('app-screen').style.display = "block";
+                setupCloudSync(); // Start reading from Cloud
+            } else {
+                // Hacker created an account! Kick them out.
+                signOut(auth);
+                alert("ACCESS DENIED: Unauthorized User ID blocked by Iron Gate.");
+            }
+        } else {
+            // Logged out
+            document.getElementById('login-screen').style.display = "flex";
+            document.getElementById('app-screen').style.display = "none";
+            document.getElementById('loginEmail').value = "";
+            document.getElementById('loginPass').value = "";
+            document.getElementById('loginBtn').innerText = "UNLOCK SYSTEM";
+        }
+    });
+
+    // 3. CLOUD SYNC LOGIC
+    function setupCloudSync() {
+        const dataRef = ref(db, 'admin_data');
+        // This listens to the cloud. If laptop changes it, phone updates automatically!
+        onValue(dataRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                students = data.students || [];
+                expenses = data.expenses || [];
+                history = data.history || [];
+            } else {
+                students = []; expenses = []; history = [];
+            }
+            window.clearExpForm();
+            window.render();
+        });
+    }
+
+    function saveToCloud() {
+        set(ref(db, 'admin_data'), { students, expenses, history })
+        .then(() => { console.log("Saved to Cloud!"); })
+        .catch((error) => { alert("Error saving to cloud! Check internet."); });
+    }
+
+    // 4. MAIN APPLICATION FUNCTIONS
+    window.switchTab = function(t) {
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(t).classList.add('active');
+    };
+
+    window.setF = function(f) {
+        curF = f;
+        document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
+        if(f=='all') document.getElementById('fAll').classList.add('active');
+        if(f=='due') document.getElementById('fDue').classList.add('active');
+        if(f=='fol') document.getElementById('fFol').classList.add('active');
+        window.render();
+    };
+
+    window.saveStudent = function() {
+        const id = document.getElementById('editId').value || Date.now();
+        const name = document.getElementById('stuName').value;
+        const phone = document.getElementById('stuPhone').value;
+        const fee = document.getElementById('stuFeeDate').value;
+        const amount = document.getElementById('stuAmt').value;
+        const seat = document.getElementById('stuSeat').value;
+        
+        if(!name || !phone || !fee) return alert("Fill Name, Phone and Date");
+        
+        const idx = students.findIndex(s => s.id == id);
+        const data = { id: parseInt(id), name, phone, fee, amount, seat, lastRemind: students[idx]?.lastRemind || null, isCounted: true };
+        
+        if(idx > -1) students[idx] = data; else students.push(data);
+        
+        if(amount && confirm(`Record Saved! ✅\nDo you want to send a WhatsApp receipt to ${name} for ₹${amount}?`)) {
+            let parts = fee.split('-');
+            let displayDate = `${parts[2]}/${parts[1]}/${parts[0]}`; 
+            let msg = `Namaste ${name}, fee amount ₹${amount} received. Valid till ${displayDate}. Thank you! Happy Studying 📖 - Bapora Library`;
+            
+            let finalIdx = students.findIndex(s => s.id == data.id);
+            students[finalIdx].lastRemind = new Date().toISOString();
+            window.open(`https://wa.me/91${phone}?text=${encodeURIComponent(msg)}`);
+        }
+        saveToCloud(); // NEW: Saves to Firebase
+        window.clearForms();
+    };
+
+    window.render = function() {
+        const q = document.getElementById('stuSearch').value.toLowerCase();
+        let sH = "", dCnt = 0, tFees = 0;
+        const now = new Date();
+
+        students.forEach(s => {
+            const fVal = parseFloat(s.amount) || 0;
+            if(s.isCounted !== false) { tFees += fVal; }
+
+            const isDue = (s.fee && now >= new Date(s.fee));
+            if(isDue) dCnt++;
+
+            let isFol = false, folHTML = "", rDateHTML = "";
+            if(s.lastRemind) {
+                const diff = Math.floor((now - new Date(s.lastRemind)) / (1000 * 60 * 60 * 24));
+                isFol = isDue && diff >= 3;
+                if(isFol) folHTML = `<div class="follow-up">⚠️ Follow-up Needed (${diff}d ago)</div>`;
+                rDateHTML = `<span class="remind-date">Last Sent: ${new Date(s.lastRemind).toLocaleDateString()}</span>`;
+            }
+
+            if(s.name.toLowerCase().includes(q) && (curF=='all' || (curF=='due' && isDue) || (curF=='fol' && isFol))) {
+                let amountColor = (s.isCounted === false) ? '#9e9e9e' : 'var(--safe)';
+                let loggedTag = (s.isCounted === false) ? '<small style="font-size:9px;">(Logged)</small>' : '';
+
+                sH += `<div class="record-item ${isDue ? 'due-alert' : ''}">
+                    <b>${s.name}</b> <span style="float:right; color:${amountColor};">₹${fVal} ${loggedTag}</span><br>
+                    <small>Seat: ${s.seat} | Valid: ${s.fee}</small><br>
+                    ${rDateHTML} ${folHTML}
+                    <div class="wa-btn-group">
+                        <button onclick="window.wa(${s.id}, 1)" class="wa-btn btn-rcpt">Receipt</button>
+                        <button onclick="window.wa(${s.id}, 2)" class="wa-btn btn-due">Due</button>
+                        <button onclick="window.wa(${s.id}, 3)" class="wa-btn btn-lunch">Lunch</button>
+                    </div>
+                    <span class="action-link" style="color:blue" onclick="window.editStu(${s.id})">✎ EDIT</span>
+                    <span class="action-link" style="color:red" onclick="window.delStu(${s.id})">✖ DELETE</span>
+                </div>`;
+            }
+        });
+
+        let tE = expenses.reduce((a, b) => a + (parseFloat(b.amt) || 0), 0);
+        document.getElementById('countTotal').innerText = students.length;
+        document.getElementById('countDue').innerText = dCnt;
+        document.getElementById('sumFees').innerText = '₹' + tFees;
+        document.getElementById('sumExp').innerText = '₹' + tE;
+        document.getElementById('netProfit').innerText = '₹' + (tFees - tE);
+        document.getElementById('stuList').innerHTML = sH || "<center style='padding:20px'>No records found</center>";
+        
+        let hH = "<b>📜 MONTHLY REPORTS</b>";
+        [...history].reverse().forEach(h => { hH += `<div class="history-card"><b>${h.month}</b><br>Fees: ₹${h.fee} | Exp: ₹${h.exp} | Profit: ₹${h.profit}</div>`; });
+        document.getElementById('historyList').innerHTML = hH;
+
+        let eH = "<b>Current Month Expenses:</b>";
+        let sortedExp = [...expenses].sort((a,b) => new Date(b.date) - new Date(a.date));
+        sortedExp.forEach(e => { 
+            let displayDate = new Date(e.date).toLocaleDateString('en-GB'); 
+            eH += `<div class="record-item" style="border-left-color:var(--danger); padding:8px;">
+                <div style="display:flex; justify-content:space-between;">
+                    <span><b>${e.note}</b> (${displayDate})</span>
+                    <b style="color:var(--danger)">₹${e.amt}</b>
+                </div>
+                <div style="margin-top:5px; border-top:1px solid #eee; padding-top:5px;">
+                    <span class="action-link" style="color:blue" onclick="window.editExp(${e.id})">✎ EDIT</span>
+                    <span class="action-link" style="color:red" onclick="window.delExp(${e.id})">✖ DELETE</span>
+                </div>
+            </div>`; 
+        });
+        document.getElementById('expList').innerHTML = eH || "<small><br>No expenses logged this month.</small>";
+    };
+
+    window.editStu = function(id) {
+        const s = students.find(x => x.id == id);
+        document.getElementById('editId').value = s.id;
+        document.getElementById('stuName').value = s.name;
+        document.getElementById('stuPhone').value = s.phone;
+        document.getElementById('stuFeeDate').value = s.fee;
+        document.getElementById('stuAmt').value = s.amount;
+        document.getElementById('stuSeat').value = s.seat;
+        document.getElementById('saveBtn').innerText = "UPDATE CLOUD RECORD";
+        document.getElementById('cancelBtn').style.display = "block";
+        window.scrollTo(0,0);
+    };
+
+    window.delStu = function(id) { if(confirm("Delete student?")) { students = students.filter(s => s.id != id); saveToCloud(); } };
+    
+    window.wa = function(id, type) {
+        const idx = students.findIndex(x => x.id == id);
+        const s = students[idx];
+        let parts = s.fee.split('-');
+        let displayDate = `${parts[2]}/${parts[1]}/${parts[0]}`; 
+        let msg = type==1 ? `Namaste ${s.name}, fee amount ₹${s.amount} received. Valid till ${displayDate}. Thank you! Happy Studying 📖 - Bapora Library` : `Namaste ${s.name}, fee pending since ${displayDate}.`;
+        if(type==3) msg = `Namaste ${s.name}, your lunch is ready. 🍴`;
+        students[idx].lastRemind = new Date().toISOString();
+        saveToCloud();
+        window.open(`https://wa.me/91${s.phone}?text=${encodeURIComponent(msg)}`);
+    };
+
+    window.addExpense = function() {
+        const id = document.getElementById('editExpId').value || Date.now();
+        const amt = document.getElementById('expAmt').value;
+        const note = document.getElementById('expNote').value;
+        const dateVal = document.getElementById('expDate').value;
+        if(!amt || !dateVal) return alert("Please enter Amount and Date");
+        const idx = expenses.findIndex(e => e.id == id);
+        const data = { id: parseInt(id), amt: parseFloat(amt), note: note || "Expense", date: dateVal };
+        if(idx > -1) expenses[idx] = data; else expenses.push(data);
+        saveToCloud(); window.clearExpForm();
+    };
+
+    window.editExp = function(id) {
+        const e = expenses.find(x => x.id == id);
+        document.getElementById('editExpId').value = e.id;
+        document.getElementById('expAmt').value = e.amt;
+        document.getElementById('expNote').value = e.note;
+        document.getElementById('expDate').value = e.date || new Date().toISOString().split('T')[0];
+        document.getElementById('saveExpBtn').innerText = "UPDATE CLOUD EXPENSE";
+        document.getElementById('cancelExpBtn').style.display = "block";
+        window.scrollTo(0,0);
+    };
+
+    window.delExp = function(id) { if(confirm("Delete this expense?")) { expenses = expenses.filter(e => e.id != id); saveToCloud(); } };
+
+    window.archiveMonth = function() {
+        if(!confirm("Close month and save report? \nThis will also download a Master Backup for this month.")) return;
+        let monthName = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
+        let totalF = students.reduce((a, b) => a + (b.isCounted !== false ? (parseFloat(b.amount) || 0) : 0), 0);
+        let totalE = expenses.reduce((a, b) => a + (parseFloat(b.amt) || 0), 0);
+        
+        let monthSnapshot = { Month_Name: monthName, Total_Fees_Collected: totalF, Total_Expenses: totalE, Net_Profit: (totalF - totalE), Detailed_Expenses: [...expenses], Students_Snapshot: JSON.parse(JSON.stringify(students)) };
+        
+        const blob = new Blob([JSON.stringify(monthSnapshot, null, 2)], {type: 'text/plain'});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+        let safeMonthName = monthName.replace(' ', '_'); a.download = `Bapora_Monthly_Backup_${safeMonthName}.txt`; a.click();
+
+        history.push({ month: monthName, fee: totalF, exp: totalE, profit: (totalF - totalE), detailedData: monthSnapshot });
+        expenses = []; students.forEach(s => s.isCounted = false);
+        saveToCloud(); alert(`Month Closed!\n${monthName} backup file downloaded successfully.`);
+    };
+
+    window.exportToExcel = function() {
+        if(students.length === 0) return alert("No students to export!");
+        let csv = "Name,Seat No,Phone,Fee Paid,Valid Till,Status\n";
+        const now = new Date();
+        students.forEach(s => {
+            let isDue = (s.fee && now >= new Date(s.fee));
+            let status = isDue ? "DUE" : "ACTIVE";
+            let displayDate = "";
+            if(s.fee) { let parts = s.fee.split('-'); displayDate = `${parts[2]}/${parts[1]}/${parts[0]}`; }
+            csv += `"${s.name}","${s.seat}","${s.phone}","${s.amount}","${displayDate}","${status}"\n`;
+        });
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+        let today = new Date().toLocaleDateString('en-GB').replace(/\//g, '-'); a.download = `Library_Report_${today}.csv`; a.click();
+    };
+
+    window.clearForms = function() { document.getElementById('editId').value = ''; document.querySelectorAll('#lib-tab input').forEach(i => i.value = ''); document.getElementById('saveBtn').innerText = "SAVE TO CLOUD"; document.getElementById('cancelBtn').style.display = "none"; };
+    window.clearExpForm = function() { document.getElementById('editExpId').value = ''; document.getElementById('expAmt').value = ''; document.getElementById('expNote').value = ''; document.getElementById('expDate').value = new Date().toISOString().split('T')[0]; document.getElementById('saveExpBtn').innerText = "LOG TO CLOUD"; document.getElementById('cancelExpBtn').style.display = "none"; };
+    window.exportData = function() { const blob = new Blob([JSON.stringify({students, expenses, history})], {type: 'text/plain'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `bapora_master_backup.txt`; a.click(); };
+    
+    // MIGRATION FROM TEXT FILE TO CLOUD
+    window.importData = function() {
+        const f = document.getElementById('importFile').files[0]; 
+        if(!f) { alert("⚠️ Pehle 'Choose File' button dabakar .txt file select karein!"); return; }
+        if(f.name.endsWith('.csv')) { alert("❌ Galat File! Kripya .txt wali Backup file select karein."); return; }
+        
+        const r = new FileReader(); 
+        r.onload = (e) => { 
+            try {
+                const d = JSON.parse(e.target.result); 
+                if(d.Students_Snapshot) {
+                    students = d.Students_Snapshot; expenses = d.Detailed_Expenses || [];
+                    alert(`✅ Purana Data Load Ho Gaya.`);
+                } else if (d.students) {
+                    students = d.students; expenses = d.expenses || []; history = d.history || []; 
+                    alert("✅ Master Backup Uploaded to Cloud!");
+                } else {
+                    alert("❌ Ye correct backup file nahi hai!"); return;
+                }
+                saveToCloud(); // Pushes data up to Firebase
+            } catch(err) { alert("❌ Restore Fail! Format Error."); }
+        };
+        r.readAsText(f);
+    };
+</script>
+</body>
+</html>
