@@ -106,7 +106,7 @@
         .whatsapp-float:hover { transform: scale(1.1) rotate(-5deg); }
         .whatsapp-icon { width: 35px; height: 35px; }
 
-        /* NAYA: LUNCH POPUP STYLES */
+        /* LUNCH POPUP STYLES */
         #lunch-popup-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.7); backdrop-filter: blur(6px);
@@ -179,12 +179,14 @@
 
     <div id="lunch-popup-overlay">
         <div id="lunch-popup-box">
-            <div style="font-size: 55px; margin-bottom: 10px; filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.2));">🍱🥄</div>
-            <div style="font-size: 22px; color: var(--navy); font-weight: 900; margin-bottom: 8px;">
+            <div style="font-size: 22px; color: var(--navy); font-weight: 900; margin-bottom: 12px;">
                 Namaste <span id="lunch-student-name" style="color: var(--blue);"></span>,
             </div>
-            <div style="font-size: 16px; font-weight: bold; color: #333; margin-bottom: 5px;">Your lunch has arrived!</div>
-            <div style="font-size: 14px; color: #555; margin-bottom: 25px;">Please collect it from the reception. 😊</div>
+            
+            <div style="font-size: 18px; font-weight: bold; color: #333; margin-bottom: 25px; line-height: 1.4;">
+                Your lunch has been arrived.<br>Please collect it from reception. 🍱🥄
+            </div>
+            
             <button onclick="closeLunchPopup()" style="background: linear-gradient(145deg, var(--green), #27ae60); color: white; border: none; padding: 12px 30px; border-radius: 10px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 10px rgba(46, 204, 113, 0.4); transition: 0.2s;">Got It! ⚓</button>
         </div>
     </div>
@@ -305,13 +307,12 @@
             }).catch(e => alert("Permission Denied! Log in first."));
         }
 
-        /* NAYA: LUNCH POPUP JAVASCRIPT LOGIC */
+        /* LUNCH POPUP JAVASCRIPT LOGIC */
         function showLunchPopup(studentName) {
             document.getElementById('lunch-student-name').innerText = studentName;
             const overlay = document.getElementById('lunch-popup-overlay');
             const box = document.getElementById('lunch-popup-box');
             overlay.style.display = 'flex';
-            // Slight delay for smooth animation
             setTimeout(() => {
                 overlay.style.opacity = '1';
                 box.style.transform = 'scale(1)';
@@ -323,7 +324,6 @@
             const box = document.getElementById('lunch-popup-box');
             overlay.style.opacity = '0';
             box.style.transform = 'scale(0.8)';
-            // Wait for animation to finish before hiding completely
             setTimeout(() => {
                 overlay.style.display = 'none';
             }, 300);
