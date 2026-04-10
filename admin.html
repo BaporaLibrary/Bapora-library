@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Bapora Command v10.16 (Full Button Restore)</title>
+    <title>Bapora Command v10.17 (All Features Restored)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root { --navy: #002347; --gold: #c5a059; --bg: #f4f4f9; --card: #ffffff; --text: #222; --safe: #1b5e20; --danger: #b71c1c; }
@@ -25,10 +25,10 @@
         .stat { background: #fff; border: 1px solid var(--navy); padding: 8px; border-radius: 6px; text-align: center; color: var(--navy); }
         .stat b { font-size: 14px; display: block; }
         .btn-main { padding: 12px; width: 100%; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; color: white; margin-top: 5px; }
-        #login-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; background:var(--navy); }
-        .login-box { background:white; padding:30px; border-radius:10px; text-align:center; width:280px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
         .action-link { font-size: 10px; font-weight: bold; cursor: pointer; margin-top: 8px; display: inline-block; margin-right: 15px; }
         .history-card { background: #e3f2fd; padding: 10px; border-radius: 6px; margin-top: 8px; font-size: 11px; border-left: 4px solid var(--gold); }
+        #login-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; background:var(--navy); }
+        .login-box { background:white; padding:30px; border-radius:10px; text-align:center; width:280px; }
     </style>
 </head>
 <body>
@@ -96,6 +96,7 @@
                 <input type="number" id="expAmt" placeholder="Amount (₹)">
                 <input type="text" id="expNote" placeholder="Note">
                 <button id="saveExpBtn" class="btn-main" style="background:var(--danger);" onclick="window.addExpense()">LOG EXPENSE</button>
+                <button id="cancelExpBtn" class="btn-main" style="background:#666; display:none;" onclick="window.clearExpForm()">CANCEL</button>
             </div>
             <div id="historyList"></div>
             <hr><div id="expList"></div>
@@ -212,7 +213,12 @@
         
         let eH = "";
         expenses.forEach(e => {
-            eH += `<div class="record-item" style="border-left-color:red"><b>${e.note}</b><span style="float:right;">₹${e.amt}</span><br><small>${e.date}</small></div>`;
+            eH += `<div class="record-item" style="border-left-color:red">
+                <b>${e.note}</b> <span style="float:right;">₹${e.amt}</span><br>
+                <small>${e.date}</small><br>
+                <span class="action-link" style="color:blue" onclick="window.editExp(${e.id})">✎ EDIT</span>
+                <span class="action-link" style="color:red" onclick="window.delExp(${e.id})">✖ DELETE</span>
+            </div>`;
         });
         document.getElementById('expList').innerHTML = eH;
 
@@ -233,15 +239,29 @@
     };
 
     window.addExpense = () => {
+        const id = document.getElementById('editExpId').value || Date.now();
         const amt = document.getElementById('expAmt').value;
         const note = document.getElementById('expNote').value;
         const date = document.getElementById('expDate').value;
         if(!amt || !date) return alert("Enter Amt/Date");
-        expenses.push({ id: Date.now(), amt, note, date });
-        saveToCloud(); 
+        const idx = expenses.findIndex(e => e.id == id);
+        const data = { id: parseInt(id), amt, note, date };
+        if(idx > -1) expenses[idx] = data; else expenses.push(data);
+        saveToCloud(); window.clearExpForm();
     };
 
-    window.delStu = (id) => { students = students.filter(s => s.id != id); saveToCloud(); };
+    window.editExp = (id) => {
+        const e = expenses.find(x => x.id == id);
+        document.getElementById('editExpId').value = e.id;
+        document.getElementById('expAmt').value = e.amt;
+        document.getElementById('expNote').value = e.note;
+        document.getElementById('expDate').value = e.date;
+        document.getElementById('saveExpBtn').innerText = "UPDATE CLOUD EXPENSE";
+        document.getElementById('cancelExpBtn').style.display = "block";
+    };
+
+    window.delExp = (id) => { if(confirm("Delete expense?")) { expenses = expenses.filter(e => e.id != id); saveToCloud(); } };
+    window.delStu = (id) => { if(confirm("Delete student?")) { students = students.filter(s => s.id != id); saveToCloud(); } };
     window.editStu = (id) => {
         const s = students.find(x => x.id == id);
         document.getElementById('editId').value = s.id;
@@ -250,10 +270,13 @@
         document.getElementById('stuFeeDate').value = s.fee;
         document.getElementById('stuAmt').value = s.amount;
         document.getElementById('stuSeat').value = s.seat;
+        document.getElementById('saveBtn').innerText = "UPDATE CLOUD RECORD";
+        document.getElementById('cancelBtn').style.display = "block";
         window.scrollTo(0,0);
     };
 
-    window.clearForms = () => { document.querySelectorAll('#lib-tab input').forEach(i => i.value = ''); };
+    window.clearForms = () => { document.querySelectorAll('#lib-tab input').forEach(i => i.value = ''); document.getElementById('saveBtn').innerText = "SAVE TO CLOUD"; document.getElementById('cancelBtn').style.display = "none"; };
+    window.clearExpForm = () => { document.querySelectorAll('#exp-tab input').forEach(i => i.value = ''); document.getElementById('saveExpBtn').innerText = "LOG EXPENSE"; document.getElementById('cancelExpBtn').style.display = "none"; };
     
     window.importData = () => {
         const f = document.getElementById('importFile').files[0];
@@ -284,4 +307,4 @@
     };
 </script>
 </body>
-</html>
+                    </html>
