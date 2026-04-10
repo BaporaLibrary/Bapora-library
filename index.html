@@ -3,214 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bapora Library - Secure Control</title>
+    <title>Bapora Library - Live Status</title>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-auth-compat.js"></script>
     <style>
         :root { --navy: #002b5b; --gold: #c5a059; --green: #2ecc71; --blue: #3498db; --red: #e74c3c; }
-        
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%); 
-            margin: 0; 
-            padding-bottom: 50px; 
-            text-align: center; 
-            min-height: 100vh;
-        }
-        
-        /* PREMIUM HEADER */
-        .header {
-            background: radial-gradient(circle at center, #003366 0%, #001a33 100%);
-            color: white; padding: 30px 20px; border-bottom: 5px solid var(--gold);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3); border-radius: 0 0 15px 15px; margin-bottom: 20px;
-        }
-        .header h2 { margin: 0; font-size: 32px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
-        .tagline { font-size: 12px; color: var(--gold); font-weight: bold; margin-top: 10px; letter-spacing: 1.5px; text-transform: uppercase; background-color: rgba(0,0,0,0.4); display: inline-block; padding: 5px 15px; border-radius: 20px; border: 1px solid rgba(197, 160, 89, 0.3); }
-        
-        /* DASHBOARD CARDS */
-        .dash { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin: 15px 20px; }
-        .stat-card { background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(10px); padding: 15px 10px; border-radius: 16px; box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1); border: 1px solid rgba(255, 255, 255, 0.8); display: flex; flex-direction: column; align-items: center; transition: all 0.3s ease; }
-        .stat-card.total { border-bottom: 4px solid #555; }
-        .stat-card.general { border-bottom: 4px solid var(--blue); }
-        .stat-card.reserved { border-bottom: 4px solid var(--red); }
-        .stat-card.vacant { border-bottom: 4px solid var(--green); }
-        .stat-icon { font-size: 24px; margin-bottom: 5px; }
-        .num { font-size: 26px; font-weight: 900; margin-bottom: 2px; }
-        .lbl { font-size: 11px; color: #555; text-transform: uppercase; font-weight: 800;}
-
-        /* LIVE STATUS */
-        #live-status-box { text-align:center; margin: 20px; padding: 15px; border-radius: 12px; font-weight: bold; font-size: 1.1rem; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(5px); }
-
-        /* SEAT GRID */
-        .section-box { background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(10px); margin: 15px 20px; padding: 20px; border-radius: 16px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); gap: 12px; }
-        .seat { width: 50px; height: 55px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; }
+        body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%); margin: 0; padding-bottom: 80px; text-align: center; }
+        .header { background: radial-gradient(circle at center, #003366 0%, #001a33 100%); color: white; padding: 30px 20px; border-bottom: 5px solid var(--gold); border-radius: 0 0 15px 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .header h2 { margin: 0; font-size: 32px; font-weight: 800; letter-spacing: 2px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+        .tagline { font-size: 11px; color: var(--gold); font-weight: bold; margin-top: 10px; text-transform: uppercase; background: rgba(0,0,0,0.4); padding: 5px 15px; border-radius: 20px; display: inline-block; border: 1px solid rgba(197, 160, 89, 0.3); }
+        .dash { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin: 20px; }
+        .stat-card { background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(10px); padding: 15px 10px; border-radius: 16px; box-shadow: 0 8px 32px rgba(31, 38, 135, 0.1); border-bottom: 4px solid #ccc; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); gap: 12px; margin: 20px; padding: 20px; background: rgba(255,255,255,0.4); border-radius: 15px; }
+        .seat { width: 50px; height: 55px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; font-size: 13px; transition: 0.3s; }
         .st-vacant { background: #fff; color: var(--green); border: 2px dashed var(--green); }
-        .st-general { background: linear-gradient(145deg, #3498db, #2980b9); color: white; border: none; }
-        .st-reserved { background: linear-gradient(145deg, #e74c3c, #c0392b); color: white; border: none; }
-        .icon-stu { font-size: 18px; line-height: 1; }
-        .seat-no { font-size: 12px; line-height: 1; }
-
-        /* ADMIN PANEL */
-        .admin-trigger { background: none; border: none; color: rgba(0,0,0,0.01); padding: 20px; width: 100%; cursor: pointer; }
-        #admin-panel { display: none; margin: 20px; padding: 20px; background: rgba(255, 255, 255, 0.9); border: 2px solid var(--navy); border-radius: 16px; }
-        input { padding: 12px; margin: 8px; width: 85%; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; outline: none; }
-        .btn { padding: 12px 25px; background: linear-gradient(145deg, var(--navy), #001f3f); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
-
-        /* LUNCH POPUP */
-        #lunch-popup-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(6px); display: none; justify-content: center; align-items: center; z-index: 3000; opacity: 0; transition: opacity 0.3s ease; }
-        #lunch-popup-box { background: rgba(255, 255, 255, 0.95); padding: 30px 20px; border-radius: 20px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.3); max-width: 320px; width: 90%; border: 3px solid var(--gold); transform: scale(0.8); transition: transform 0.3s ease; }
+        .st-general { background: linear-gradient(145deg, #3498db, #2980b9); color: white; box-shadow: 2px 4px 8px rgba(0,0,0,0.2); }
+        .st-reserved { background: linear-gradient(145deg, #e74c3c, #c0392b); color: white; box-shadow: 2px 4px 8px rgba(0,0,0,0.2); }
+        .icon-stu { font-size: 18px; margin-bottom: 2px; }
+        .whatsapp-float { position: fixed; width: 60px; height: 60px; bottom: 20px; right: 20px; background-color: #25d366; border-radius: 50px; display: flex; justify-content: center; align-items: center; z-index: 9999 !important; box-shadow: 2px 6px 15px rgba(0,0,0,0.3); text-decoration: none; }
+        .whatsapp-icon { width: 35px; height: 35px; }
     </style>
 </head>
 <body>
-
     <div class="header">
         <h2>BAPORA LIBRARY</h2>
         <div class="tagline">⚓ VETERAN SECURE SYSTEM ⚓</div>
     </div>
-
     <div class="dash">
-        <div class="stat-card total"><div class="stat-icon">🏛️</div><span id="total-count" class="num" style="color:#2c3e50">57</span><span class="lbl">Total Seats</span></div>
-        <div class="stat-card general"><div class="stat-icon">📘</div><span id="gen-count" class="num" style="color:var(--blue)">0</span><span class="lbl">General</span></div>
-        <div class="stat-card reserved"><div class="stat-icon">📕</div><span id="res-count" class="num" style="color:var(--red)">0</span><span class="lbl">Reserved</span></div>
-        <div class="stat-card vacant"><div class="stat-icon">✅</div><span id="vac-count" class="num" style="color:var(--green)">0</span><span class="lbl">Vacant</span></div>
+        <div class="stat-card" style="border-color: var(--navy);"><b>57</b><br><small>TOTAL</small></div>
+        <div class="stat-card" style="border-color: var(--green);"><b id="vac-count">0</b><br><small>VACANT</small></div>
     </div>
-
-    <div id="live-status-box"><span id="seat-status">Checking Status...</span></div>
-
-    <div class="section-box"><div class="grid" id="seat-grid"></div></div>
-
-    <button class="admin-trigger" onclick="showAdmin()">Admin Access</button>
-
-    <div id="admin-panel">
-        <h3 style="color:var(--navy); margin-top:0;">MASTER CONTROL 🔐</h3>
-        <input type="email" id="email" placeholder="Email Address">
-        <input type="password" id="pass" placeholder="Password">
-        <button class="btn" style="width:100%;" onclick="handleLogin()">LOGIN ⚓</button>
-        
-        <div id="admin-controls" style="display:none; margin-top:20px; border-top: 2px solid #eee; padding-top:20px;">
-            <div id="admin-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); gap:5px; margin-bottom:15px;"></div>
-            <button class="btn" style="width:100%; background:linear-gradient(145deg, #2ecc71, #27ae60);" onclick="updateCloud()">SYNC TO DATABASE</button>
-            
-            <button class="btn" style="width:100%; background:linear-gradient(145deg, #f39c12, #d35400); margin-top:10px;" onclick="triggerLunchFromAdmin()">🍱 SEND LUNCH ALERT</button>
-            
-            <button class="btn" style="width:100%; background:linear-gradient(145deg, #e74c3c, #c0392b); margin-top:10px;" onclick="location.reload()">LOGOUT</button>
-        </div>
-    </div>
-
-    <div id="lunch-popup-overlay">
-        <div id="lunch-popup-box">
-            <div style="font-size: 22px; color: var(--navy); font-weight: 900; margin-bottom: 12px;">
-                Namaste <span id="lunch-student-name" style="color: var(--blue);"></span>,
-            </div>
-            <div style="font-size: 18px; font-weight: bold; color: #333; margin-bottom: 25px; line-height: 1.4;">
-                Your lunch has been arrived.<br>Please collect it from reception. 🍱🥄
-            </div>
-            <button onclick="closeLunchPopup()" style="background: linear-gradient(145deg, var(--green), #27ae60); color: white; border: none; padding: 12px 30px; border-radius: 10px; font-weight: bold; cursor: pointer;">Got It! ⚓</button>
-        </div>
-    </div>
-
+    <div class="grid" id="seat-grid"></div>
+    <a href="https://wa.me/919393681565?text=Hello%20Sir!" class="whatsapp-float" target="_blank">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" class="whatsapp-icon">
+    </a>
     <script>
-        const firebaseConfig = { 
-            apiKey: "AIzaSyAsF3o3S7fpvTumwVVL_exuqMlAUS5MKXE", 
-            authDomain: "baporalibrary-fea16.firebaseapp.com",
-            databaseURL: "https://baporalibrary-fea16-default-rtdb.firebaseio.com/",
-            projectId: "baporalibrary-fea16"
-        };
-        firebase.initializeApp(firebaseConfig);
+        const config = { databaseURL: "https://baporalibrary-fea16-default-rtdb.firebaseio.com/" };
+        firebase.initializeApp(config);
         const db = firebase.database();
-        const auth = firebase.auth();
-
-        let seatData = {};
-        // NAYA: Current time save kar lo, taki purane alerts na dikhein
-        let systemLoadTime = Date.now(); 
-
         db.ref('seats').on('value', (snap) => {
-            seatData = snap.val() || {};
-            render();
-        });
-
-        // NAYA: FIREBASE RADIO RECEIVER FOR LUNCH ALERTS
-        db.ref('lunch_signal').on('value', (snap) => {
-            const data = snap.val();
-            // Agar naya alert aaya hai (time check) tabhi popup dikhao
-            if (data && data.timestamp > systemLoadTime) {
-                showLunchPopup(data.studentName);
-                systemLoadTime = data.timestamp; // Update time
-            }
-        });
-
-        // NAYA: ADMIN SENDER FUNCTION
-        function triggerLunchFromAdmin() {
-            let stuName = prompt("Enter Student Name or Seat No. for Lunch Alert:");
-            if(stuName && stuName.trim() !== "") {
-                // Firebase par naya signal bhejo
-                db.ref('lunch_signal').set({
-                    studentName: stuName,
-                    timestamp: Date.now()
-                }).then(() => {
-                    alert("✅ Lunch Alert sent to Main Screen successfully!");
-                });
-            }
-        }
-
-        // GUI & POPUP LOGIC
-        function showLunchPopup(studentName) {
-            document.getElementById('lunch-student-name').innerText = studentName;
-            const overlay = document.getElementById('lunch-popup-overlay');
-            const box = document.getElementById('lunch-popup-box');
-            overlay.style.display = 'flex';
-            setTimeout(() => { overlay.style.opacity = '1'; box.style.transform = 'scale(1)'; }, 10);
-        }
-
-        function closeLunchPopup() {
-            const overlay = document.getElementById('lunch-popup-overlay');
-            const box = document.getElementById('lunch-popup-box');
-            overlay.style.opacity = '0'; box.style.transform = 'scale(0.8)';
-            setTimeout(() => { overlay.style.display = 'none'; }, 300);
-        }
-
-        function render() {
+            const data = snap.val() || {};
             const grid = document.getElementById('seat-grid'); grid.innerHTML = "";
-            let g=0, r=0; const total = 57;
-            for(let i=1; i<=total; i++){
+            let v = 0;
+            for(let i=1; i<=57; i++){
                 let div = document.createElement('div');
-                let status = seatData[i] || 'v';
-                div.className = status==='g'?'seat st-general':status==='r'?'seat st-reserved':'seat st-vacant';
-                if(status === 'g' || status === 'r') { div.innerHTML = `<div class="icon-stu">👤</div><div class="seat-no">${i}</div>`; } 
-                else { div.innerHTML = `<div class="seat-no" style="font-size:16px;">${i}</div>`; }
-                if(status==='g') g++; if(status==='r') r++;
+                let s = data[i] || 'v';
+                div.className = s==='g'?'seat st-general':s==='r'?'seat st-reserved':'seat st-vacant';
+                if(s==='v') { div.innerHTML = i; v++; }
+                else { div.innerHTML = `<div class="icon-stu">👤</div><div>${i}</div>`; }
                 grid.appendChild(div);
             }
-            document.getElementById('total-count').innerText = total; document.getElementById('gen-count').innerText = g;
-            document.getElementById('res-count').innerText = r; document.getElementById('vac-count').innerText = total - (g+r);
-            updateLiveStatus(g + r);
-        }
-
-        function updateLiveStatus(totalOccupied) {
-            const available = 57 - totalOccupied; const st = document.getElementById("seat-status"); const bx = document.getElementById("live-status-box");
-            if (available > 10) { st.innerText = "🟢 STATUS: SEATS AVAILABLE"; st.style.color = "#196f3d"; bx.style.border = "2px solid rgba(46, 204, 113, 0.5)"; } 
-            else if (available > 0) { st.innerText = "🟡 STATUS: FILLING FAST"; st.style.color = "#d68910"; bx.style.border = "2px solid rgba(243, 156, 18, 0.5)"; } 
-            else { st.innerText = "🔴 STATUS: FULLY OCCUPIED"; st.style.color = "#c0392b"; bx.style.border = "2px solid rgba(231, 76, 60, 0.5)"; }
-        }
-
-        function showAdmin() { document.getElementById('admin-panel').style.display='block'; window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); }
-        function handleLogin() {
-            auth.signInWithEmailAndPassword(document.getElementById('email').value, document.getElementById('pass').value)
-                .then(() => { alert("Welcome Petty Officer!"); document.getElementById('admin-controls').style.display='block'; renderAdmin(); })
-                .catch(e => alert("ACCESS DENIED"));
-        }
-        function renderAdmin() {
-            const ag = document.getElementById('admin-grid'); ag.innerHTML = "";
-            for(let i=1; i<=57; i++){
-                const b = document.createElement('button'); b.innerText = i; b.className = "btn"; b.style.padding="8px"; 
-                let status = seatData[i] || 'v'; b.style.background = (status==='g')?'#3498db':(status==='r')?'#e74c3c':'#2ecc71';
-                b.onclick = () => { seatData[i] = (!seatData[i] || seatData[i]==='v') ? 'g' : (seatData[i]==='g' ? 'r' : 'v'); if(seatData[i]==='v') delete seatData[i]; renderAdmin(); };
-                ag.appendChild(b);
-            }
-        }
-        function updateCloud() { db.ref('seats').set(seatData).then(() => alert("Database Synced! ✅")); }
+            document.getElementById('vac-count').innerText = v;
+        });
     </script>
 </body>
 </html>
