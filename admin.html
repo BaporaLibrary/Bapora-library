@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Bapora Command v10.14 (Cloud Secure)</title>
+    <title>Bapora Command v10.15 (Full Restore Fix)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root { --navy: #002347; --gold: #c5a059; --bg: #f4f4f9; --card: #ffffff; --text: #222; --safe: #1b5e20; --danger: #b71c1c; }
@@ -29,6 +29,7 @@
         .btn-filter { flex: 1; font-size: 9px; padding: 8px 2px; border: 1px solid var(--navy); background: white; border-radius: 4px; cursor: pointer; font-weight: bold; }
         .btn-filter.active { background: var(--navy); color: white; }
         .action-link { font-size: 10px; font-weight: bold; cursor: pointer; margin-top: 8px; display: inline-block; margin-right: 15px; }
+        .history-card { background: #e3f2fd; padding: 10px; border-radius: 6px; margin-top: 8px; font-size: 11px; border-left: 4px solid var(--gold); }
         #login-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; background:var(--navy); }
         .login-box { background:white; padding:30px; border-radius:10px; text-align:center; width:280px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
     </style>
@@ -38,11 +39,9 @@
 <div id="login-screen">
     <div class="login-box">
         <h2 style="color:var(--navy); margin-top:0;">Bapora Command</h2>
-        <p style="font-size:12px; color:#666; font-weight:bold;">SECURE CLOUD ACCESS</p>
         <input type="email" id="loginEmail" placeholder="Admin Email">
         <input type="password" id="loginPass" placeholder="Master Password">
         <button id="loginBtn" class="btn-main" style="background:var(--gold); color:black;" onclick="window.login()">UNLOCK SYSTEM</button>
-        <p id="loginError" style="color:red; font-size:11px; display:none;"></p>
     </div>
 </div>
 
@@ -75,13 +74,6 @@
             </div>
 
             <input type="text" id="stuSearch" placeholder="🔍 Search..." onkeyup="window.render()">
-            
-            <div class="filter-bar">
-                <button id="fAll" class="btn-filter active" onclick="window.setF('all')">ALL</button>
-                <button id="fDue" class="btn-filter" onclick="window.setF('due')">DUE</button>
-                <button id="fFol" class="btn-filter" style="border-color:#ef6c00;" onclick="window.setF('fol')">⚠️ FOLLOW-UP</button>
-            </div>
-
             <div id="stuList"></div>
 
             <div class="section" style="margin-top:20px; text-align:center; background:#eee;">
@@ -103,13 +95,12 @@
             </div>
             
             <div class="section">
-                <p style="margin:0 0 5px 0; font-weight:bold;">➕ Add / Edit Expense</p>
                 <input type="hidden" id="editExpId">
                 <input type="date" id="expDate">
                 <input type="number" id="expAmt" placeholder="Amount (₹)">
-                <input type="text" id="expNote" placeholder="Note (Electricity etc.)">
-                <button id="saveExpBtn" class="btn-main" style="background:var(--danger);" onclick="window.addExpense()">LOG TO CLOUD</button>
-                <button id="cancelExpBtn" class="btn-main" style="background:#666; display:none;" onclick="window.clearExpForm()">CANCEL EDIT</button>
+                <input type="text" id="expNote" placeholder="Note">
+                <button id="saveExpBtn" class="btn-main" style="background:var(--danger);" onclick="window.addExpense()">LOG EXPENSE</button>
+                <button id="cancelExpBtn" class="btn-main" style="background:#666; display:none;" onclick="window.clearExpForm()">CANCEL</button>
             </div>
             <div id="historyList"></div>
             <hr><div id="expList"></div>
@@ -137,14 +128,12 @@
     let students = [], expenses = [], history = [], curF = 'all';
 
     window.login = function() {
-        const email = document.getElementById('loginEmail').value;
-        const pass = document.getElementById('loginPass').value;
-        signInWithEmailAndPassword(auth, email, pass).catch(() => {
-            alert("Wrong Email or Password!");
-        });
+        const e = document.getElementById('loginEmail').value;
+        const p = document.getElementById('loginPass').value;
+        signInWithEmailAndPassword(auth, e, p).catch(() => alert("Error!"));
     };
 
-    window.logout = function() { signOut(auth); };
+    window.logout = () => signOut(auth);
 
     onAuthStateChanged(auth, (user) => {
         if (user && user.uid === MASTER_UID) {
@@ -173,49 +162,45 @@
         set(ref(db, 'admin_data'), { students, expenses, history });
     }
 
-    window.switchTab = function(t) {
+    window.switchTab = (t) => {
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(t).classList.add('active');
+        if(t === 'tabL') document.getElementById('tabL').classList.add('active');
+        else document.getElementById('tabE').classList.add('active');
     };
 
-    window.setF = function(f) {
-        curF = f;
-        document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
-        document.getElementById('f'+f.charAt(0).toUpperCase()+f.slice(1)).classList.add('active');
-        window.render();
-    };
-
-    window.saveStudent = function() {
+    window.saveStudent = () => {
         const id = document.getElementById('editId').value || Date.now();
-        const name = document.getElementById('stuName').value;
-        const phone = document.getElementById('stuPhone').value;
-        const fee = document.getElementById('stuFeeDate').value;
-        const amount = document.getElementById('stuAmt').value;
-        const seat = document.getElementById('stuSeat').value;
-        if(!name || !phone || !fee) return alert("Fill Name, Phone and Date");
+        const data = {
+            id: parseInt(id),
+            name: document.getElementById('stuName').value,
+            seat: document.getElementById('stuSeat').value,
+            amount: document.getElementById('stuAmt').value,
+            phone: document.getElementById('stuPhone').value,
+            fee: document.getElementById('stuFeeDate').value,
+            isCounted: true
+        };
         const idx = students.findIndex(s => s.id == id);
-        const data = { id: parseInt(id), name, phone, fee, amount, seat, isCounted: true };
         if(idx > -1) students[idx] = data; else students.push(data);
-        saveToCloud();
-        window.clearForms();
+        saveToCloud(); window.clearForms();
     };
 
-    window.render = function() {
+    window.render = () => {
         const q = document.getElementById('stuSearch').value.toLowerCase();
         let sH = "", dCnt = 0, tFees = 0;
         const now = new Date();
+        
         students.forEach(s => {
             if(s.isCounted !== false) tFees += parseFloat(s.amount) || 0;
             const isDue = (s.fee && now >= new Date(s.fee));
             if(isDue) dCnt++;
-            if(s.name.toLowerCase().includes(q) && (curF=='all' || (curF=='due' && isDue))) {
+            if(s.name.toLowerCase().includes(q)) {
                 sH += `<div class="record-item ${isDue ? 'due-alert' : ''}">
                     <b>${s.name}</b> <span style="float:right;">₹${s.amount}</span><br>
                     <small>Seat: ${s.seat} | Valid: ${s.fee}</small><br>
                     <div class="wa-btn-group">
                         <button onclick="window.wa(${s.id}, 1)" class="wa-btn btn-rcpt">Receipt</button>
-                        <button onclick="window.wa(${s.id}, 2)" class="wa-btn btn-due">Due</button>
                         <button onclick="window.wa(${s.id}, 3)" class="wa-btn btn-lunch">Lunch</button>
                     </div>
                     <span class="action-link" style="color:blue" onclick="window.editStu(${s.id})">✎ EDIT</span>
@@ -223,44 +208,71 @@
                 </div>`;
             }
         });
+
+        let tE = expenses.reduce((a, b) => a + (parseFloat(b.amt) || 0), 0);
         document.getElementById('countTotal').innerText = students.length;
         document.getElementById('countDue').innerText = dCnt;
         document.getElementById('sumFees').innerText = '₹' + tFees;
-        document.getElementById('stuList').innerHTML = sH || "<center style='padding:20px'>No records found</center>";
+        document.getElementById('sumExp').innerText = '₹' + tE;
+        document.getElementById('netProfit').innerText = '₹' + (tFees - tE);
+        document.getElementById('stuList').innerHTML = sH || "<center>No records</center>";
+        
+        let eH = "";
+        expenses.forEach(e => {
+            eH += `<div class="record-item" style="border-left-color:red">
+                <b>${e.note}</b> <span style="float:right;">₹${e.amt}</span><br>
+                <small>${e.date}</small>
+                <span class="action-link" style="color:red" onclick="window.delExp(${e.id})">✖ DELETE</span>
+            </div>`;
+        });
+        document.getElementById('expList').innerHTML = eH;
+
+        let hH = "<b>📜 REPORTS</b>";
+        history.forEach(h => {
+            hH += `<div class="history-card"><b>${h.month}</b><br>Profit: ₹${h.profit}</div>`;
+        });
+        document.getElementById('historyList').innerHTML = hH;
     };
 
-    window.wa = function(id, type) {
+    window.wa = (id, type) => {
         const s = students.find(x => x.id == id);
-        let parts = s.fee.split('-');
-        let displayDate = `${parts[2]}/${parts[1]}/${parts[0]}`; 
-        let msg = "";
-        
-        if(type == 1) msg = `Namaste ${s.name}, fee amount ₹${s.amount} received. Valid till ${displayDate}. Thank you! Happy Studying 📖 - Bapora Library`;
-        if(type == 2) msg = `Namaste ${s.name}, fee pending since ${displayDate}. Please update soon.`;
-        
-        // Lunch message updated here
-        if(type == 3) msg = `Namaste ${s.name}, your lunch has been arrived. Please collect it from reception. 🍱🥄`;
-        
+        let msg = type == 1 ? `Namaste ${s.name}, fee ₹${s.amount} received.` : `Namaste ${s.name}, your lunch has been arrived. Please collect it from reception. 🍱🥄`;
         window.open(`https://wa.me/91${s.phone}?text=${encodeURIComponent(msg)}`);
     };
 
-    window.editStu = function(id) {
-        const s = students.find(x => x.id == id);
-        document.getElementById('editId').value = s.id;
-        document.getElementById('stuName').value = s.name;
-        document.getElementById('stuPhone').value = s.phone;
-        document.getElementById('stuFeeDate').value = s.fee;
-        document.getElementById('stuAmt').value = s.amount;
-        document.getElementById('stuSeat').value = s.seat;
-        window.scrollTo(0,0);
+    window.addExpense = () => {
+        const amt = document.getElementById('expAmt').value;
+        const note = document.getElementById('expNote').value;
+        const date = document.getElementById('expDate').value;
+        if(!amt || !date) return alert("Enter Amt/Date");
+        expenses.push({ id: Date.now(), amt, note, date });
+        saveToCloud(); window.clearExpForm();
     };
 
-    window.delStu = function(id) { if(confirm("Delete student?")) { students = students.filter(s => s.id != id); saveToCloud(); } };
-    window.clearForms = function() { document.querySelectorAll('#lib-tab input').forEach(i => i.value = ''); };
-    window.addExpense = function() { /* add expense logic */ };
-    window.exportData = function() { /* export logic */ };
-    window.exportToExcel = function() { /* excel logic */ };
-    window.importData = function() { /* import logic */ };
+    window.delExp = (id) => { expenses = expenses.filter(e => e.id != id); saveToCloud(); };
+    window.delStu = (id) => { students = students.filter(s => s.id != id); saveToCloud(); };
+    window.clearForms = () => { document.querySelectorAll('#lib-tab input').forEach(i => i.value = ''); };
+    window.clearExpForm = () => { document.querySelectorAll('#exp-tab input').forEach(i => i.value = ''); };
+    
+    window.importData = () => {
+        const f = document.getElementById('importFile').files[0];
+        if(!f) return;
+        const r = new FileReader();
+        r.onload = (e) => {
+            const d = JSON.parse(e.target.result);
+            students = d.students || [];
+            expenses = d.expenses || [];
+            history = d.history || [];
+            saveToCloud(); alert("Restored!");
+        };
+        r.readAsText(f);
+    };
+
+    window.exportData = () => {
+        const blob = new Blob([JSON.stringify({students, expenses, history})], {type: 'text/plain'});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+        a.download = "bapora_master_backup.txt"; a.click();
+    };
 </script>
 </body>
-</html>
+    </html>
