@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Bapora Command v10.15 (Full Restore Fix)</title>
+    <title>Bapora Command v10.16 (Full Button Restore)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root { --navy: #002347; --gold: #c5a059; --bg: #f4f4f9; --card: #ffffff; --text: #222; --safe: #1b5e20; --danger: #b71c1c; }
@@ -25,13 +25,10 @@
         .stat { background: #fff; border: 1px solid var(--navy); padding: 8px; border-radius: 6px; text-align: center; color: var(--navy); }
         .stat b { font-size: 14px; display: block; }
         .btn-main { padding: 12px; width: 100%; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; color: white; margin-top: 5px; }
-        .filter-bar { display: flex; gap: 4px; margin-bottom: 10px; }
-        .btn-filter { flex: 1; font-size: 9px; padding: 8px 2px; border: 1px solid var(--navy); background: white; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        .btn-filter.active { background: var(--navy); color: white; }
-        .action-link { font-size: 10px; font-weight: bold; cursor: pointer; margin-top: 8px; display: inline-block; margin-right: 15px; }
-        .history-card { background: #e3f2fd; padding: 10px; border-radius: 6px; margin-top: 8px; font-size: 11px; border-left: 4px solid var(--gold); }
         #login-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; background:var(--navy); }
         .login-box { background:white; padding:30px; border-radius:10px; text-align:center; width:280px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        .action-link { font-size: 10px; font-weight: bold; cursor: pointer; margin-top: 8px; display: inline-block; margin-right: 15px; }
+        .history-card { background: #e3f2fd; padding: 10px; border-radius: 6px; margin-top: 8px; font-size: 11px; border-left: 4px solid var(--gold); }
     </style>
 </head>
 <body>
@@ -48,8 +45,8 @@
 <div id="app-screen" style="display:none; padding:8px;">
     <div class="container">
         <div class="tabs">
-            <button id="tabL" class="tab-btn active" onclick="window.switchTab('lib-tab')">LIBRARIAN</button>
-            <button id="tabE" class="tab-btn" onclick="window.switchTab('exp-tab')">FINANCE</button>
+            <button id="tabLBtn" class="tab-btn active" onclick="window.switchTab('lib-tab')">LIBRARIAN</button>
+            <button id="tabEBtn" class="tab-btn" onclick="window.switchTab('exp-tab')">FINANCE</button>
         </div>
 
         <div id="lib-tab" class="tab-content active">
@@ -93,14 +90,12 @@
             <div class="stat" style="background:var(--navy); color:white; margin-bottom:15px; padding:15px; border-radius:6px; text-align:center;">
                 <small>Net Profit (This Month)</small><b id="netProfit" style="font-size:24px;">₹0</b>
             </div>
-            
             <div class="section">
                 <input type="hidden" id="editExpId">
                 <input type="date" id="expDate">
                 <input type="number" id="expAmt" placeholder="Amount (₹)">
                 <input type="text" id="expNote" placeholder="Note">
                 <button id="saveExpBtn" class="btn-main" style="background:var(--danger);" onclick="window.addExpense()">LOG EXPENSE</button>
-                <button id="cancelExpBtn" class="btn-main" style="background:#666; display:none;" onclick="window.clearExpForm()">CANCEL</button>
             </div>
             <div id="historyList"></div>
             <hr><div id="expList"></div>
@@ -125,12 +120,10 @@
     const db = getDatabase(app);
     const MASTER_UID = "SDMZEUimL9RVB7oGxxD6klxROA22";
 
-    let students = [], expenses = [], history = [], curF = 'all';
+    let students = [], expenses = [], history = [];
 
     window.login = function() {
-        const e = document.getElementById('loginEmail').value;
-        const p = document.getElementById('loginPass').value;
-        signInWithEmailAndPassword(auth, e, p).catch(() => alert("Error!"));
+        signInWithEmailAndPassword(auth, document.getElementById('loginEmail').value, document.getElementById('loginPass').value).catch(() => alert("Error!"));
     };
 
     window.logout = () => signOut(auth);
@@ -147,8 +140,8 @@
     });
 
     function setupCloudSync() {
-        onValue(ref(db, 'admin_data'), (snapshot) => {
-            const data = snapshot.val();
+        onValue(ref(db, 'admin_data'), (snap) => {
+            const data = snap.val();
             if (data) {
                 students = data.students || [];
                 expenses = data.expenses || [];
@@ -166,8 +159,7 @@
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(t).classList.add('active');
-        if(t === 'tabL') document.getElementById('tabL').classList.add('active');
-        else document.getElementById('tabE').classList.add('active');
+        document.getElementById(t + 'Btn').classList.add('active');
     };
 
     window.saveStudent = () => {
@@ -201,6 +193,7 @@
                     <small>Seat: ${s.seat} | Valid: ${s.fee}</small><br>
                     <div class="wa-btn-group">
                         <button onclick="window.wa(${s.id}, 1)" class="wa-btn btn-rcpt">Receipt</button>
+                        <button onclick="window.wa(${s.id}, 2)" class="wa-btn btn-due">Due</button>
                         <button onclick="window.wa(${s.id}, 3)" class="wa-btn btn-lunch">Lunch</button>
                     </div>
                     <span class="action-link" style="color:blue" onclick="window.editStu(${s.id})">✎ EDIT</span>
@@ -209,7 +202,7 @@
             }
         });
 
-        let tE = expenses.reduce((a, b) => a + (parseFloat(b.amt) || 0), 0);
+        const tE = expenses.reduce((a, b) => a + (parseFloat(b.amt) || 0), 0);
         document.getElementById('countTotal').innerText = students.length;
         document.getElementById('countDue').innerText = dCnt;
         document.getElementById('sumFees').innerText = '₹' + tFees;
@@ -219,24 +212,23 @@
         
         let eH = "";
         expenses.forEach(e => {
-            eH += `<div class="record-item" style="border-left-color:red">
-                <b>${e.note}</b> <span style="float:right;">₹${e.amt}</span><br>
-                <small>${e.date}</small>
-                <span class="action-link" style="color:red" onclick="window.delExp(${e.id})">✖ DELETE</span>
-            </div>`;
+            eH += `<div class="record-item" style="border-left-color:red"><b>${e.note}</b><span style="float:right;">₹${e.amt}</span><br><small>${e.date}</small></div>`;
         });
         document.getElementById('expList').innerHTML = eH;
 
         let hH = "<b>📜 REPORTS</b>";
-        history.forEach(h => {
-            hH += `<div class="history-card"><b>${h.month}</b><br>Profit: ₹${h.profit}</div>`;
-        });
+        history.forEach(h => { hH += `<div class="history-card"><b>${h.month}</b><br>Profit: ₹${h.profit}</div>`; });
         document.getElementById('historyList').innerHTML = hH;
     };
 
     window.wa = (id, type) => {
         const s = students.find(x => x.id == id);
-        let msg = type == 1 ? `Namaste ${s.name}, fee ₹${s.amount} received.` : `Namaste ${s.name}, your lunch has been arrived. Please collect it from reception. 🍱🥄`;
+        let parts = s.fee.split('-');
+        let displayDate = `${parts[2]}/${parts[1]}/${parts[0]}`; 
+        let msg = "";
+        if(type == 1) msg = `Namaste ${s.name}, fee ₹${s.amount} received. Valid till ${displayDate}. 📖`;
+        if(type == 2) msg = `Namaste ${s.name}, fee pending since ${displayDate}. Update soon.`;
+        if(type == 3) msg = `Namaste ${s.name}, your lunch has been arrived. Please collect it from reception. 🍱🥄`;
         window.open(`https://wa.me/91${s.phone}?text=${encodeURIComponent(msg)}`);
     };
 
@@ -246,13 +238,22 @@
         const date = document.getElementById('expDate').value;
         if(!amt || !date) return alert("Enter Amt/Date");
         expenses.push({ id: Date.now(), amt, note, date });
-        saveToCloud(); window.clearExpForm();
+        saveToCloud(); 
     };
 
-    window.delExp = (id) => { expenses = expenses.filter(e => e.id != id); saveToCloud(); };
     window.delStu = (id) => { students = students.filter(s => s.id != id); saveToCloud(); };
+    window.editStu = (id) => {
+        const s = students.find(x => x.id == id);
+        document.getElementById('editId').value = s.id;
+        document.getElementById('stuName').value = s.name;
+        document.getElementById('stuPhone').value = s.phone;
+        document.getElementById('stuFeeDate').value = s.fee;
+        document.getElementById('stuAmt').value = s.amount;
+        document.getElementById('stuSeat').value = s.seat;
+        window.scrollTo(0,0);
+    };
+
     window.clearForms = () => { document.querySelectorAll('#lib-tab input').forEach(i => i.value = ''); };
-    window.clearExpForm = () => { document.querySelectorAll('#exp-tab input').forEach(i => i.value = ''); };
     
     window.importData = () => {
         const f = document.getElementById('importFile').files[0];
@@ -273,6 +274,14 @@
         const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
         a.download = "bapora_master_backup.txt"; a.click();
     };
+
+    window.exportToExcel = () => {
+        let csv = "Name,Seat,Phone,Fee,Amount\n";
+        students.forEach(s => { csv += `${s.name},${s.seat},${s.phone},${s.fee},${s.amount}\n`; });
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+        a.download = "Library_Report.csv"; a.click();
+    };
 </script>
 </body>
-    </html>
+</html>
