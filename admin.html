@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Bapora Command v10.17 (All Features Restored)</title>
+    <title>Bapora Command v10.18 (All Features Hardened)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root { --navy: #002347; --gold: #c5a059; --bg: #f4f4f9; --card: #ffffff; --text: #222; --safe: #1b5e20; --danger: #b71c1c; }
@@ -96,7 +96,7 @@
                 <input type="number" id="expAmt" placeholder="Amount (₹)">
                 <input type="text" id="expNote" placeholder="Note">
                 <button id="saveExpBtn" class="btn-main" style="background:var(--danger);" onclick="window.addExpense()">LOG EXPENSE</button>
-                <button id="cancelExpBtn" class="btn-main" style="background:#666; display:none;" onclick="window.clearExpForm()">CANCEL</button>
+                <button id="cancelExpBtn" class="btn-main" style="background:#666; display:none;" onclick="window.clearExpForm()">CANCEL EDIT</button>
             </div>
             <div id="historyList"></div>
             <hr><div id="expList"></div>
@@ -165,17 +165,24 @@
 
     window.saveStudent = () => {
         const id = document.getElementById('editId').value || Date.now();
-        const data = {
-            id: parseInt(id),
-            name: document.getElementById('stuName').value,
-            seat: document.getElementById('stuSeat').value,
-            amount: document.getElementById('stuAmt').value,
-            phone: document.getElementById('stuPhone').value,
-            fee: document.getElementById('stuFeeDate').value,
-            isCounted: true
-        };
+        const name = document.getElementById('stuName').value;
+        const phone = document.getElementById('stuPhone').value;
+        const fee = document.getElementById('stuFeeDate').value;
+        const amount = document.getElementById('stuAmt').value;
+        const seat = document.getElementById('stuSeat').value;
+        
+        if(!name || !phone || !fee) return alert("Fill Name, Phone and Date");
+        
         const idx = students.findIndex(s => s.id == id);
+        const data = { id: parseInt(id), name, phone, fee, amount, seat, isCounted: true };
+        
         if(idx > -1) students[idx] = data; else students.push(data);
+        
+        // RESTORED: WhatsApp Receipt Confirmation Popup
+        if(amount && confirm(`Record Saved! ✅\nDo you want to send a WhatsApp receipt to ${name} for ₹${amount}?`)) {
+            window.wa(data.id, 1);
+        }
+        
         saveToCloud(); window.clearForms();
     };
 
@@ -232,8 +239,8 @@
         let parts = s.fee.split('-');
         let displayDate = `${parts[2]}/${parts[1]}/${parts[0]}`; 
         let msg = "";
-        if(type == 1) msg = `Namaste ${s.name}, fee ₹${s.amount} received. Valid till ${displayDate}. 📖`;
-        if(type == 2) msg = `Namaste ${s.name}, fee pending since ${displayDate}. Update soon.`;
+        if(type == 1) msg = `Namaste ${s.name}, fee amount ₹${s.amount} received. Valid till ${displayDate}. Thank you! Happy Studying 📖 - Bapora Library`;
+        if(type == 2) msg = `Namaste ${s.name}, your fee is pending since ${displayDate}. Please update soon.`;
         if(type == 3) msg = `Namaste ${s.name}, your lunch has been arrived. Please collect it from reception. 🍱🥄`;
         window.open(`https://wa.me/91${s.phone}?text=${encodeURIComponent(msg)}`);
     };
@@ -245,7 +252,7 @@
         const date = document.getElementById('expDate').value;
         if(!amt || !date) return alert("Enter Amt/Date");
         const idx = expenses.findIndex(e => e.id == id);
-        const data = { id: parseInt(id), amt, note, date };
+        const data = { id: parseInt(id), amt: parseFloat(amt), note, date };
         if(idx > -1) expenses[idx] = data; else expenses.push(data);
         saveToCloud(); window.clearExpForm();
     };
@@ -257,11 +264,12 @@
         document.getElementById('expNote').value = e.note;
         document.getElementById('expDate').value = e.date;
         document.getElementById('saveExpBtn').innerText = "UPDATE CLOUD EXPENSE";
-        document.getElementById('cancelExpBtn').style.display = "block";
+        window.scrollTo(0,0);
     };
 
     window.delExp = (id) => { if(confirm("Delete expense?")) { expenses = expenses.filter(e => e.id != id); saveToCloud(); } };
     window.delStu = (id) => { if(confirm("Delete student?")) { students = students.filter(s => s.id != id); saveToCloud(); } };
+    
     window.editStu = (id) => {
         const s = students.find(x => x.id == id);
         document.getElementById('editId').value = s.id;
@@ -276,7 +284,7 @@
     };
 
     window.clearForms = () => { document.querySelectorAll('#lib-tab input').forEach(i => i.value = ''); document.getElementById('saveBtn').innerText = "SAVE TO CLOUD"; document.getElementById('cancelBtn').style.display = "none"; };
-    window.clearExpForm = () => { document.querySelectorAll('#exp-tab input').forEach(i => i.value = ''); document.getElementById('saveExpBtn').innerText = "LOG EXPENSE"; document.getElementById('cancelExpBtn').style.display = "none"; };
+    window.clearExpForm = () => { document.querySelectorAll('#exp-tab input').forEach(i => i.value = ''); document.getElementById('saveExpBtn').innerText = "LOG EXPENSE"; };
     
     window.importData = () => {
         const f = document.getElementById('importFile').files[0];
@@ -307,4 +315,4 @@
     };
 </script>
 </body>
-                    </html>
+    </html>
