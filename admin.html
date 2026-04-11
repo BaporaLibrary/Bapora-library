@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Bapora Command v10.18 (All Features Hardened)</title>
+    <title>Bapora Command v10.19 (Final Master Assembly)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root { --navy: #002347; --gold: #c5a059; --bg: #f4f4f9; --card: #ffffff; --text: #222; --safe: #1b5e20; --danger: #b71c1c; }
@@ -16,6 +16,11 @@
         input, select { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #cfd8dc; border-radius: 4px; box-sizing: border-box; }
         .record-item { background: white; padding: 12px; border-radius: 6px; margin-top: 8px; border: 1px solid #eceff1; position: relative; border-left: 4px solid var(--navy); }
         .due-alert { border-left-color: var(--danger) !important; background: #fff5f5; }
+        
+        /* RESTORED: Follow-up Alerts & Reminders */
+        .follow-up { background: #fff3e0; color: #ef6c00; font-weight: bold; padding: 4px; border-radius: 4px; font-size: 10px; display: inline-block; margin-top: 5px; border: 1px solid #ffe0b2; }
+        .remind-date { font-size: 9px; color: #666; display: block; margin-top: 2px; }
+        
         .wa-btn-group { display: flex; gap: 4px; margin-top: 8px; }
         .wa-btn { flex: 1; color: white; padding: 8px 2px; border-radius: 4px; font-size: 10px; font-weight: bold; text-align: center; border: none; cursor: pointer; }
         .btn-rcpt { background: var(--safe); }
@@ -25,10 +30,16 @@
         .stat { background: #fff; border: 1px solid var(--navy); padding: 8px; border-radius: 6px; text-align: center; color: var(--navy); }
         .stat b { font-size: 14px; display: block; }
         .btn-main { padding: 12px; width: 100%; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; color: white; margin-top: 5px; }
+        
+        /* RESTORED: Filter Bar CSS */
+        .filter-bar { display: flex; gap: 4px; margin-bottom: 10px; }
+        .btn-filter { flex: 1; font-size: 9px; padding: 8px 2px; border: 1px solid var(--navy); background: white; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-filter.active { background: var(--navy); color: white; }
+        
         .action-link { font-size: 10px; font-weight: bold; cursor: pointer; margin-top: 8px; display: inline-block; margin-right: 15px; }
         .history-card { background: #e3f2fd; padding: 10px; border-radius: 6px; margin-top: 8px; font-size: 11px; border-left: 4px solid var(--gold); }
         #login-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; background:var(--navy); }
-        .login-box { background:white; padding:30px; border-radius:10px; text-align:center; width:280px; }
+        .login-box { background:white; padding:30px; border-radius:10px; text-align:center; width:280px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
     </style>
 </head>
 <body>
@@ -36,9 +47,11 @@
 <div id="login-screen">
     <div class="login-box">
         <h2 style="color:var(--navy); margin-top:0;">Bapora Command</h2>
+        <p style="font-size:12px; color:#666; font-weight:bold;">SECURE CLOUD ACCESS</p>
         <input type="email" id="loginEmail" placeholder="Admin Email">
         <input type="password" id="loginPass" placeholder="Master Password">
         <button id="loginBtn" class="btn-main" style="background:var(--gold); color:black;" onclick="window.login()">UNLOCK SYSTEM</button>
+        <p id="loginError" style="color:red; font-size:11px; display:none;"></p>
     </div>
 </div>
 
@@ -71,6 +84,13 @@
             </div>
 
             <input type="text" id="stuSearch" placeholder="🔍 Search..." onkeyup="window.render()">
+            
+            <div class="filter-bar">
+                <button id="fAll" class="btn-filter active" onclick="window.setF('all')">ALL</button>
+                <button id="fDue" class="btn-filter" onclick="window.setF('due')">DUE</button>
+                <button id="fFol" class="btn-filter" style="border-color:#ef6c00;" onclick="window.setF('fol')">⚠️ FOLLOW-UP</button>
+            </div>
+
             <div id="stuList"></div>
 
             <div class="section" style="margin-top:20px; text-align:center; background:#eee;">
@@ -94,7 +114,7 @@
                 <input type="hidden" id="editExpId">
                 <input type="date" id="expDate">
                 <input type="number" id="expAmt" placeholder="Amount (₹)">
-                <input type="text" id="expNote" placeholder="Note">
+                <input type="text" id="expNote" placeholder="Note (Electricity etc.)">
                 <button id="saveExpBtn" class="btn-main" style="background:var(--danger);" onclick="window.addExpense()">LOG EXPENSE</button>
                 <button id="cancelExpBtn" class="btn-main" style="background:#666; display:none;" onclick="window.clearExpForm()">CANCEL EDIT</button>
             </div>
@@ -121,10 +141,10 @@
     const db = getDatabase(app);
     const MASTER_UID = "SDMZEUimL9RVB7oGxxD6klxROA22";
 
-    let students = [], expenses = [], history = [];
+    let students = [], expenses = [], history = [], curF = 'all';
 
     window.login = function() {
-        signInWithEmailAndPassword(auth, document.getElementById('loginEmail').value, document.getElementById('loginPass').value).catch(() => alert("Error!"));
+        signInWithEmailAndPassword(auth, document.getElementById('loginEmail').value, document.getElementById('loginPass').value).catch(() => alert("Wrong Email or Password!"));
     };
 
     window.logout = () => signOut(auth);
@@ -163,6 +183,16 @@
         document.getElementById(t + 'Btn').classList.add('active');
     };
 
+    // RESTORED: Filter Setting Logic
+    window.setF = (f) => {
+        curF = f;
+        document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
+        if(f=='all') document.getElementById('fAll').classList.add('active');
+        if(f=='due') document.getElementById('fDue').classList.add('active');
+        if(f=='fol') document.getElementById('fFol').classList.add('active');
+        window.render();
+    };
+
     window.saveStudent = () => {
         const id = document.getElementById('editId').value || Date.now();
         const name = document.getElementById('stuName').value;
@@ -174,16 +204,23 @@
         if(!name || !phone || !fee) return alert("Fill Name, Phone and Date");
         
         const idx = students.findIndex(s => s.id == id);
-        const data = { id: parseInt(id), name, phone, fee, amount, seat, isCounted: true };
+        
+        // Ensure lastRemind is preserved when editing
+        const data = { 
+            id: parseInt(id), name, phone, fee, amount, seat, 
+            lastRemind: students[idx]?.lastRemind || null, 
+            isCounted: true 
+        };
         
         if(idx > -1) students[idx] = data; else students.push(data);
         
         // RESTORED: WhatsApp Receipt Confirmation Popup
         if(amount && confirm(`Record Saved! ✅\nDo you want to send a WhatsApp receipt to ${name} for ₹${amount}?`)) {
             window.wa(data.id, 1);
+        } else {
+            saveToCloud(); 
         }
-        
-        saveToCloud(); window.clearForms();
+        window.clearForms();
     };
 
     window.render = () => {
@@ -195,10 +232,22 @@
             if(s.isCounted !== false) tFees += parseFloat(s.amount) || 0;
             const isDue = (s.fee && now >= new Date(s.fee));
             if(isDue) dCnt++;
-            if(s.name.toLowerCase().includes(q)) {
+
+            // RESTORED: Follow Up Time Calculation Logic
+            let isFol = false, folHTML = "", rDateHTML = "";
+            if(s.lastRemind) {
+                const diff = Math.floor((now - new Date(s.lastRemind)) / (1000 * 60 * 60 * 24));
+                isFol = isDue && diff >= 3;
+                if(isFol) folHTML = `<div class="follow-up">⚠️ Follow-up Needed (${diff}d ago)</div>`;
+                rDateHTML = `<span class="remind-date">Last Sent: ${new Date(s.lastRemind).toLocaleDateString()}</span>`;
+            }
+
+            // Apply Filters (Search + ALL/DUE/FOL)
+            if(s.name.toLowerCase().includes(q) && (curF=='all' || (curF=='due' && isDue) || (curF=='fol' && isFol))) {
                 sH += `<div class="record-item ${isDue ? 'due-alert' : ''}">
-                    <b>${s.name}</b> <span style="float:right;">₹${s.amount}</span><br>
+                    <b>${s.name}</b> <span style="float:right; color:var(--safe);">₹${s.amount}</span><br>
                     <small>Seat: ${s.seat} | Valid: ${s.fee}</small><br>
+                    ${rDateHTML} ${folHTML}
                     <div class="wa-btn-group">
                         <button onclick="window.wa(${s.id}, 1)" class="wa-btn btn-rcpt">Receipt</button>
                         <button onclick="window.wa(${s.id}, 2)" class="wa-btn btn-due">Due</button>
@@ -210,41 +259,53 @@
             }
         });
 
+        // Finance Render Logic
         const tE = expenses.reduce((a, b) => a + (parseFloat(b.amt) || 0), 0);
         document.getElementById('countTotal').innerText = students.length;
         document.getElementById('countDue').innerText = dCnt;
         document.getElementById('sumFees').innerText = '₹' + tFees;
         document.getElementById('sumExp').innerText = '₹' + tE;
         document.getElementById('netProfit').innerText = '₹' + (tFees - tE);
-        document.getElementById('stuList').innerHTML = sH || "<center>No records</center>";
+        document.getElementById('stuList').innerHTML = sH || "<center style='padding:20px'>No records found</center>";
         
         let eH = "";
-        expenses.forEach(e => {
+        let sortedExp = [...expenses].sort((a,b) => new Date(b.date) - new Date(a.date));
+        sortedExp.forEach(e => {
             eH += `<div class="record-item" style="border-left-color:red">
                 <b>${e.note}</b> <span style="float:right;">₹${e.amt}</span><br>
-                <small>${e.date}</small><br>
+                <small>${new Date(e.date).toLocaleDateString('en-GB')}</small><br>
                 <span class="action-link" style="color:blue" onclick="window.editExp(${e.id})">✎ EDIT</span>
                 <span class="action-link" style="color:red" onclick="window.delExp(${e.id})">✖ DELETE</span>
             </div>`;
         });
-        document.getElementById('expList').innerHTML = eH;
+        document.getElementById('expList').innerHTML = eH || "<small><br>No expenses logged.</small>";
 
-        let hH = "<b>📜 REPORTS</b>";
-        history.forEach(h => { hH += `<div class="history-card"><b>${h.month}</b><br>Profit: ₹${h.profit}</div>`; });
+        let hH = "<b>📜 MONTHLY REPORTS</b>";
+        [...history].reverse().forEach(h => { 
+            hH += `<div class="history-card"><b>${h.month}</b><br>Fees: ₹${h.fee} | Exp: ₹${h.exp} | Profit: ₹${h.profit}</div>`; 
+        });
         document.getElementById('historyList').innerHTML = hH;
     };
 
     window.wa = (id, type) => {
-        const s = students.find(x => x.id == id);
+        const idx = students.findIndex(x => x.id == id);
+        const s = students[idx];
         let parts = s.fee.split('-');
         let displayDate = `${parts[2]}/${parts[1]}/${parts[0]}`; 
         let msg = "";
+        
         if(type == 1) msg = `Namaste ${s.name}, fee amount ₹${s.amount} received. Valid till ${displayDate}. Thank you! Happy Studying 📖 - Bapora Library`;
         if(type == 2) msg = `Namaste ${s.name}, your fee is pending since ${displayDate}. Please update soon.`;
         if(type == 3) msg = `Namaste ${s.name}, your lunch has been arrived. Please collect it from reception. 🍱🥄`;
+        
+        // RESTORED: Update the Last Remind Date when WhatsApp is sent
+        students[idx].lastRemind = new Date().toISOString();
+        saveToCloud();
+
         window.open(`https://wa.me/91${s.phone}?text=${encodeURIComponent(msg)}`);
     };
 
+    // Expenses Logic
     window.addExpense = () => {
         const id = document.getElementById('editExpId').value || Date.now();
         const amt = document.getElementById('expAmt').value;
@@ -264,6 +325,7 @@
         document.getElementById('expNote').value = e.note;
         document.getElementById('expDate').value = e.date;
         document.getElementById('saveExpBtn').innerText = "UPDATE CLOUD EXPENSE";
+        document.getElementById('cancelExpBtn').style.display = "block";
         window.scrollTo(0,0);
     };
 
@@ -284,35 +346,8 @@
     };
 
     window.clearForms = () => { document.querySelectorAll('#lib-tab input').forEach(i => i.value = ''); document.getElementById('saveBtn').innerText = "SAVE TO CLOUD"; document.getElementById('cancelBtn').style.display = "none"; };
-    window.clearExpForm = () => { document.querySelectorAll('#exp-tab input').forEach(i => i.value = ''); document.getElementById('saveExpBtn').innerText = "LOG EXPENSE"; };
+    window.clearExpForm = () => { document.querySelectorAll('#exp-tab input').forEach(i => i.value = ''); document.getElementById('saveExpBtn').innerText = "LOG EXPENSE"; document.getElementById('cancelExpBtn').style.display = "none"; };
     
+    // RESTORED: Import Backup Logic
     window.importData = () => {
-        const f = document.getElementById('importFile').files[0];
-        if(!f) return;
-        const r = new FileReader();
-        r.onload = (e) => {
-            const d = JSON.parse(e.target.result);
-            students = d.students || [];
-            expenses = d.expenses || [];
-            history = d.history || [];
-            saveToCloud(); alert("Restored!");
-        };
-        r.readAsText(f);
-    };
-
-    window.exportData = () => {
-        const blob = new Blob([JSON.stringify({students, expenses, history})], {type: 'text/plain'});
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-        a.download = "bapora_master_backup.txt"; a.click();
-    };
-
-    window.exportToExcel = () => {
-        let csv = "Name,Seat,Phone,Fee,Amount\n";
-        students.forEach(s => { csv += `${s.name},${s.seat},${s.phone},${s.fee},${s.amount}\n`; });
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-        a.download = "Library_Report.csv"; a.click();
-    };
-</script>
-</body>
-    </html>
+        const f = document.getElemen
