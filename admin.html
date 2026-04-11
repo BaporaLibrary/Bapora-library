@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Bapora Command v10.19 (Final Master Assembly)</title>
+    <title>Bapora Command v10.20 (Login Fix)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root { --navy: #002347; --gold: #c5a059; --bg: #f4f4f9; --card: #ffffff; --text: #222; --safe: #1b5e20; --danger: #b71c1c; }
@@ -17,7 +17,6 @@
         .record-item { background: white; padding: 12px; border-radius: 6px; margin-top: 8px; border: 1px solid #eceff1; position: relative; border-left: 4px solid var(--navy); }
         .due-alert { border-left-color: var(--danger) !important; background: #fff5f5; }
         
-        /* RESTORED: Follow-up Alerts & Reminders */
         .follow-up { background: #fff3e0; color: #ef6c00; font-weight: bold; padding: 4px; border-radius: 4px; font-size: 10px; display: inline-block; margin-top: 5px; border: 1px solid #ffe0b2; }
         .remind-date { font-size: 9px; color: #666; display: block; margin-top: 2px; }
         
@@ -31,7 +30,6 @@
         .stat b { font-size: 14px; display: block; }
         .btn-main { padding: 12px; width: 100%; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; color: white; margin-top: 5px; }
         
-        /* RESTORED: Filter Bar CSS */
         .filter-bar { display: flex; gap: 4px; margin-bottom: 10px; }
         .btn-filter { flex: 1; font-size: 9px; padding: 8px 2px; border: 1px solid var(--navy); background: white; border-radius: 4px; cursor: pointer; font-weight: bold; }
         .btn-filter.active { background: var(--navy); color: white; }
@@ -51,7 +49,7 @@
         <input type="email" id="loginEmail" placeholder="Admin Email">
         <input type="password" id="loginPass" placeholder="Master Password">
         <button id="loginBtn" class="btn-main" style="background:var(--gold); color:black;" onclick="window.login()">UNLOCK SYSTEM</button>
-        <p id="loginError" style="color:red; font-size:11px; display:none;"></p>
+        <p id="loginError" style="color:red; font-size:12px; margin-top:10px; font-weight:bold;"></p>
     </div>
 </div>
 
@@ -139,24 +137,36 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getDatabase(app);
-    const MASTER_UID = "SDMZEUimL9RVB7oGxxD6klxROA22";
 
     let students = [], expenses = [], history = [], curF = 'all';
 
+    // FIX: Updated Login Function to show correct errors
     window.login = function() {
-        signInWithEmailAndPassword(auth, document.getElementById('loginEmail').value, document.getElementById('loginPass').value).catch(() => alert("Wrong Email or Password!"));
+        const email = document.getElementById('loginEmail').value;
+        const pass = document.getElementById('loginPass').value;
+        document.getElementById('loginBtn').innerText = "Verifying...";
+        document.getElementById('loginError').innerText = "";
+        
+        signInWithEmailAndPassword(auth, email, pass).catch((error) => {
+            document.getElementById('loginBtn').innerText = "UNLOCK SYSTEM";
+            document.getElementById('loginError').innerText = "❌ Wrong Email or Password!";
+        });
     };
 
     window.logout = () => signOut(auth);
 
+    // FIX: Removed the restrictive MASTER_UID check
     onAuthStateChanged(auth, (user) => {
-        if (user && user.uid === MASTER_UID) {
+        if (user) {
+            // Agar User Sahi hai toh andar aane do
             document.getElementById('login-screen').style.display = "none";
             document.getElementById('app-screen').style.display = "block";
             setupCloudSync();
         } else {
+            // Bahar Roko
             document.getElementById('login-screen').style.display = "flex";
             document.getElementById('app-screen').style.display = "none";
+            document.getElementById('loginBtn').innerText = "UNLOCK SYSTEM";
         }
     });
 
@@ -183,7 +193,6 @@
         document.getElementById(t + 'Btn').classList.add('active');
     };
 
-    // RESTORED: Filter Setting Logic
     window.setF = (f) => {
         curF = f;
         document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
@@ -204,8 +213,6 @@
         if(!name || !phone || !fee) return alert("Fill Name, Phone and Date");
         
         const idx = students.findIndex(s => s.id == id);
-        
-        // Ensure lastRemind is preserved when editing
         const data = { 
             id: parseInt(id), name, phone, fee, amount, seat, 
             lastRemind: students[idx]?.lastRemind || null, 
@@ -214,7 +221,6 @@
         
         if(idx > -1) students[idx] = data; else students.push(data);
         
-        // RESTORED: WhatsApp Receipt Confirmation Popup
         if(amount && confirm(`Record Saved! ✅\nDo you want to send a WhatsApp receipt to ${name} for ₹${amount}?`)) {
             window.wa(data.id, 1);
         } else {
@@ -233,7 +239,6 @@
             const isDue = (s.fee && now >= new Date(s.fee));
             if(isDue) dCnt++;
 
-            // RESTORED: Follow Up Time Calculation Logic
             let isFol = false, folHTML = "", rDateHTML = "";
             if(s.lastRemind) {
                 const diff = Math.floor((now - new Date(s.lastRemind)) / (1000 * 60 * 60 * 24));
@@ -242,7 +247,6 @@
                 rDateHTML = `<span class="remind-date">Last Sent: ${new Date(s.lastRemind).toLocaleDateString()}</span>`;
             }
 
-            // Apply Filters (Search + ALL/DUE/FOL)
             if(s.name.toLowerCase().includes(q) && (curF=='all' || (curF=='due' && isDue) || (curF=='fol' && isFol))) {
                 sH += `<div class="record-item ${isDue ? 'due-alert' : ''}">
                     <b>${s.name}</b> <span style="float:right; color:var(--safe);">₹${s.amount}</span><br>
@@ -259,7 +263,6 @@
             }
         });
 
-        // Finance Render Logic
         const tE = expenses.reduce((a, b) => a + (parseFloat(b.amt) || 0), 0);
         document.getElementById('countTotal').innerText = students.length;
         document.getElementById('countDue').innerText = dCnt;
@@ -298,14 +301,11 @@
         if(type == 2) msg = `Namaste ${s.name}, your fee is pending since ${displayDate}. Please update soon.`;
         if(type == 3) msg = `Namaste ${s.name}, your lunch has been arrived. Please collect it from reception. 🍱🥄`;
         
-        // RESTORED: Update the Last Remind Date when WhatsApp is sent
         students[idx].lastRemind = new Date().toISOString();
         saveToCloud();
-
         window.open(`https://wa.me/91${s.phone}?text=${encodeURIComponent(msg)}`);
     };
 
-    // Expenses Logic
     window.addExpense = () => {
         const id = document.getElementById('editExpId').value || Date.now();
         const amt = document.getElementById('expAmt').value;
@@ -348,6 +348,5 @@
     window.clearForms = () => { document.querySelectorAll('#lib-tab input').forEach(i => i.value = ''); document.getElementById('saveBtn').innerText = "SAVE TO CLOUD"; document.getElementById('cancelBtn').style.display = "none"; };
     window.clearExpForm = () => { document.querySelectorAll('#exp-tab input').forEach(i => i.value = ''); document.getElementById('saveExpBtn').innerText = "LOG EXPENSE"; document.getElementById('cancelExpBtn').style.display = "none"; };
     
-    // RESTORED: Import Backup Logic
     window.importData = () => {
-        const f = document.getElemen
+        const f 
