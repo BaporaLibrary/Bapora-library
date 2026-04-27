@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Bapora Command v10.21 (Advanced Search Upgrade)</title>
+    <title>Bapora Command v10.23 (Mgmt Alert Upgrade)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root { --navy: #002347; --gold: #c5a059; --bg: #f4f4f9; --card: #ffffff; --text: #222; --safe: #1b5e20; --danger: #b71c1c; }
         body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); color: var(--text); padding: 0; margin: 0; }
-        .container { max-width: 480px; margin: auto; background: var(--card); border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border-top: 5px solid var(--navy); overflow: hidden; padding: 8px; }
+        .container { max-width: 480px; margin: auto; background: var(--card); border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border-top: 5px solid var(--navy); overflow: hidden; padding: 8px; padding-bottom: 60px; }
         .tabs { display: flex; background: #eceff1; }
         .tab-btn { flex: 1; padding: 14px 5px; border: none; background: none; font-weight: bold; cursor: pointer; color: #546e7a; font-size: 12px; border-bottom: 3px solid transparent; }
         .tab-btn.active { color: var(--navy); border-bottom: 3px solid var(--navy); background: #fff; }
@@ -20,11 +20,13 @@
         .follow-up { background: #fff3e0; color: #ef6c00; font-weight: bold; padding: 4px; border-radius: 4px; font-size: 10px; display: inline-block; margin-top: 5px; border: 1px solid #ffe0b2; }
         .remind-date { font-size: 9px; color: #666; display: block; margin-top: 2px; }
         
-        .wa-btn-group { display: flex; gap: 4px; margin-top: 8px; }
-        .wa-btn { flex: 1; color: white; padding: 8px 2px; border-radius: 4px; font-size: 10px; font-weight: bold; text-align: center; border: none; cursor: pointer; }
+        .wa-btn-group { display: flex; gap: 4px; margin-top: 8px; flex-wrap: wrap; }
+        .wa-btn { flex: 1; min-width: 22%; color: white; padding: 8px 2px; border-radius: 4px; font-size: 10px; font-weight: bold; text-align: center; border: none; cursor: pointer; }
         .btn-rcpt { background: var(--safe); }
         .btn-due { background: #ff9800; }
         .btn-lunch { background: #007bff; }
+        .btn-alert { background: #8e44ad; } /* NAYA: Alert Button Color */
+        
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
         .stat { background: #fff; border: 1px solid var(--navy); padding: 8px; border-radius: 6px; text-align: center; color: var(--navy); }
         .stat b { font-size: 14px; display: block; }
@@ -36,6 +38,10 @@
         
         .action-link { font-size: 10px; font-weight: bold; cursor: pointer; margin-top: 8px; display: inline-block; margin-right: 15px; }
         .history-card { background: #e3f2fd; padding: 10px; border-radius: 6px; margin-top: 8px; font-size: 11px; border-left: 4px solid var(--gold); }
+        
+        #mega-panel { display: none; position: fixed; bottom: 0; left: 0; width: 100%; background: var(--navy); color: white; padding: 15px; box-sizing: border-box; box-shadow: 0 -5px 15px rgba(0,0,0,0.3); z-index: 9999; text-align: center; border-top: 3px solid var(--gold); }
+        .btn-mega { background: var(--gold); color: black; font-weight: bold; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 5px; font-size: 16px; width: 100%; }
+        
         #login-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; background:var(--navy); }
         .login-box { background:white; padding:30px; border-radius:10px; text-align:center; width:280px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
     </style>
@@ -89,6 +95,8 @@
                 <button id="fFol" class="btn-filter" style="border-color:#ef6c00;" onclick="window.setF('fol')">⚠️ FOLLOW-UP</button>
             </div>
 
+            <button class="btn-main" style="background: linear-gradient(145deg, #f39c12, #d35400); margin-bottom: 15px; font-size:14px;" onclick="window.startMegaphone()">📢 BROADCAST MESSAGE</button>
+
             <div id="stuList"></div>
 
             <div class="section" style="margin-top:20px; text-align:center; background:#eee;">
@@ -122,6 +130,16 @@
     </div>
 </div>
 
+<div id="mega-panel">
+    <div style="font-size: 14px; margin-bottom: 5px;">📢 <b>MEGAPHONE ACTIVE</b></div>
+    <div style="font-size: 12px; margin-bottom: 10px; color: var(--gold);">Students Left in Queue: <b id="megaCount">0</b></div>
+    <div style="font-size: 11px; margin-bottom: 10px;">Next: <span id="megaNextName" style="font-weight:bold; color:#fff;"></span></div>
+    <div style="display: flex; gap: 10px;">
+        <button class="btn-main" style="background: #e74c3c; width: 40%; margin-top: 0;" onclick="window.stopMegaphone()">STOP 🛑</button>
+        <button class="btn-mega" style="width: 60%; margin-top: 0;" onclick="window.fireMegaphone()">FIRE NEXT 🚀</button>
+    </div>
+</div>
+
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
@@ -139,6 +157,7 @@
     const db = getDatabase(app);
 
     let students = [], expenses = [], history = [], curF = 'all';
+    let megaQueue = [], megaMessage = "";
 
     window.login = function() {
         const email = document.getElementById('loginEmail').value;
@@ -169,18 +188,12 @@
     function setupCloudSync() {
         onValue(ref(db, 'admin_data'), (snap) => {
             const data = snap.val();
-            if (data) {
-                students = data.students || [];
-                expenses = data.expenses || [];
-                history = data.history || [];
-            }
+            if (data) { students = data.students || []; expenses = data.expenses || []; history = data.history || []; }
             window.render();
         });
     }
 
-    function saveToCloud() {
-        set(ref(db, 'admin_data'), { students, expenses, history });
-    }
+    function saveToCloud() { set(ref(db, 'admin_data'), { students, expenses, history }); }
 
     window.switchTab = (t) => {
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -198,6 +211,54 @@
         window.render();
     };
 
+    window.startMegaphone = function() {
+        const q = document.getElementById('stuSearch').value.toLowerCase();
+        const now = new Date();
+        megaQueue = [];
+
+        students.forEach(s => {
+            const isDue = (s.fee && now >= new Date(s.fee));
+            let isFol = false;
+            if(s.lastRemind) {
+                const diff = Math.floor((now - new Date(s.lastRemind)) / (1000 * 60 * 60 * 24));
+                isFol = isDue && diff >= 3;
+            }
+            let matchName = s.name.toLowerCase().includes(q);
+            let matchPhone = s.phone && s.phone.includes(q);
+            let matchSeat = s.seat && s.seat.toString().toLowerCase().includes(q);
+
+            if((matchName || matchPhone || matchSeat) && (curF=='all' || (curF=='due' && isDue) || (curF=='fol' && isFol))) {
+                if(s.phone) megaQueue.push(s);
+            }
+        });
+
+        if(megaQueue.length === 0) return alert("No valid students found in current filter!");
+
+        let inputMsg = prompt(`You are about to send a bulk message to ${megaQueue.length} students.\n\nEnter your message below:`);
+        if(inputMsg && inputMsg.trim() !== "") {
+            megaMessage = inputMsg; updateMegaUI(); document.getElementById('mega-panel').style.display = 'block';
+        }
+    };
+
+    function updateMegaUI() {
+        document.getElementById('megaCount').innerText = megaQueue.length;
+        if(megaQueue.length > 0) { document.getElementById('megaNextName').innerText = megaQueue[0].name + " (Seat " + megaQueue[0].seat + ")"; } 
+        else { document.getElementById('mega-panel').style.display = 'none'; alert("📢 Megaphone Broadcast Complete!"); }
+    }
+
+    window.fireMegaphone = function() {
+        if(megaQueue.length > 0) {
+            let s = megaQueue.shift(); 
+            let finalMsg = `Namaste ${s.name},\n\n${megaMessage}`;
+            window.open(`https://wa.me/91${s.phone}?text=${encodeURIComponent(finalMsg)}`, '_blank');
+            const idx = students.findIndex(x => x.id == s.id);
+            if(idx > -1) { students[idx].lastRemind = new Date().toISOString(); saveToCloud(); }
+            updateMegaUI();
+        }
+    };
+
+    window.stopMegaphone = function() { megaQueue = []; document.getElementById('mega-panel').style.display = 'none'; };
+
     window.saveStudent = () => {
         const id = document.getElementById('editId').value || Date.now();
         const name = document.getElementById('stuName').value;
@@ -207,21 +268,20 @@
         const seat = document.getElementById('stuSeat').value;
         
         if(!name || !phone || !fee) return alert("Fill Name, Phone and Date");
-        
         const idx = students.findIndex(s => s.id == id);
-        const data = { 
-            id: parseInt(id), name, phone, fee, amount, seat, 
-            lastRemind: students[idx]?.lastRemind || null, 
-            isCounted: true 
-        };
+        const data = { id: parseInt(id), name, phone, fee, amount, seat, lastRemind: students[idx]?.lastRemind || null, isCounted: true };
         
         if(idx > -1) students[idx] = data; else students.push(data);
-        
+        saveToCloud(); 
+
         if(amount && confirm(`Record Saved! ✅\nDo you want to send a WhatsApp receipt to ${name} for ₹${amount}?`)) {
             window.wa(data.id, 1);
-        } else {
-            saveToCloud(); 
+        } 
+        // NAYA: Ask to send Mgmt Alert immediately after saving
+        else if (amount && confirm(`Do you want to alert the Management Team about this payment?`)) {
+            window.wa(data.id, 4);
         }
+        
         window.clearForms();
     };
 
@@ -243,12 +303,12 @@
                 rDateHTML = `<span class="remind-date">Last Sent: ${new Date(s.lastRemind).toLocaleDateString()}</span>`;
             }
 
-            // NAYA UPDATE: Search by Name, Phone OR Seat Logic
             let matchName = s.name.toLowerCase().includes(q);
             let matchPhone = s.phone && s.phone.includes(q);
             let matchSeat = s.seat && s.seat.toString().toLowerCase().includes(q);
 
             if((matchName || matchPhone || matchSeat) && (curF=='all' || (curF=='due' && isDue) || (curF=='fol' && isFol))) {
+                // NAYA: Added "Mgmt Alert" button to the record item
                 sH += `<div class="record-item ${isDue ? 'due-alert' : ''}">
                     <b>${s.name}</b> <span style="float:right; color:var(--safe);">₹${s.amount}</span><br>
                     <small>Seat: ${s.seat} | Valid: ${s.fee}</small><br>
@@ -257,6 +317,7 @@
                         <button onclick="window.wa(${s.id}, 1)" class="wa-btn btn-rcpt">Receipt</button>
                         <button onclick="window.wa(${s.id}, 2)" class="wa-btn btn-due">Due</button>
                         <button onclick="window.wa(${s.id}, 3)" class="wa-btn btn-lunch">Lunch</button>
+                        <button onclick="window.wa(${s.id}, 4)" class="wa-btn btn-alert">Mgmt Alert</button>
                     </div>
                     <span class="action-link" style="color:blue" onclick="window.editStu(${s.id})">✎ EDIT</span>
                     <span class="action-link" style="color:red" onclick="window.delStu(${s.id})">✖ DELETE</span>
@@ -298,13 +359,30 @@
         let displayDate = `${parts[2]}/${parts[1]}/${parts[0]}`; 
         let msg = "";
         
-        if(type == 1) msg = `Namaste ${s.name}, fee amount ₹${s.amount} received. Valid till ${displayDate}. Thank you! Happy Studying 📖 - Bapora Library`;
-        if(type == 2) msg = `Namaste ${s.name}, your fee is pending since ${displayDate}. Please update soon.`;
-        if(type == 3) msg = `Namaste ${s.name}, your lunch has been arrived. Please collect it from reception. 🍱🥄`;
-        
-        students[idx].lastRemind = new Date().toISOString();
-        saveToCloud();
-        window.open(`https://wa.me/91${s.phone}?text=${encodeURIComponent(msg)}`);
+        if(type == 1) {
+            msg = `Namaste ${s.name}, fee amount ₹${s.amount} received. Valid till ${displayDate}. Thank you! Happy Studying 📖 - Bapora Library`;
+            students[idx].lastRemind = new Date().toISOString();
+            saveToCloud();
+            window.open(`https://wa.me/91${s.phone}?text=${encodeURIComponent(msg)}`);
+        }
+        else if(type == 2) {
+            msg = `Namaste ${s.name}, your fee is pending since ${displayDate}. Please update soon.`;
+            students[idx].lastRemind = new Date().toISOString();
+            saveToCloud();
+            window.open(`https://wa.me/91${s.phone}?text=${encodeURIComponent(msg)}`);
+        }
+        else if(type == 3) {
+            msg = `Namaste ${s.name}, your lunch has been arrived. Please collect it from reception. 🍱🥄`;
+            students[idx].lastRemind = new Date().toISOString();
+            saveToCloud();
+            window.open(`https://wa.me/91${s.phone}?text=${encodeURIComponent(msg)}`);
+        }
+        // NAYA: Type 4 is for Management Alert
+        else if(type == 4) {
+            msg = `📢 *Seat Payment Alert*\n\nStudent: *${s.name}*\nSeat No: *${s.seat}* (Reserved)\nAmount Paid: *₹${s.amount}*\nValid Till: *${displayDate}*`;
+            // Notice there is no phone number here. It opens WhatsApp and lets you choose who to forward it to!
+            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`);
+        }
     };
 
     window.addExpense = () => {
@@ -356,13 +434,9 @@
         r.onload = (e) => {
             try {
                 const d = JSON.parse(e.target.result);
-                if(d.Students_Snapshot) {
-                    students = d.Students_Snapshot; expenses = d.Detailed_Expenses || [];
-                } else if (d.students) {
-                    students = d.students; expenses = d.expenses || []; history = d.history || [];
-                } else {
-                    alert("Galat file format!"); return;
-                }
+                if(d.Students_Snapshot) { students = d.Students_Snapshot; expenses = d.Detailed_Expenses || []; } 
+                else if (d.students) { students = d.students; expenses = d.expenses || []; history = d.history || []; } 
+                else { alert("Galat file format!"); return; }
                 saveToCloud(); alert("System Successfully Restored from Backup! ✅");
             } catch(err) { alert("Format Error!"); }
         };
