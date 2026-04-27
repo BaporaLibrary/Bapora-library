@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Bapora Command v10.24 (Expired Final Call)</title>
+    <title>Bapora Command v10.25 (Smart Megaphone)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root { --navy: #002347; --gold: #c5a059; --bg: #f4f4f9; --card: #ffffff; --text: #222; --safe: #1b5e20; --danger: #b71c1c; }
@@ -20,14 +20,13 @@
         .follow-up { background: #fff3e0; color: #ef6c00; font-weight: bold; padding: 4px; border-radius: 4px; font-size: 10px; display: inline-block; margin-top: 5px; border: 1px solid #ffe0b2; }
         .remind-date { font-size: 9px; color: #666; display: block; margin-top: 2px; }
         
-        /* UPDATED: Buttons Layout for 5 Buttons */
         .wa-btn-group { display: flex; gap: 4px; margin-top: 8px; flex-wrap: wrap; justify-content: space-between;}
         .wa-btn { flex: 1; min-width: 30%; color: white; padding: 8px 2px; border-radius: 4px; font-size: 10px; font-weight: bold; text-align: center; border: none; cursor: pointer; margin-bottom: 2px; }
         .btn-rcpt { background: var(--safe); }
         .btn-due { background: #ff9800; }
         .btn-lunch { background: #007bff; }
         .btn-alert { background: #8e44ad; }
-        .btn-exp { background: var(--danger); } /* Final Call Button */
+        .btn-exp { background: var(--danger); } 
         
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
         .stat { background: #fff; border: 1px solid var(--navy); padding: 8px; border-radius: 6px; text-align: center; color: var(--navy); }
@@ -225,7 +224,7 @@
             let isFol = false, isExp = false;
             
             const daysOverdue = isDue ? Math.floor((now - new Date(s.fee)) / (1000 * 60 * 60 * 24)) : 0;
-            if(daysOverdue >= 5) isExp = true; // 5 days over due = Expired
+            if(daysOverdue >= 5) isExp = true; 
             
             if(s.lastRemind) {
                 const diff = Math.floor((now - new Date(s.lastRemind)) / (1000 * 60 * 60 * 24));
@@ -243,7 +242,18 @@
 
         if(megaQueue.length === 0) return alert("No valid students found in current filter!");
 
-        let inputMsg = prompt(`You are about to send a bulk message to ${megaQueue.length} students.\n\nEnter your message below:`);
+        // NAYA: Smart Pre-filled Message Logic based on Filter Tab
+        let defaultTemplate = "";
+        if (curF === 'exp') {
+            defaultTemplate = "your library membership expired on [DATE]. We haven't heard from you! Please confirm if you are taking a break or planning to continue, so we can manage your seat reservation accordingly. Thank you! 📚 - Admin, Bapora Library";
+        } else if (curF === 'due' || curF === 'fol') {
+            defaultTemplate = "your fee is pending since [DATE]. Please update soon.";
+        } else {
+            defaultTemplate = "Please type your general announcement here...";
+        }
+
+        let inputMsg = prompt(`Broadcast to ${megaQueue.length} students.\n\nKeep [DATE] in the text, and the system will automatically change it to their exact expiry date!`, defaultTemplate);
+        
         if(inputMsg && inputMsg.trim() !== "") {
             megaMessage = inputMsg; updateMegaUI(); document.getElementById('mega-panel').style.display = 'block';
         }
@@ -258,7 +268,18 @@
     window.fireMegaphone = function() {
         if(megaQueue.length > 0) {
             let s = megaQueue.shift(); 
-            let finalMsg = `Namaste ${s.name},\n\n${megaMessage}`;
+            
+            // Generate exact date for this student
+            let displayDate = "N/A";
+            if(s.fee) {
+                let parts = s.fee.split('-');
+                displayDate = `${parts[2]}/${parts[1]}/${parts[0]}`; 
+            }
+            
+            // NAYA: Replace [DATE] with the student's actual expiry date
+            let customizedBody = megaMessage.replace(/\[DATE\]/g, displayDate);
+            let finalMsg = `Namaste ${s.name},\n\n${customizedBody}`;
+            
             window.open(`https://wa.me/91${s.phone}?text=${encodeURIComponent(finalMsg)}`, '_blank');
             const idx = students.findIndex(x => x.id == s.id);
             if(idx > -1) { students[idx].lastRemind = new Date().toISOString(); saveToCloud(); }
@@ -306,7 +327,6 @@
             let isFol = false, isExp = false, folHTML = "", rDateHTML = "";
             const daysOverdue = isDue ? Math.floor((now - new Date(s.fee)) / (1000 * 60 * 60 * 24)) : 0;
             
-            // Logic: Agar fee expire hue 5 din se zyada ho gaye, toh student Expired list mein chala jayega.
             if(daysOverdue >= 5) {
                 isExp = true;
                 folHTML = `<div class="follow-up" style="background:#ffebee; color:#b71c1c; border-color:#ffcdd2;">🚨 Membership Expired (${daysOverdue} days ago)</div>`;
@@ -396,7 +416,6 @@
             msg = `📢 *Seat Payment Alert*\n\nStudent: *${s.name}*\nSeat No: *${s.seat}* (Reserved)\nAmount Paid: *₹${s.amount}*\nValid Till: *${displayDate}*`;
             window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`);
         }
-        // NAYA: Type 5 is for Expired Final Call
         else if(type == 5) {
             msg = `Namaste ${s.name}, your library membership expired on ${displayDate}. We haven't heard from you! Please confirm if you are taking a break or planning to continue, so we can manage your seat reservation accordingly. Thank you! 📚 - Admin, Bapora Library`;
             students[idx].lastRemind = new Date().toISOString();
