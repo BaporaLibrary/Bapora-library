@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Bapora Command v10.24 (Final Call Upgrade)</title>
+    <title>Bapora Command v10.24 (Expired Final Call)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root { --navy: #002347; --gold: #c5a059; --bg: #f4f4f9; --card: #ffffff; --text: #222; --safe: #1b5e20; --danger: #b71c1c; }
@@ -20,22 +20,22 @@
         .follow-up { background: #fff3e0; color: #ef6c00; font-weight: bold; padding: 4px; border-radius: 4px; font-size: 10px; display: inline-block; margin-top: 5px; border: 1px solid #ffe0b2; }
         .remind-date { font-size: 9px; color: #666; display: block; margin-top: 2px; }
         
-        .wa-btn-group { display: flex; gap: 4px; margin-top: 8px; flex-wrap: wrap; }
-        /* NAYA: Button width adjusted to fit 5 buttons gracefully */
-        .wa-btn { flex: 1; min-width: 18%; color: white; padding: 8px 2px; border-radius: 4px; font-size: 10px; font-weight: bold; text-align: center; border: none; cursor: pointer; }
+        /* UPDATED: Buttons Layout for 5 Buttons */
+        .wa-btn-group { display: flex; gap: 4px; margin-top: 8px; flex-wrap: wrap; justify-content: space-between;}
+        .wa-btn { flex: 1; min-width: 30%; color: white; padding: 8px 2px; border-radius: 4px; font-size: 10px; font-weight: bold; text-align: center; border: none; cursor: pointer; margin-bottom: 2px; }
         .btn-rcpt { background: var(--safe); }
         .btn-due { background: #ff9800; }
         .btn-lunch { background: #007bff; }
-        .btn-alert { background: #8e44ad; } 
-        .btn-expire { background: #34495e; } /* NAYA: Final Call Button Color (Slate) */
+        .btn-alert { background: #8e44ad; }
+        .btn-exp { background: var(--danger); } /* Final Call Button */
         
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
         .stat { background: #fff; border: 1px solid var(--navy); padding: 8px; border-radius: 6px; text-align: center; color: var(--navy); }
         .stat b { font-size: 14px; display: block; }
         .btn-main { padding: 12px; width: 100%; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; color: white; margin-top: 5px; }
         
-        .filter-bar { display: flex; gap: 4px; margin-bottom: 10px; }
-        .btn-filter { flex: 1; font-size: 9px; padding: 8px 2px; border: 1px solid var(--navy); background: white; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .filter-bar { display: flex; gap: 4px; margin-bottom: 10px; flex-wrap: wrap; }
+        .btn-filter { flex: 1; min-width: 20%; font-size: 9px; padding: 8px 2px; border: 1px solid var(--navy); background: white; border-radius: 4px; cursor: pointer; font-weight: bold; }
         .btn-filter.active { background: var(--navy); color: white; }
         
         .action-link { font-size: 10px; font-weight: bold; cursor: pointer; margin-top: 8px; display: inline-block; margin-right: 15px; }
@@ -94,7 +94,8 @@
             <div class="filter-bar">
                 <button id="fAll" class="btn-filter active" onclick="window.setF('all')">ALL</button>
                 <button id="fDue" class="btn-filter" onclick="window.setF('due')">DUE</button>
-                <button id="fFol" class="btn-filter" style="border-color:#ef6c00;" onclick="window.setF('fol')">⚠️ FOLLOW-UP</button>
+                <button id="fFol" class="btn-filter" style="border-color:#ef6c00;" onclick="window.setF('fol')">⚠️ FOLLOW UP</button>
+                <button id="fExp" class="btn-filter" style="border-color:#b71c1c; color:#b71c1c;" onclick="window.setF('exp')">🚨 EXPIRED</button>
             </div>
 
             <button class="btn-main" style="background: linear-gradient(145deg, #f39c12, #d35400); margin-bottom: 15px; font-size:14px;" onclick="window.startMegaphone()">📢 BROADCAST MESSAGE</button>
@@ -210,6 +211,7 @@
         if(f=='all') document.getElementById('fAll').classList.add('active');
         if(f=='due') document.getElementById('fDue').classList.add('active');
         if(f=='fol') document.getElementById('fFol').classList.add('active');
+        if(f=='exp') document.getElementById('fExp').classList.add('active');
         window.render();
     };
 
@@ -220,16 +222,21 @@
 
         students.forEach(s => {
             const isDue = (s.fee && now >= new Date(s.fee));
-            let isFol = false;
+            let isFol = false, isExp = false;
+            
+            const daysOverdue = isDue ? Math.floor((now - new Date(s.fee)) / (1000 * 60 * 60 * 24)) : 0;
+            if(daysOverdue >= 5) isExp = true; // 5 days over due = Expired
+            
             if(s.lastRemind) {
                 const diff = Math.floor((now - new Date(s.lastRemind)) / (1000 * 60 * 60 * 24));
                 isFol = isDue && diff >= 3;
             }
+            
             let matchName = s.name.toLowerCase().includes(q);
             let matchPhone = s.phone && s.phone.includes(q);
             let matchSeat = s.seat && s.seat.toString().toLowerCase().includes(q);
 
-            if((matchName || matchPhone || matchSeat) && (curF=='all' || (curF=='due' && isDue) || (curF=='fol' && isFol))) {
+            if((matchName || matchPhone || matchSeat) && (curF=='all' || (curF=='due' && isDue) || (curF=='fol' && isFol) || (curF=='exp' && isExp))) {
                 if(s.phone) megaQueue.push(s);
             }
         });
@@ -296,11 +303,21 @@
             const isDue = (s.fee && now >= new Date(s.fee));
             if(isDue) dCnt++;
 
-            let isFol = false, folHTML = "", rDateHTML = "";
+            let isFol = false, isExp = false, folHTML = "", rDateHTML = "";
+            const daysOverdue = isDue ? Math.floor((now - new Date(s.fee)) / (1000 * 60 * 60 * 24)) : 0;
+            
+            // Logic: Agar fee expire hue 5 din se zyada ho gaye, toh student Expired list mein chala jayega.
+            if(daysOverdue >= 5) {
+                isExp = true;
+                folHTML = `<div class="follow-up" style="background:#ffebee; color:#b71c1c; border-color:#ffcdd2;">🚨 Membership Expired (${daysOverdue} days ago)</div>`;
+            }
+
             if(s.lastRemind) {
                 const diff = Math.floor((now - new Date(s.lastRemind)) / (1000 * 60 * 60 * 24));
-                isFol = isDue && diff >= 3;
-                if(isFol) folHTML = `<div class="follow-up">⚠️ Follow-up Needed (${diff}d ago)</div>`;
+                if(isDue && diff >= 3 && !isExp) { 
+                    isFol = true;
+                    folHTML = `<div class="follow-up">⚠️ Follow-up Needed (${diff}d ago)</div>`;
+                }
                 rDateHTML = `<span class="remind-date">Last Sent: ${new Date(s.lastRemind).toLocaleDateString()}</span>`;
             }
 
@@ -308,8 +325,7 @@
             let matchPhone = s.phone && s.phone.includes(q);
             let matchSeat = s.seat && s.seat.toString().toLowerCase().includes(q);
 
-            if((matchName || matchPhone || matchSeat) && (curF=='all' || (curF=='due' && isDue) || (curF=='fol' && isFol))) {
-                // NAYA: Added "Expired" (Final Call) button
+            if((matchName || matchPhone || matchSeat) && (curF=='all' || (curF=='due' && isDue) || (curF=='fol' && isFol) || (curF=='exp' && isExp))) {
                 sH += `<div class="record-item ${isDue ? 'due-alert' : ''}">
                     <b>${s.name}</b> <span style="float:right; color:var(--safe);">₹${s.amount}</span><br>
                     <small>Seat: ${s.seat} | Valid: ${s.fee}</small><br>
@@ -319,7 +335,7 @@
                         <button onclick="window.wa(${s.id}, 2)" class="wa-btn btn-due">Due</button>
                         <button onclick="window.wa(${s.id}, 3)" class="wa-btn btn-lunch">Lunch</button>
                         <button onclick="window.wa(${s.id}, 4)" class="wa-btn btn-alert">Mgmt Alert</button>
-                        <button onclick="window.wa(${s.id}, 5)" class="wa-btn btn-expire">Expired</button>
+                        <button onclick="window.wa(${s.id}, 5)" class="wa-btn btn-exp">Final Call</button>
                     </div>
                     <span class="action-link" style="color:blue" onclick="window.editStu(${s.id})">✎ EDIT</span>
                     <span class="action-link" style="color:red" onclick="window.delStu(${s.id})">✖ DELETE</span>
@@ -364,31 +380,27 @@
         if(type == 1) {
             msg = `Namaste ${s.name}, fee amount ₹${s.amount} received. Valid till ${displayDate}. Thank you! Happy Studying 📖 - Bapora Library`;
             students[idx].lastRemind = new Date().toISOString();
-            saveToCloud();
-            window.open(`https://wa.me/91${s.phone}?text=${encodeURIComponent(msg)}`);
+            saveToCloud(); window.open(`https://wa.me/91${s.phone}?text=${encodeURIComponent(msg)}`);
         }
         else if(type == 2) {
             msg = `Namaste ${s.name}, your fee is pending since ${displayDate}. Please update soon.`;
             students[idx].lastRemind = new Date().toISOString();
-            saveToCloud();
-            window.open(`https://wa.me/91${s.phone}?text=${encodeURIComponent(msg)}`);
+            saveToCloud(); window.open(`https://wa.me/91${s.phone}?text=${encodeURIComponent(msg)}`);
         }
         else if(type == 3) {
             msg = `Namaste ${s.name}, your lunch has been arrived. Please collect it from reception. 🍱🥄`;
             students[idx].lastRemind = new Date().toISOString();
-            saveToCloud();
-            window.open(`https://wa.me/91${s.phone}?text=${encodeURIComponent(msg)}`);
+            saveToCloud(); window.open(`https://wa.me/91${s.phone}?text=${encodeURIComponent(msg)}`);
         }
         else if(type == 4) {
             msg = `📢 *Seat Payment Alert*\n\nStudent: *${s.name}*\nSeat No: *${s.seat}* (Reserved)\nAmount Paid: *₹${s.amount}*\nValid Till: *${displayDate}*`;
             window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`);
         }
-        // NAYA: Type 5 is for Final Call (Membership Expired)
+        // NAYA: Type 5 is for Expired Final Call
         else if(type == 5) {
-            msg = `Namaste ${s.name}, your library membership expired on ${displayDate}. Please confirm if you will continue or if you are taking a break, so we can update our seat records. Thank you! 📚 - Admin, Bapora Library`;
+            msg = `Namaste ${s.name}, your library membership expired on ${displayDate}. We haven't heard from you! Please confirm if you are taking a break or planning to continue, so we can manage your seat reservation accordingly. Thank you! 📚 - Admin, Bapora Library`;
             students[idx].lastRemind = new Date().toISOString();
-            saveToCloud();
-            window.open(`https://wa.me/91${s.phone}?text=${encodeURIComponent(msg)}`);
+            saveToCloud(); window.open(`https://wa.me/91${s.phone}?text=${encodeURIComponent(msg)}`);
         }
     };
 
