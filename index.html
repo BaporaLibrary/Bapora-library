@@ -1,183 +1,203 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bapora Library - Premium Secure Center</title>
+    <title>Bapora Library - Secure Control</title>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-auth-compat.js"></script>
     <style>
-        :root { 
-            --navy: #001a33; 
-            --gold: #c5a059; 
-            --green: #2ecc71; 
-            --blue: #3498db; 
-            --red: #e74c3c; 
-            --glass: rgba(255, 255, 255, 0.15);
-        }
+        :root { --navy: #002b5b; --gold: #c5a059; --green: #2ecc71; --blue: #3498db; --red: #e74c3c; }
         
         body { 
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
-            background: linear-gradient(135deg, #001f3f 0%, #003366 50%, #001f3f 100%); 
-            background-attachment: fixed;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%); 
             margin: 0; 
-            padding-bottom: 60px; 
+            padding-bottom: 50px; 
             text-align: center; 
-            color: #fff;
             min-height: 100vh;
         }
         
-        /* PREMIUM HEADER */
+        /* HEADER STYLES */
         .header {
-            background: rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(10px);
-            padding: 40px 20px;
-            border-bottom: 4px solid var(--gold);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            border-radius: 0 0 30px 30px;
-            margin-bottom: 30px;
+            background: radial-gradient(circle at center, #003366 0%, #001a33 100%);
+            color: white;
+            padding: 30px 20px;
+            border-bottom: 5px solid var(--gold);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            border-radius: 0 0 15px 15px;
+            margin-bottom: 20px;
         }
         .header h2 {
             margin: 0;
-            font-size: 38px;
-            font-weight: 900;
-            letter-spacing: 4px;
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: 2px;
             text-transform: uppercase;
-            background: linear-gradient(to bottom, #ffffff, #c0c0c0);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5), 0 0 10px rgba(255,255,255,0.1);
         }
         .tagline {
-            font-size: 14px;
+            font-size: 12px;
             color: var(--gold);
             font-weight: bold;
-            margin-top: 15px;
-            letter-spacing: 2px;
-            background: rgba(0,0,0,0.5); 
+            margin-top: 10px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            background-color: rgba(0,0,0,0.4); 
             display: inline-block;
-            padding: 8px 25px;
-            border-radius: 30px;
-            border: 1px solid var(--gold);
+            padding: 5px 15px;
+            border-radius: 20px;
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
         }
         
-        /* DASHBOARD GRID */
-        .dash { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin: 20px; }
+        /* SOLID 3D DASHBOARD CARDS (No Heavy Glass) */
+        .dash { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin: 15px 20px; }
         .stat-card { 
-            background: rgba(255, 255, 255, 0.1); 
-            backdrop-filter: blur(15px); 
-            -webkit-backdrop-filter: blur(15px);
-            padding: 20px 10px; 
-            border-radius: 20px; 
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            background: #ffffff; /* Solid White Color */
+            padding: 15px 10px; 
+            border-radius: 16px; 
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Base shadow */
+            border: 1px solid #e0e0e0;
+            display: flex; flex-direction: column; align-items: center; 
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); 
             cursor: pointer;
         }
-        .stat-card:hover { transform: translateY(-8px); background: rgba(255, 255, 255, 0.2); }
-        .stat-card.total { border-left: 6px solid #fff; }
-        .stat-card.general { border-left: 6px solid var(--blue); }
-        .stat-card.reserved { border-left: 6px solid var(--red); }
-        .stat-card.vacant { border-left: 6px solid var(--green); }
         
-        .num { font-size: 32px; font-weight: 900; display: block; margin: 5px 0; }
-        .lbl { font-size: 12px; font-weight: 700; color: #ddd; text-transform: uppercase; }
+        /* NAYA: 3D Hover/Pop effect */
+        .stat-card:hover { 
+            transform: translateY(-6px); 
+            box-shadow: 0 12px 20px rgba(0, 0, 0, 0.2); 
+        }
+        .stat-card:active { transform: scale(0.96); }
+        
+        .stat-card.total { border-bottom: 4px solid #555; }
+        .stat-card.general { border-bottom: 4px solid var(--blue); }
+        .stat-card.reserved { border-bottom: 4px solid var(--red); }
+        .stat-card.vacant { border-bottom: 4px solid var(--green); }
+        
+        .stat-icon { font-size: 24px; margin-bottom: 5px; filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.2)); }
+        .num { font-size: 26px; font-weight: 900; margin-bottom: 2px; }
+        .lbl { font-size: 11px; color: #555; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;}
 
-        /* PULSING STATUS BOX */
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.4); }
-            70% { box-shadow: 0 0 0 15px rgba(46, 204, 113, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); }
+        /* ANIMATED SMART STATUS ALERT BOX */
+        @keyframes breathing {
+            0% { transform: scale(1); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+            50% { transform: scale(1.02); box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
+            100% { transform: scale(1); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         }
         #live-status-box {
-            margin: 30px 20px; padding: 18px; border-radius: 50px; font-weight: 800; font-size: 18px; 
-            background: rgba(0, 0, 0, 0.3); border: 2px solid rgba(255,255,255,0.1);
+            text-align:center; margin: 20px; padding: 15px; border-radius: 12px; font-weight: bold; font-size: 1.1rem; 
+            transition: 0.3s; animation: breathing 3s infinite ease-in-out;
+            background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(5px);
         }
-        .active-pulse { animation: pulse 2s infinite; }
 
-        /* SEAT GRID */
+        /* 3D SEAT GRID WITH HOVER EFFECTS */
         .section-box { 
-            background: rgba(0, 0, 0, 0.2); backdrop-filter: blur(5px);
-            margin: 20px; padding: 25px; border-radius: 25px; border: 1px solid rgba(255,255,255,0.05);
+            background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            margin: 15px 20px; padding: 20px; border-radius: 16px; box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1); 
         }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(55px, 1fr)); gap: 15px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); gap: 12px; }
         
         .seat { 
-            width: 55px; height: 60px; border-radius: 12px; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; font-size: 14px; font-weight: bold; 
-            transition: 0.3s; cursor: pointer; position: relative;
+            width: 50px; height: 55px; border-radius: 10px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; font-size: 13px; font-weight: bold; 
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); cursor: pointer;
         }
-        .seat:hover { transform: scale(1.2) rotate(3deg); z-index: 10; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
+        .seat:hover { transform: translateY(-4px) scale(1.05); }
         
-        .st-vacant { background: rgba(255,255,255,0.05); color: var(--green); border: 2px dashed var(--green); }
-        .st-general { background: linear-gradient(145deg, var(--blue), #2980b9); color: white; border: none; box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4); }
-        .st-reserved { background: linear-gradient(145deg, var(--red), #c0392b); color: white; border: none; box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4); }
+        .st-vacant { background: #fff; color: var(--green); border: 2px dashed var(--green); }
+        .st-vacant:hover { box-shadow: 0 6px 12px rgba(46, 204, 113, 0.3); background: #f0fdf4; }
+        
+        .st-general { background: linear-gradient(145deg, #3498db, #2980b9); color: white; border: none; box-shadow: 3px 5px 10px rgba(0,0,0,0.2), inset 1px 1px 2px rgba(255,255,255,0.4); }
+        .st-general:hover { box-shadow: 0 8px 15px rgba(52, 152, 219, 0.5); }
+        
+        .st-reserved { background: linear-gradient(145deg, #e74c3c, #c0392b); color: white; border: none; box-shadow: 3px 5px 10px rgba(0,0,0,0.2), inset 1px 1px 2px rgba(255,255,255,0.4); }
+        .st-reserved:hover { box-shadow: 0 8px 15px rgba(231, 76, 60, 0.5); }
 
-        /* ADMIN & BUTTONS */
-        .admin-trigger { background: none; border: none; color: rgba(255,255,255,0.05); padding: 20px; width: 100%; cursor: pointer; }
-        #admin-panel { display: none; margin: 20px; padding: 25px; background: #fff; color: #333; border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
-        input { padding: 12px; margin: 10px; width: 85%; border-radius: 10px; border: 1px solid #ddd; font-size: 16px; }
-        .btn { padding: 15px 30px; background: var(--navy); color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; }
+        .icon-stu { font-size: 18px; margin-bottom: 2px; line-height: 1; filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.3)); }
+        .seat-no { font-size: 12px; line-height: 1; }
 
-        /* WHATSAPP */
-        .whatsapp-float { position: fixed; bottom: 25px; right: 25px; background-color: #25d366; color: #FFF; border-radius: 50px; width: 65px; height: 65px; display: flex; justify-content: center; align-items: center; box-shadow: 0 10px 25px rgba(37, 211, 102, 0.5); transition: 0.3s; }
-        .whatsapp-float:hover { transform: scale(1.1); }
+        /* STEALTH ADMIN SECTION */
+        .admin-trigger { 
+            background: transparent; /* Pura transparent */
+            border: none; 
+            color: transparent; /* Text gayab */
+            height: 60px; /* Click karne ke liye jagah */
+            width: 100%; 
+            cursor: default; /* Arrow pointer nahi banega */
+            outline: none;
+            margin-top: 10px;
+        }
+        
+        #admin-panel { display: none; margin: 20px; padding: 20px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 2px solid var(--navy); border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        input { padding: 12px; margin: 8px; width: 85%; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; outline: none; background: rgba(255,255,255,0.8); }
+        .btn { padding: 12px 25px; background: linear-gradient(145deg, var(--navy), #001f3f); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.3); }
+
+        /* WhatsApp */
+        .whatsapp-float { position: fixed; width: 60px; height: 60px; bottom: 20px; right: 20px; background-color: #25d366; color: #FFF; border-radius: 50px; box-shadow: 2px 4px 15px rgba(37, 211, 102, 0.4); z-index: 1000; display: flex; justify-content: center; align-items: center; text-decoration: none; transition: all 0.3s ease; }
+        .whatsapp-float:hover { transform: scale(1.1) rotate(-5deg); }
+        .whatsapp-icon { width: 35px; height: 35px; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h2>Bapora Library</h2>
+        <h2>BAPORA LIBRARY</h2>
         <div class="tagline">⚓ VETERAN SECURE SYSTEM ⚓</div>
     </div>
 
     <div class="dash">
-        <div class="stat-card total" onclick="alert('Total capacity of Bapora Library: 57 Seats')">
-            <span id="total-count" class="num">57</span>
-            <span class="lbl">Capacity</span>
+        <div class="stat-card total">
+            <div class="stat-icon">🏛️</div>
+            <span id="total-count" class="num" style="color:#2c3e50">57</span>
+            <span class="lbl">Total Seats</span>
         </div>
-        <div class="stat-card general" onclick="alert('Current students using general seating.')">
+        <div class="stat-card general">
+            <div class="stat-icon">📘</div>
             <span id="gen-count" class="num" style="color:var(--blue)">0</span>
             <span class="lbl">General</span>
         </div>
-        <div class="stat-card reserved" onclick="alert('These seats are currently booked/reserved.')">
+        <div class="stat-card reserved">
+            <div class="stat-icon">📕</div>
             <span id="res-count" class="num" style="color:var(--red)">0</span>
             <span class="lbl">Reserved</span>
         </div>
-        <div class="stat-card vacant" onclick="alert('Congratulations! These seats are available. Click WhatsApp to book!')">
+        <div class="stat-card vacant">
+            <div class="stat-icon">✅</div>
             <span id="vac-count" class="num" style="color:var(--green)">0</span>
-            <span class="lbl">Available</span>
+            <span class="lbl">Vacant</span>
         </div>
     </div>
 
-    <div id="live-status-box" class="active-pulse">
-        <span id="seat-status">SCANNING RADAR...</span>
+    <div id="live-status-box">
+        <span id="seat-status">Checking Status...</span>
     </div>
 
     <div class="section-box">
         <div class="grid" id="seat-grid"></div>
-        <div style="margin-top: 20px; font-size: 11px; opacity: 0.6;">
-            Legend: 🟢 Vacant | 🔵 General | 🔴 Reserved
-        </div>
     </div>
 
-    <button class="admin-trigger" onclick="showAdmin()">Admin Access</button>
+    <button class="admin-trigger" onclick="showAdmin()"></button>
 
     <div id="admin-panel">
-        <h3 style="margin-top:0;">MASTER CONTROL 🔐</h3>
-        <input type="email" id="email" placeholder="Admin Email">
+        <h3 style="color:var(--navy); margin-top:0; text-shadow: 1px 1px 2px rgba(0,0,0,0.1);">MASTER CONTROL 🔐</h3>
+        <input type="email" id="email" placeholder="Email Address">
         <input type="password" id="pass" placeholder="Password">
-        <button class="btn" onclick="handleLogin()">UNLOCK CONSOLE ⚓</button>
+        <button class="btn" onclick="handleLogin()">LOGIN ⚓</button>
         
-        <div id="admin-controls" style="display:none; margin-top:25px; border-top: 1px solid #eee; padding-top:20px;">
-            <div id="admin-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(42px, 1fr)); gap:8px; margin-bottom:20px;"></div>
-            <button class="btn" style="background:var(--green);" onclick="updateCloud()">SYNC TO CLOUD ✅</button>
-            <button class="btn" style="background:#666;" onclick="location.reload()">LOGOUT</button>
+        <div id="admin-controls" style="display:none; margin-top:20px; border-top: 2px solid #eee; padding-top:20px;">
+            <div id="admin-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); gap:5px; margin-bottom:15px;"></div>
+            <button class="btn" style="width:100%; background:linear-gradient(145deg, #2ecc71, #27ae60);" onclick="updateCloud()">SYNC TO DATABASE</button>
+            <button class="btn" style="width:100%; background:linear-gradient(145deg, #e74c3c, #c0392b); margin-top:10px;" onclick="location.reload()">LOGOUT</button>
         </div>
     </div>
 
-    <a href="https://wa.me/919393681565?text=Hello%20Sir!%20I%20want%20to%20book%20a%20seat%20in%20Bapora%20Library." class="whatsapp-float" target="_blank">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" width="35" alt="WhatsApp">
+    <a href="https://wa.me/919393681565?text=Hello%20Sir!%20I%20have%20a%20query%20regarding%20the%20Bapora%20Library." class="whatsapp-float" target="_blank" rel="noopener noreferrer">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="Chat on WhatsApp" class="whatsapp-icon">
     </a>
 
     <script>
@@ -210,38 +230,44 @@
                 div.className = status==='g'?'seat st-general':status==='r'?'seat st-reserved':'seat st-vacant';
                 
                 if(status === 'g' || status === 'r') {
-                    div.innerHTML = `<span style="font-size:16px;">👤</span><span style="font-size:10px;">${i}</span>`;
+                    div.innerHTML = `<div class="icon-stu">👤</div><div class="seat-no">${i}</div>`;
                 } else {
-                    div.innerHTML = `<span>${i}</span>`;
+                    div.innerHTML = `<div class="seat-no" style="font-size:16px;">${i}</div>`;
                 }
 
                 if(status==='g') g++; if(status==='r') r++;
                 grid.appendChild(div);
             }
             
+            document.getElementById('total-count').innerText = total;
             document.getElementById('gen-count').innerText = g;
             document.getElementById('res-count').innerText = r;
             document.getElementById('vac-count').innerText = total - (g+r);
 
-            updateLiveStatus(total - (g+r));
+            updateLiveStatus(g + r);
         }
 
-        function updateLiveStatus(available) {
+        function updateLiveStatus(totalOccupied) {
+            const totalSeats = 57;
+            const available = totalSeats - totalOccupied;
             const statusText = document.getElementById("seat-status");
             const statusBox = document.getElementById("live-status-box");
 
             if (available > 10) {
                 statusText.innerText = "🟢 STATUS: SEATS AVAILABLE";
-                statusText.style.color = "#2ecc71"; 
-                statusBox.className = "active-pulse";
+                statusText.style.color = "#196f3d"; 
+                statusBox.style.border = "2px solid rgba(46, 204, 113, 0.5)";
+                statusBox.style.backgroundColor = "rgba(234, 237, 237, 0.8)"; 
             } else if (available > 0) {
-                statusText.innerText = "🟡 STATUS: FILLING FAST (" + available + " LEFT)";
-                statusText.style.color = "#f1c40f"; 
-                statusBox.className = "active-pulse";
+                statusText.innerText = "🟡 STATUS: FILLING FAST (Only " + available + " Left)";
+                statusText.style.color = "#d68910"; 
+                statusBox.style.border = "2px solid rgba(243, 156, 18, 0.5)";
+                statusBox.style.backgroundColor = "rgba(254, 249, 231, 0.8)"; 
             } else {
-                statusText.innerText = "🔴 STATUS: LIBRARY FULL";
-                statusText.style.color = "#e74c3c";
-                statusBox.className = "";
+                statusText.innerText = "🔴 STATUS: FULLY OCCUPIED";
+                statusText.style.color = "#c0392b"; 
+                statusBox.style.border = "2px solid rgba(231, 76, 60, 0.5)";
+                statusBox.style.backgroundColor = "rgba(253, 237, 236, 0.8)"; 
             }
         }
 
@@ -255,21 +281,21 @@
             const pass = document.getElementById('pass').value;
             auth.signInWithEmailAndPassword(email, pass)
                 .then(() => {
-                    alert("System Unlocked, Petty Officer!");
+                    alert("Welcome Petty Officer! System Unlocked.");
                     document.getElementById('admin-controls').style.display='block';
                     renderAdmin();
                 })
-                .catch(e => alert("ACCESS DENIED!"));
+                .catch(e => alert("ACCESS DENIED: Wrong Email or Password."));
         }
 
         function renderAdmin() {
             const ag = document.getElementById('admin-grid'); ag.innerHTML = "";
             for(let i=1; i<=57; i++){
                 const b = document.createElement('button');
-                b.innerText = i; b.style.padding="10px 5px"; b.style.border="1px solid #ccc"; b.style.borderRadius="8px";
+                b.innerText = i; b.style.padding="8px"; b.style.border="none"; b.style.color="white"; b.style.borderRadius="6px";
                 let status = seatData[i] || 'v';
-                b.style.background = (status==='g')?'#3498db':(status==='r')?'#e74c3c':'#eee';
-                b.style.color = (status==='v')?'#333':'white';
+                b.style.background = (status==='g')?'#3498db':(status==='r')?'#e74c3c':'#2ecc71';
+                b.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
                 b.onclick = () => {
                     if(!seatData[i] || seatData[i]==='v') seatData[i]='g';
                     else if(seatData[i]==='g') seatData[i]='r';
@@ -282,16 +308,17 @@
 
         function updateCloud() {
             db.ref('seats').set(seatData).then(() => {
-                alert("Database Updated! ✅");
-            }).catch(e => alert("Permission Denied!"));
+                alert("Database Synced! ✅");
+            }).catch(e => alert("Permission Denied! Log in first."));
         }
         
-        // Security Controls
         document.addEventListener('contextmenu', event => event.preventDefault()); 
         document.onkeydown = function(e) {
-            if(e.keyCode == 123) return false; 
-            if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false; 
-            if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false; 
+            if(e.keyCode == 123) { return false; } 
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) { return false; } 
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) { return false; } 
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) { return false; } 
+            if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) { return false; } 
         };
     </script>
 </body>
