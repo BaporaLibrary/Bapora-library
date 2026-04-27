@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Bapora Command v10.23 (Mgmt Alert Upgrade)</title>
+    <title>Bapora Command v10.24 (Final Call Upgrade)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root { --navy: #002347; --gold: #c5a059; --bg: #f4f4f9; --card: #ffffff; --text: #222; --safe: #1b5e20; --danger: #b71c1c; }
@@ -21,11 +21,13 @@
         .remind-date { font-size: 9px; color: #666; display: block; margin-top: 2px; }
         
         .wa-btn-group { display: flex; gap: 4px; margin-top: 8px; flex-wrap: wrap; }
-        .wa-btn { flex: 1; min-width: 22%; color: white; padding: 8px 2px; border-radius: 4px; font-size: 10px; font-weight: bold; text-align: center; border: none; cursor: pointer; }
+        /* NAYA: Button width adjusted to fit 5 buttons gracefully */
+        .wa-btn { flex: 1; min-width: 18%; color: white; padding: 8px 2px; border-radius: 4px; font-size: 10px; font-weight: bold; text-align: center; border: none; cursor: pointer; }
         .btn-rcpt { background: var(--safe); }
         .btn-due { background: #ff9800; }
         .btn-lunch { background: #007bff; }
-        .btn-alert { background: #8e44ad; } /* NAYA: Alert Button Color */
+        .btn-alert { background: #8e44ad; } 
+        .btn-expire { background: #34495e; } /* NAYA: Final Call Button Color (Slate) */
         
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
         .stat { background: #fff; border: 1px solid var(--navy); padding: 8px; border-radius: 6px; text-align: center; color: var(--navy); }
@@ -277,7 +279,6 @@
         if(amount && confirm(`Record Saved! ✅\nDo you want to send a WhatsApp receipt to ${name} for ₹${amount}?`)) {
             window.wa(data.id, 1);
         } 
-        // NAYA: Ask to send Mgmt Alert immediately after saving
         else if (amount && confirm(`Do you want to alert the Management Team about this payment?`)) {
             window.wa(data.id, 4);
         }
@@ -308,7 +309,7 @@
             let matchSeat = s.seat && s.seat.toString().toLowerCase().includes(q);
 
             if((matchName || matchPhone || matchSeat) && (curF=='all' || (curF=='due' && isDue) || (curF=='fol' && isFol))) {
-                // NAYA: Added "Mgmt Alert" button to the record item
+                // NAYA: Added "Expired" (Final Call) button
                 sH += `<div class="record-item ${isDue ? 'due-alert' : ''}">
                     <b>${s.name}</b> <span style="float:right; color:var(--safe);">₹${s.amount}</span><br>
                     <small>Seat: ${s.seat} | Valid: ${s.fee}</small><br>
@@ -318,6 +319,7 @@
                         <button onclick="window.wa(${s.id}, 2)" class="wa-btn btn-due">Due</button>
                         <button onclick="window.wa(${s.id}, 3)" class="wa-btn btn-lunch">Lunch</button>
                         <button onclick="window.wa(${s.id}, 4)" class="wa-btn btn-alert">Mgmt Alert</button>
+                        <button onclick="window.wa(${s.id}, 5)" class="wa-btn btn-expire">Expired</button>
                     </div>
                     <span class="action-link" style="color:blue" onclick="window.editStu(${s.id})">✎ EDIT</span>
                     <span class="action-link" style="color:red" onclick="window.delStu(${s.id})">✖ DELETE</span>
@@ -377,11 +379,16 @@
             saveToCloud();
             window.open(`https://wa.me/91${s.phone}?text=${encodeURIComponent(msg)}`);
         }
-        // NAYA: Type 4 is for Management Alert
         else if(type == 4) {
             msg = `📢 *Seat Payment Alert*\n\nStudent: *${s.name}*\nSeat No: *${s.seat}* (Reserved)\nAmount Paid: *₹${s.amount}*\nValid Till: *${displayDate}*`;
-            // Notice there is no phone number here. It opens WhatsApp and lets you choose who to forward it to!
             window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`);
+        }
+        // NAYA: Type 5 is for Final Call (Membership Expired)
+        else if(type == 5) {
+            msg = `Namaste ${s.name}, your library membership expired on ${displayDate}. Please confirm if you will continue or if you are taking a break, so we can update our seat records. Thank you! 📚 - Admin, Bapora Library`;
+            students[idx].lastRemind = new Date().toISOString();
+            saveToCloud();
+            window.open(`https://wa.me/91${s.phone}?text=${encodeURIComponent(msg)}`);
         }
     };
 
