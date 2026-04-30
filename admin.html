@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Bapora Command v10.25 (Smart Megaphone)</title>
+    <title>Bapora Command v10.26 (Auto Month-End Close)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root { --navy: #002347; --gold: #c5a059; --bg: #f4f4f9; --card: #ffffff; --text: #222; --safe: #1b5e20; --danger: #b71c1c; }
@@ -110,6 +110,14 @@
                     <input type="file" id="importFile" style="font-size:10px;" accept=".txt">
                     <button class="btn-main" style="background:var(--navy);" onclick="window.importData()">🔄 UPLOAD/RESTORE TO CLOUD</button>
                 </div>
+                
+                <!-- DYNAMIC MONTHLY RESET SECTION -->
+                <div style="border-top:2px solid var(--danger); margin-top:15px; padding-top:15px;">
+                    <h4 style="color:var(--danger); margin:0;">🏁 MONTH-END CLOSE</h4>
+                    <p style="font-size:11px; margin:5px 0;">Reset Fees & Expenses to 0. Students list remains safe.</p>
+                    <button class="btn-main" style="background:var(--danger); font-size:14px;" onclick="window.closeMonthlyLedger()">🚀 CLOSE CURRENT MONTH & RESET</button>
+                </div>
+                
                 <button class="btn-main" style="background:#b71c1c; margin-top:15px;" onclick="window.logout()">LOGOUT</button>
             </div>
         </div>
@@ -242,7 +250,6 @@
 
         if(megaQueue.length === 0) return alert("No valid students found in current filter!");
 
-        // NAYA: Smart Pre-filled Message Logic based on Filter Tab
         let defaultTemplate = "";
         if (curF === 'exp') {
             defaultTemplate = "your library membership expired on [DATE]. We haven't heard from you! Please confirm if you are taking a break or planning to continue, so we can manage your seat accordingly. Thank you! 📚 - Admin, Bapora Library";
@@ -269,14 +276,12 @@
         if(megaQueue.length > 0) {
             let s = megaQueue.shift(); 
             
-            // Generate exact date for this student
             let displayDate = "N/A";
             if(s.fee) {
                 let parts = s.fee.split('-');
                 displayDate = `${parts[2]}/${parts[1]}/${parts[0]}`; 
             }
             
-            // NAYA: Replace [DATE] with the student's actual expiry date
             let customizedBody = megaMessage.replace(/\[DATE\]/g, displayDate);
             let finalMsg = `Namaste ${s.name},\n\n${customizedBody}`;
             
@@ -493,6 +498,53 @@
         const blob = new Blob([csv], { type: 'text/csv' });
         const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
         a.download = "Library_Report.csv"; a.click();
+    };
+
+    // --- DYNAMIC MONTHLY RESET FUNCTION ---
+    window.closeMonthlyLedger = function() {
+        if (!confirm("Commander, kya aap sure hain? Is mahine ka financial data reset ho jayega aur History mein save ho jayega! (Sytem pehle backup download karega)")) return;
+
+        try {
+            // 1. Auto Backup
+            window.exportData(); 
+            
+            // 2. Dynamic Month Calculation for History & Alerts
+            const now = new Date();
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            const currentMonthName = monthNames[now.getMonth()];
+            const nextMonthName = monthNames[(now.getMonth() + 1) % 12]; // Automatically gets the next month
+
+            const totalFees = students.reduce((a, b) => a + (parseFloat(b.amount) || 0), 0);
+            const totalExp = expenses.reduce((a, b) => a + (parseFloat(b.amt) || 0), 0);
+            
+            const monthlySummary = {
+                month: currentMonthName + " " + now.getFullYear(),
+                fee: totalFees,
+                exp: totalExp,
+                profit: (totalFees - totalExp)
+            };
+
+            // 3. Reset Data
+            students = students.map(s => ({
+                ...s,
+                amount: "0",      
+                lastRemind: null  
+            }));
+
+            expenses = []; 
+
+            if (!history) history = [];
+            history.push(monthlySummary);
+
+            // 4. Save to Firebase
+            saveToCloud();
+
+            alert(`Mission Successful! ${currentMonthName} Ledger closed. ${nextMonthName} is now active! 📈`);
+            location.reload();
+
+        } catch (err) {
+            alert("Error during reset: " + err.message);
+        }
     };
 </script>
 </body>
