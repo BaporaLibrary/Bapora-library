@@ -199,6 +199,52 @@
             document.getElementById('loginError').innerText = "❌ Wrong Email or Password!";
         });
     };
+    // NAYA ENGINE: DAILY MASTER LOG CALCULATOR (JS LESSON 1)
+    window.showDailyLog = function() {
+        // 1. Box ko target karna
+        const displayBox = document.getElementById('dailyLogDisplay');
+        
+        // 2. Agar box pehle se khula hai, toh use band kar do (Toggle feature)
+        if (displayBox.style.display === 'block') {
+            displayBox.style.display = 'none';
+            return;
+        }
+
+        // 3. Counting Logic: Har date par kitne bacche the, ginna shuru karo
+        let dailyCounts = {};
+        
+        students.forEach(s => {
+            if (s.attendanceHistory) {
+                s.attendanceHistory.forEach(date => {
+                    // Agar date dictionary mein hai, toh +1 kar do, warna naya 1 bana do
+                    if (dailyCounts[date]) {
+                        dailyCounts[date] = dailyCounts[date] + 1;
+                    } else {
+                        dailyCounts[date] = 1;
+                    }
+                });
+            }
+        });
+
+        // 4. Data ko screen par dikhane ke liye Design (HTML) banana
+        let resultHTML = "<b style='color:#0277bd;'>Radar Report:</b><br><ul style='padding-left:20px; margin-top:5px; color:#333;'>";
+        
+        // Dates ko latest se purani ki taraf sort (arrange) karna
+        let dates = Object.keys(dailyCounts).sort().reverse(); 
+        
+        if (dates.length === 0) {
+            resultHTML += "<li>Abhi tak koi attendance data nahi hai.</li>";
+        } else {
+            dates.forEach(d => {
+                resultHTML += `<li style="margin-bottom:3px;">${d} : <b>${dailyCounts[d]} Students Present</b></li>`;
+            });
+        }
+        resultHTML += "</ul>";
+
+        // 5. Result ko box ke andar daalna aur screen par dikhana
+        displayBox.innerHTML = resultHTML;
+        displayBox.style.display = 'block'; 
+    };
 
     window.logout = () => signOut(auth);
 
