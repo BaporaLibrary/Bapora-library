@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Bapora Command v10.27 (Auto Reset & Memory Flag)</title>
+    <title>Bapora Command v10.29 (Full Attendance History)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root { --navy: #002347; --gold: #c5a059; --bg: #f4f4f9; --card: #ffffff; --text: #222; --safe: #1b5e20; --danger: #b71c1c; }
@@ -28,7 +28,8 @@
         .btn-alert { background: #8e44ad; }
         .btn-exp { background: var(--danger); } 
         
-        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+        .stat-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
         .stat { background: #fff; border: 1px solid var(--navy); padding: 8px; border-radius: 6px; text-align: center; color: var(--navy); }
         .stat b { font-size: 14px; display: block; }
         .btn-main { padding: 12px; width: 100%; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; color: white; margin-top: 5px; }
@@ -68,9 +69,12 @@
         </div>
 
         <div id="lib-tab" class="tab-content active">
-            <div class="stat-grid">
+            <div class="stat-grid-3">
                 <div class="stat"><small>Students</small><b id="countTotal">0</b></div>
-                <div class="stat" style="color:var(--danger);"><small>Due Now</small><b id="countDue">0</b></div>
+                <div class="stat" style="color:#0277bd; border-color:#0277bd;"><small>Present</small><b id="countPresent">0</b></div>
+                <div class="stat" style="color:var(--danger); border-color:var(--danger);"><small>Due Now</small><b id="countDue">0</b></div>
+            </div>
+            <div class="stat-grid">
                 <div class="stat" style="color:var(--safe); border-color:var(--safe);"><small>Fees This Mnt</small><b id="sumFees">₹0</b></div>
                 <div class="stat" style="color:var(--danger); border-color:var(--danger);"><small>Exp This Mnt</small><b id="sumExp">₹0</b></div>
             </div>
@@ -78,9 +82,14 @@
             <div class="section">
                 <input type="hidden" id="editId">
                 <input type="text" id="stuName" placeholder="Student Name">
-                <div style="display:flex; gap:5px;">
-                    <input type="text" id="stuSeat" placeholder="Seat" style="flex:1;">
-                    <input type="number" id="stuAmt" placeholder="Fee Paid (₹)" style="flex:1;">
+                <div style="display:flex; gap:4px;">
+                    <input type="text" id="stuSeat" placeholder="Seat" style="width:25%;">
+                    <select id="stuShift" style="width:40%; font-size:12px; padding:8px;">
+                        <option value="Full">Full Day</option>
+                        <option value="Morning">Morning</option>
+                        <option value="Evening">Evening</option>
+                    </select>
+                    <input type="number" id="stuAmt" placeholder="Paid(₹)" style="width:35%;">
                 </div>
                 <input type="tel" id="stuPhone" placeholder="WhatsApp No">
                 <input type="date" id="stuFeeDate">
@@ -113,7 +122,7 @@
                 
                 <div style="border-top:2px solid var(--danger); margin-top:15px; padding-top:15px;">
                     <h4 style="color:var(--danger); margin:0;">🏁 MONTH-END CLOSE</h4>
-                    <p style="font-size:11px; margin:5px 0;">Reset Fees & Expenses to 0. (Last paid amount will be saved in grey flag)</p>
+                    <p style="font-size:11px; margin:5px 0;">Reset Fees & Expenses to 0. (Last paid amount saved in grey flag)</p>
                     <button class="btn-main" style="background:var(--danger); font-size:14px;" onclick="window.closeMonthlyLedger()">🚀 CLOSE CURRENT MONTH & RESET</button>
                 </div>
                 
@@ -251,7 +260,7 @@
 
         let defaultTemplate = "";
         if (curF === 'exp') {
-            defaultTemplate = "your library membership expired on [DATE]. We haven't heard from you! Please confirm if you are taking a break or planning to continue, so we can manage your seat accordingly. Thank you! 📚 - Admin, Bapora Library";
+            defaultTemplate = "your library membership expired on [DATE]. We haven't heard from you! Please confirm if you are taking a break or planning to continue. Thank you! 📚 - Admin, Bapora Library";
         } else if (curF === 'due' || curF === 'fol') {
             defaultTemplate = "your fee is pending since [DATE]. Please update soon.";
         } else {
@@ -274,13 +283,11 @@
     window.fireMegaphone = function() {
         if(megaQueue.length > 0) {
             let s = megaQueue.shift(); 
-            
             let displayDate = "N/A";
             if(s.fee) {
                 let parts = s.fee.split('-');
                 displayDate = `${parts[2]}/${parts[1]}/${parts[0]}`; 
             }
-            
             let customizedBody = megaMessage.replace(/\[DATE\]/g, displayDate);
             let finalMsg = `Namaste ${s.name},\n\n${customizedBody}`;
             
@@ -293,6 +300,33 @@
 
     window.stopMegaphone = function() { megaQueue = []; document.getElementById('mega-panel').style.display = 'none'; };
 
+    // --- NAYA: ROLL CALL (FULL HISTORY) FUNCTION ---
+    window.markPresent = (id) => {
+        const idx = students.findIndex(x => x.id == id);
+        const todayStr = new Date().toLocaleDateString('en-GB'); // Ex: "30/04/2026"
+        
+        if (!students[idx].attendanceHistory) students[idx].attendanceHistory = [];
+        
+        const dateIndex = students[idx].attendanceHistory.indexOf(todayStr);
+        if (dateIndex > -1) {
+            students[idx].attendanceHistory.splice(dateIndex, 1); // Remove date if already marked
+        } else {
+            students[idx].attendanceHistory.push(todayStr); // Add date to history
+        }
+        saveToCloud();
+    };
+
+    // --- NAYA: VIEW HISTORY BUTTON FUNCTION ---
+    window.viewAttendance = (id) => {
+        const s = students.find(x => x.id == id);
+        const hist = s.attendanceHistory || [];
+        if (hist.length === 0) {
+            alert(`⚠️ No attendance record found for ${s.name} yet.`);
+        } else {
+            alert(`📅 ATTENDANCE HISTORY FOR ${s.name.toUpperCase()}\n\nTotal Days Present: ${hist.length}\n\nDates Present:\n${hist.join("\n")}`);
+        }
+    };
+
     window.saveStudent = () => {
         const id = document.getElementById('editId').value || Date.now();
         const name = document.getElementById('stuName').value;
@@ -300,11 +334,11 @@
         const fee = document.getElementById('stuFeeDate').value;
         const amount = document.getElementById('stuAmt').value;
         const seat = document.getElementById('stuSeat').value;
+        const shift = document.getElementById('stuShift').value;
         
         if(!name || !phone || !fee) return alert("Fill Name, Phone and Date");
         const idx = students.findIndex(s => s.id == id);
         
-        // NAYA: Save karne par bhi lastAmount safe rakhein
         const data = { 
             id: parseInt(id), 
             name, 
@@ -312,8 +346,10 @@
             fee, 
             amount, 
             seat, 
+            shift, 
             lastRemind: students[idx]?.lastRemind || null, 
             lastAmount: students[idx]?.lastAmount || "0", 
+            attendanceHistory: students[idx]?.attendanceHistory || [], // PRESERVE HISTORY
             isCounted: true 
         };
         
@@ -326,19 +362,24 @@
         else if (amount && confirm(`Do you want to alert the Management Team about this payment?`)) {
             window.wa(data.id, 4);
         }
-        
         window.clearForms();
     };
 
     window.render = () => {
         const q = document.getElementById('stuSearch').value.toLowerCase();
-        let sH = "", dCnt = 0, tFees = 0;
+        let sH = "", dCnt = 0, tFees = 0, pCnt = 0;
         const now = new Date();
+        const todayStr = now.toLocaleDateString('en-GB'); 
         
         students.forEach(s => {
             if(s.isCounted !== false) tFees += parseFloat(s.amount) || 0;
             const isDue = (s.fee && now >= new Date(s.fee));
             if(isDue) dCnt++;
+            
+            // ROLL CALL LOGIC (Check Array)
+            let histArray = s.attendanceHistory || [];
+            let isPresent = histArray.includes(todayStr);
+            if(isPresent) pCnt++;
 
             let isFol = false, isExp = false, folHTML = "", rDateHTML = "";
             const daysOverdue = isDue ? Math.floor((now - new Date(s.fee)) / (1000 * 60 * 60 * 24)) : 0;
@@ -357,7 +398,6 @@
                 rDateHTML = `<span class="remind-date">Last Sent: ${new Date(s.lastRemind).toLocaleDateString()}</span>`;
             }
 
-            // NAYA: Fee Display Logic (Memory Flag)
             let feeDisplayHTML = "";
             if (s.amount > 0) {
                 feeDisplayHTML = `<span style="float:right; color:var(--safe); font-weight:bold;">₹${s.amount}</span>`;
@@ -369,14 +409,18 @@
                 `;
             }
 
+            // BUTTONS: Present Toggle + View History Link
+            let presentBtn = `<button onclick="window.markPresent(${s.id})" style="border:1px solid ${isPresent ? '#28a745' : '#ccc'}; background:${isPresent ? '#e8f5e9' : '#fff'}; color:${isPresent ? '#28a745' : '#666'}; border-radius:4px; padding:2px 6px; font-size:10px; cursor:pointer; margin-left:10px;">${isPresent ? '✅ Present' : '☑️ Mark Present'}</button>`;
+            let histLink = `<span style="font-size:10px; color:#1976d2; cursor:pointer; margin-left:8px; text-decoration:underline;" onclick="window.viewAttendance(${s.id})">📅 History (${histArray.length})</span>`;
+
             let matchName = s.name.toLowerCase().includes(q);
             let matchPhone = s.phone && s.phone.includes(q);
             let matchSeat = s.seat && s.seat.toString().toLowerCase().includes(q);
 
             if((matchName || matchPhone || matchSeat) && (curF=='all' || (curF=='due' && isDue) || (curF=='fol' && isFol) || (curF=='exp' && isExp))) {
                 sH += `<div class="record-item ${isDue ? 'due-alert' : ''}">
-                    <b>${s.name}</b> ${feeDisplayHTML}<br>
-                    <small>Seat: ${s.seat} | Valid: ${s.fee}</small><br>
+                    <b>${s.name}</b> ${presentBtn} ${histLink} ${feeDisplayHTML}<br>
+                    <small>Seat: ${s.seat} <span style="background:#eee; padding:1px 5px; border-radius:3px; font-size:9px;">${s.shift || 'Full'}</span> | Valid: ${s.fee}</small><br>
                     ${rDateHTML} ${folHTML}
                     <div class="wa-btn-group">
                         <button onclick="window.wa(${s.id}, 1)" class="wa-btn btn-rcpt">Receipt</button>
@@ -393,6 +437,7 @@
 
         const tE = expenses.reduce((a, b) => a + (parseFloat(b.amt) || 0), 0);
         document.getElementById('countTotal').innerText = students.length;
+        document.getElementById('countPresent').innerText = pCnt; 
         document.getElementById('countDue').innerText = dCnt;
         document.getElementById('sumFees').innerText = '₹' + tFees;
         document.getElementById('sumExp').innerText = '₹' + tE;
@@ -411,9 +456,20 @@
         });
         document.getElementById('expList').innerHTML = eH || "<small><br>No expenses logged.</small>";
 
-        let hH = "<b>📜 MONTHLY REPORTS</b>";
+        let hH = "<b>📜 MONTHLY REPORTS & TACTICAL CHARTS</b>";
+        let maxVal = Math.max(...history.map(h => Math.max(h.fee, h.exp)), 1); 
+        
         [...history].reverse().forEach(h => { 
-            hH += `<div class="history-card"><b>${h.month}</b><br>Fees: ₹${h.fee} | Exp: ₹${h.exp} | Profit: ₹${h.profit}</div>`; 
+            let wF = (h.fee / maxVal) * 100;
+            let wE = (h.exp / maxVal) * 100;
+            
+            hH += `<div class="history-card">
+                <b>${h.month}</b><br>
+                <div style="font-size:10px; display:flex; justify-content:space-between; margin-top:4px;"><span>Income: ₹${h.fee}</span><span>Cost: ₹${h.exp}</span></div>
+                <div style="background:#ddd; height:5px; margin:2px 0; border-radius:2px;"><div style="width:${wF}%; background:var(--safe); height:100%; border-radius:2px;"></div></div>
+                <div style="background:#ddd; height:5px; margin:2px 0 6px 0; border-radius:2px;"><div style="width:${wE}%; background:var(--danger); height:100%; border-radius:2px;"></div></div>
+                <b>Profit: ₹${h.profit}</b>
+            </div>`; 
         });
         document.getElementById('historyList').innerHTML = hH;
     };
@@ -427,28 +483,23 @@
         
         if(type == 1) {
             msg = `Namaste ${s.name}, fee amount ₹${s.amount} received. Valid till ${displayDate}. Thank you! Happy Studying 📖 - Bapora Library`;
-            students[idx].lastRemind = new Date().toISOString();
-            saveToCloud(); window.open(`https://wa.me/91${s.phone}?text=${encodeURIComponent(msg)}`);
         }
         else if(type == 2) {
             msg = `Namaste ${s.name}, your fee is pending since ${displayDate}. Please update soon.`;
-            students[idx].lastRemind = new Date().toISOString();
-            saveToCloud(); window.open(`https://wa.me/91${s.phone}?text=${encodeURIComponent(msg)}`);
         }
         else if(type == 3) {
             msg = `Namaste ${s.name}, your lunch has been arrived. Please collect it from reception. 🍱🥄`;
-            students[idx].lastRemind = new Date().toISOString();
-            saveToCloud(); window.open(`https://wa.me/91${s.phone}?text=${encodeURIComponent(msg)}`);
         }
         else if(type == 4) {
-            msg = `📢 *Seat Payment Alert*\n\nStudent: *${s.name}*\nSeat No: *${s.seat}* (Reserved)\nAmount Paid: *₹${s.amount}*\nValid Till: *${displayDate}*`;
-            window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`);
+            msg = `📢 *Seat Payment Alert*\n\nStudent: *${s.name}*\nSeat No: *${s.seat}* (Shift: ${s.shift || 'Full'})\nAmount Paid: *₹${s.amount}*\nValid Till: *${displayDate}*`;
+            return window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`);
         }
         else if(type == 5) {
             msg = `Namaste ${s.name}, your library membership expired on ${displayDate}. We haven't heard from you! Please confirm if you are taking a break or planning to continue, so we can manage your seat reservation accordingly. Thank you! 📚 - Admin, Bapora Library`;
-            students[idx].lastRemind = new Date().toISOString();
-            saveToCloud(); window.open(`https://wa.me/91${s.phone}?text=${encodeURIComponent(msg)}`);
         }
+        
+        students[idx].lastRemind = new Date().toISOString();
+        saveToCloud(); window.open(`https://wa.me/91${s.phone}?text=${encodeURIComponent(msg)}`);
     };
 
     window.addExpense = () => {
@@ -485,12 +536,13 @@
         document.getElementById('stuFeeDate').value = s.fee;
         document.getElementById('stuAmt').value = s.amount;
         document.getElementById('stuSeat').value = s.seat;
+        document.getElementById('stuShift').value = s.shift || 'Full'; 
         document.getElementById('saveBtn').innerText = "UPDATE CLOUD RECORD";
         document.getElementById('cancelBtn').style.display = "block";
         window.scrollTo(0,0);
     };
 
-    window.clearForms = () => { document.querySelectorAll('#lib-tab input').forEach(i => i.value = ''); document.getElementById('saveBtn').innerText = "SAVE TO CLOUD"; document.getElementById('cancelBtn').style.display = "none"; };
+    window.clearForms = () => { document.querySelectorAll('#lib-tab input').forEach(i => i.value = ''); document.getElementById('stuShift').value = 'Full'; document.getElementById('saveBtn').innerText = "SAVE TO CLOUD"; document.getElementById('cancelBtn').style.display = "none"; };
     window.clearExpForm = () => { document.querySelectorAll('#exp-tab input').forEach(i => i.value = ''); document.getElementById('saveExpBtn').innerText = "LOG EXPENSE"; document.getElementById('cancelExpBtn').style.display = "none"; };
     
     window.importData = () => {
@@ -516,14 +568,13 @@
     };
 
     window.exportToExcel = () => {
-        let csv = "Name,Seat,Phone,Fee,Amount\n";
-        students.forEach(s => { csv += `${s.name},${s.seat},${s.phone},${s.fee},${s.amount}\n`; });
+        let csv = "Name,Seat,Shift,Phone,Fee,Amount\n";
+        students.forEach(s => { csv += `${s.name},${s.seat},${s.shift || 'Full'},${s.phone},${s.fee},${s.amount}\n`; });
         const blob = new Blob([csv], { type: 'text/csv' });
         const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
         a.download = "Library_Report.csv"; a.click();
     };
 
-    // --- DYNAMIC MONTHLY RESET FUNCTION (WITH MEMORY FLAG) ---
     window.closeMonthlyLedger = function() {
         if (!confirm("Commander, kya aap sure hain? Is mahine ka financial data reset ho jayega aur History mein save ho jayega! (Sytem pehle backup download karega)")) return;
 
@@ -545,12 +596,12 @@
                 profit: (totalFees - totalExp)
             };
 
-            // NAYA: Amount ko 0 karne se pehle use 'lastAmount' mein save karna
             students = students.map(s => ({
                 ...s,
-                lastAmount: (parseFloat(s.amount) > 0) ? s.amount : (s.lastAmount || "0"), // Save current to memory
-                amount: "0",      // Set current fee to 0
+                lastAmount: (parseFloat(s.amount) > 0) ? s.amount : (s.lastAmount || "0"), 
+                amount: "0",      
                 lastRemind: null  
+                // NAYA: attendanceHistory array automatically safe rahegi (kabhi delete nahi hogi reset dabane par)
             }));
 
             expenses = []; 
