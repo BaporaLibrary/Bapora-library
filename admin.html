@@ -118,6 +118,25 @@
                 <div style="border-top:1px solid #ccc; padding-top:10px;">
                     <input type="file" id="importFile" style="font-size:10px;" accept=".txt">
                     <button class="btn-main" style="background:var(--navy);" onclick="window.importData()">🔄 UPLOAD/RESTORE TO CLOUD</button>
+                </div><div style="border-top:1px solid #ccc; padding-top:10px;">
+                    <input type="file" id="importFile" style="font-size:10px;" accept=".txt">
+                    <button class="btn-main" style="background:var(--navy);" onclick="window.importData()">🔄 UPLOAD/RESTORE TO CLOUD</button>
+                </div>
+                
+                <!-- NAYA: DAILY MASTER LOG SECTION (HTML LESSON 1) -->
+                <div class="section" style="margin-top:15px; background:#e3f2fd; border-left:4px solid #0277bd;">
+                    <h4 style="color:#0277bd; margin:0 0 10px 0;">📊 DAILY ATTENDANCE LOG</h4>
+                    <p style="font-size:11px; margin:0 0 10px 0;">Pichle dino mein total kitne students present the, yahan dekhein.</p>
+                    <button class="btn-main" style="background:#0277bd; font-size:12px;" onclick="window.showDailyLog()">👀 VIEW DAILY TOTALS</button>
+                    <div id="dailyLogDisplay" style="display:none; margin-top:10px; font-size:11px; background:#fff; padding:10px; border-radius:4px; border:1px solid #ccc;">
+                        <i>Radar scanning past records...</i>
+                    </div>
+                </div>
+                
+                <div style="border-top:2px solid var(--danger); margin-top:15px; padding-top:15px;">
+                    <h4 style="color:var(--danger); margin:0;">🏁 MONTH-END CLOSE</h4>
+                    <p style="font-size:11px; margin:5px 0;">Reset Fees & Expenses to 0. (Last paid amount saved in grey flag)</p>
+                    <button class="btn-main" style="background:var(--danger); font-size:14px;" onclick="window.closeMonthlyLedger()">🚀 CLOSE CURRENT MONTH & RESET</button>
                 </div>
                 
                 <div style="border-top:2px solid var(--danger); margin-top:15px; padding-top:15px;">
