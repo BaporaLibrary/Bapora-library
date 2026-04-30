@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Bapora Command v10.26 (Auto Month-End Close)</title>
+    <title>Bapora Command v10.27 (Auto Reset & Memory Flag)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root { --navy: #002347; --gold: #c5a059; --bg: #f4f4f9; --card: #ffffff; --text: #222; --safe: #1b5e20; --danger: #b71c1c; }
@@ -111,10 +111,9 @@
                     <button class="btn-main" style="background:var(--navy);" onclick="window.importData()">🔄 UPLOAD/RESTORE TO CLOUD</button>
                 </div>
                 
-                <!-- DYNAMIC MONTHLY RESET SECTION -->
                 <div style="border-top:2px solid var(--danger); margin-top:15px; padding-top:15px;">
                     <h4 style="color:var(--danger); margin:0;">🏁 MONTH-END CLOSE</h4>
-                    <p style="font-size:11px; margin:5px 0;">Reset Fees & Expenses to 0. Students list remains safe.</p>
+                    <p style="font-size:11px; margin:5px 0;">Reset Fees & Expenses to 0. (Last paid amount will be saved in grey flag)</p>
                     <button class="btn-main" style="background:var(--danger); font-size:14px;" onclick="window.closeMonthlyLedger()">🚀 CLOSE CURRENT MONTH & RESET</button>
                 </div>
                 
@@ -304,7 +303,19 @@
         
         if(!name || !phone || !fee) return alert("Fill Name, Phone and Date");
         const idx = students.findIndex(s => s.id == id);
-        const data = { id: parseInt(id), name, phone, fee, amount, seat, lastRemind: students[idx]?.lastRemind || null, isCounted: true };
+        
+        // NAYA: Save karne par bhi lastAmount safe rakhein
+        const data = { 
+            id: parseInt(id), 
+            name, 
+            phone, 
+            fee, 
+            amount, 
+            seat, 
+            lastRemind: students[idx]?.lastRemind || null, 
+            lastAmount: students[idx]?.lastAmount || "0", 
+            isCounted: true 
+        };
         
         if(idx > -1) students[idx] = data; else students.push(data);
         saveToCloud(); 
@@ -346,13 +357,25 @@
                 rDateHTML = `<span class="remind-date">Last Sent: ${new Date(s.lastRemind).toLocaleDateString()}</span>`;
             }
 
+            // NAYA: Fee Display Logic (Memory Flag)
+            let feeDisplayHTML = "";
+            if (s.amount > 0) {
+                feeDisplayHTML = `<span style="float:right; color:var(--safe); font-weight:bold;">₹${s.amount}</span>`;
+            } else {
+                let prevInfo = s.lastAmount > 0 ? `(Last: ₹${s.lastAmount})` : "";
+                feeDisplayHTML = `
+                    <span style="float:right; color:var(--danger); font-weight:bold;">₹0</span><br>
+                    <span style="float:right; color:#9e9e9e; font-size:10px; margin-top:2px;">${prevInfo}</span>
+                `;
+            }
+
             let matchName = s.name.toLowerCase().includes(q);
             let matchPhone = s.phone && s.phone.includes(q);
             let matchSeat = s.seat && s.seat.toString().toLowerCase().includes(q);
 
             if((matchName || matchPhone || matchSeat) && (curF=='all' || (curF=='due' && isDue) || (curF=='fol' && isFol) || (curF=='exp' && isExp))) {
                 sH += `<div class="record-item ${isDue ? 'due-alert' : ''}">
-                    <b>${s.name}</b> <span style="float:right; color:var(--safe);">₹${s.amount}</span><br>
+                    <b>${s.name}</b> ${feeDisplayHTML}<br>
                     <small>Seat: ${s.seat} | Valid: ${s.fee}</small><br>
                     ${rDateHTML} ${folHTML}
                     <div class="wa-btn-group">
@@ -500,19 +523,17 @@
         a.download = "Library_Report.csv"; a.click();
     };
 
-    // --- DYNAMIC MONTHLY RESET FUNCTION ---
+    // --- DYNAMIC MONTHLY RESET FUNCTION (WITH MEMORY FLAG) ---
     window.closeMonthlyLedger = function() {
         if (!confirm("Commander, kya aap sure hain? Is mahine ka financial data reset ho jayega aur History mein save ho jayega! (Sytem pehle backup download karega)")) return;
 
         try {
-            // 1. Auto Backup
             window.exportData(); 
             
-            // 2. Dynamic Month Calculation for History & Alerts
             const now = new Date();
             const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
             const currentMonthName = monthNames[now.getMonth()];
-            const nextMonthName = monthNames[(now.getMonth() + 1) % 12]; // Automatically gets the next month
+            const nextMonthName = monthNames[(now.getMonth() + 1) % 12]; 
 
             const totalFees = students.reduce((a, b) => a + (parseFloat(b.amount) || 0), 0);
             const totalExp = expenses.reduce((a, b) => a + (parseFloat(b.amt) || 0), 0);
@@ -524,10 +545,11 @@
                 profit: (totalFees - totalExp)
             };
 
-            // 3. Reset Data
+            // NAYA: Amount ko 0 karne se pehle use 'lastAmount' mein save karna
             students = students.map(s => ({
                 ...s,
-                amount: "0",      
+                lastAmount: (parseFloat(s.amount) > 0) ? s.amount : (s.lastAmount || "0"), // Save current to memory
+                amount: "0",      // Set current fee to 0
                 lastRemind: null  
             }));
 
@@ -536,7 +558,6 @@
             if (!history) history = [];
             history.push(monthlySummary);
 
-            // 4. Save to Firebase
             saveToCloud();
 
             alert(`Mission Successful! ${currentMonthName} Ledger closed. ${nextMonthName} is now active! 📈`);
