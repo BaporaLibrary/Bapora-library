@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Bapora Command v10.30 (Bulk Radar Active)</title>
+    <title>Bapora Command v10.31 (Action Dropdown Active)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root { --navy: #002347; --gold: #c5a059; --bg: #f4f4f9; --card: #ffffff; --text: #222; --safe: #1b5e20; --danger: #b71c1c; }
@@ -14,6 +14,8 @@
         .tab-content.active { display: block; }
         .section { background: #fafafa; padding: 12px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #e0e0e0; }
         input, select { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #cfd8dc; border-radius: 4px; box-sizing: border-box; }
+        
+        /* Puraana Colorful Card Style Wapas */
         .record-item { background: white; padding: 12px; border-radius: 6px; margin-top: 8px; border: 1px solid #eceff1; position: relative; border-left: 4px solid var(--navy); }
         .due-alert { border-left-color: var(--danger) !important; background: #fff5f5; }
         
@@ -108,23 +110,6 @@
 
             <button class="btn-main" style="background: linear-gradient(145deg, #f39c12, #d35400); margin-bottom: 15px; font-size:14px;" onclick="window.startMegaphone()">📢 BROADCAST MESSAGE</button>
 
-            <div id="bulkActionBar" style="display:none; position: sticky; top: 0; z-index: 1000; background: #e9ecef; padding: 10px; border-radius: 6px; margin-bottom: 15px; border: 2px solid var(--navy);">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
-                    <div>
-                        <input type="checkbox" id="selectAll" onclick="window.toggleSelectAll(this)"> 
-                        <label for="selectAll" style="font-size:12px; font-weight:bold;">Select All</label>
-                        <span id="selectedCount" style="background:var(--navy); color:white; padding:2px 6px; border-radius:4px; font-size:10px; margin-left:5px;">0</span>
-                    </div>
-                    <div style="display: flex; gap: 4px; margin-top: 8px; flex-wrap: wrap; width: 100%;">
-                        <button class="wa-btn btn-rcpt" onclick="window.sendBulk(1)">🧾 Rcpt</button>
-                        <button class="wa-btn btn-due" onclick="window.sendBulk(2)">⏳ Due</button>
-                        <button class="wa-btn btn-lunch" onclick="window.sendBulk(3)">🍴 Lunch</button>
-                        <button class="wa-btn btn-exp" onclick="window.sendBulk(5)">⚠️ Final</button>
-                        <button class="wa-btn btn-alert" onclick="window.sendBulk(4)">📢 Mgmt</button>
-                    </div>
-                </div>
-            </div>
-
             <div id="stuList"></div>
 
             <div class="section" style="margin-top:20px; text-align:center; background:#eee;">
@@ -141,9 +126,7 @@
                     <h4 style="color:#0277bd; margin:0 0 10px 0;">📊 DAILY ATTENDANCE LOG</h4>
                     <p style="font-size:11px; margin:0 0 10px 0;">Pichle dino mein total kitne students present the, yahan dekhein.</p>
                     <button class="btn-main" style="background:#0277bd; font-size:12px;" onclick="window.showDailyLog()">👀 VIEW DAILY TOTALS</button>
-                    <div id="dailyLogDisplay" style="display:none; margin-top:10px; font-size:11px; background:#fff; padding:10px; border-radius:4px; border:1px solid #ccc;">
-                        <i>Radar scanning past records...</i>
-                    </div>
+                    <div id="dailyLogDisplay" style="display:none; margin-top:10px; font-size:11px; background:#fff; padding:10px; border-radius:4px; border:1px solid #ccc;"></div>
                 </div>
                 
                 <div style="border-top:2px solid var(--danger); margin-top:15px; padding-top:15px;">
@@ -215,7 +198,6 @@
         });
     };
     
-    // NAYA ENGINE: DAILY MASTER LOG CALCULATOR
     window.showDailyLog = function() {
         const displayBox = document.getElementById('dailyLogDisplay');
         if (displayBox.style.display === 'block') {
@@ -227,11 +209,7 @@
         students.forEach(s => {
             if (s.attendanceHistory) {
                 s.attendanceHistory.forEach(date => {
-                    if (dailyCounts[date]) {
-                        dailyCounts[date] = dailyCounts[date] + 1;
-                    } else {
-                        dailyCounts[date] = 1;
-                    }
+                    dailyCounts[date] = (dailyCounts[date] || 0) + 1;
                 });
             }
         });
@@ -387,6 +365,16 @@
         }
     };
 
+    // --- NAYA FUNCTION: DROPDOWN TOGGLE ---
+    window.toggleActions = (id) => {
+        const div = document.getElementById(`actions-${id}`);
+        if(div.style.display === 'none') {
+            div.style.display = 'flex';
+        } else {
+            div.style.display = 'none';
+        }
+    };
+
     window.saveStudent = () => {
         const id = document.getElementById('editId').value || Date.now();
         const name = document.getElementById('stuName').value;
@@ -425,49 +413,9 @@
         window.clearForms();
     };
 
-    // --- BULK ACTION LOGIC ---
-    window.updateSelectedCount = () => {
-        let checked = document.querySelectorAll('.student-select-check:checked');
-        document.getElementById('selectedCount').innerText = checked.length;
-        document.getElementById('bulkActionBar').style.display = checked.length > 0 ? 'block' : 'none';
-    };
-
-    window.toggleSelectAll = (source) => {
-        let checkboxes = document.querySelectorAll('.student-select-check');
-        checkboxes.forEach(cb => cb.checked = source.checked);
-        window.updateSelectedCount();
-    };
-
-    window.sendBulk = (type) => {
-        let selected = document.querySelectorAll('.student-select-check:checked');
-        if (selected.length === 0) return;
-
-        let typeNames = {1: "RECEIPT", 2: "DUE", 3: "LUNCH", 4: "MGMT ALERT", 5: "FINAL CALL"};
-        
-        if (confirm(`Commander, kya aap in ${selected.length} bacchon ko ${typeNames[type]} alert bhejna chahte hain?`)) {
-            let delay = 0;
-            selected.forEach((cb) => {
-                let id = cb.value;
-                setTimeout(() => {
-                    window.wa(id, type); 
-                }, delay);
-                delay += 1200; // Har message ke beech 1.2 second ka gap
-            });
-            
-            // Firing ke baad saare checkboxes ko automatically un-tick kar dena
-            setTimeout(() => {
-                selected.forEach(cb => cb.checked = false);
-                document.getElementById('selectAll').checked = false;
-                window.updateSelectedCount();
-            }, delay);
-        }
-    };
-
-    // --- MAIN RENDER ENGINE (With Search Condition) ---
+    // --- MAIN RENDER ENGINE (Restored to Colorful Old UI with Dropdown) ---
     window.render = () => {
         const q = document.getElementById('stuSearch').value.toLowerCase();
-        const isSearchActive = q.length > 0;
-        
         let sH = "", dCnt = 0, tFees = 0, pCnt = 0;
         const now = new Date();
         const todayStr = now.toLocaleDateString('en-GB'); 
@@ -512,31 +460,41 @@
             let presentBtn = `<button onclick="window.markPresent(${s.id})" style="border:1px solid ${isPresent ? '#28a745' : '#ccc'}; background:${isPresent ? '#e8f5e9' : '#fff'}; color:${isPresent ? '#28a745' : '#666'}; border-radius:4px; padding:2px 6px; font-size:10px; cursor:pointer; margin-left:10px;">${isPresent ? '✅ Present' : '☑️ Mark Present'}</button>`;
             let histLink = `<span style="font-size:10px; color:#1976d2; cursor:pointer; margin-left:8px; text-decoration:underline;" onclick="window.viewAttendance(${s.id})">📅 History (${histArray.length})</span>`;
 
-            // Checkbox aur WA Buttons ki UI logic (Search hone par kya dikhega)
-            let checkboxHTML = !isSearchActive ? `<input type="checkbox" class="student-select-check" style="margin-right:8px; transform: scale(1.2);" value="${s.id}" onclick="window.updateSelectedCount()">` : '';
-            
-            let waButtonsHTML = isSearchActive ? `
-            <div class="wa-btn-group" style="margin-top:10px; border-top:1px solid #eee; padding-top:8px;">
-                <button onclick="window.wa(${s.id}, 1)" class="wa-btn btn-rcpt">Receipt</button>
-                <button onclick="window.wa(${s.id}, 2)" class="wa-btn btn-due">Due</button>
-                <button onclick="window.wa(${s.id}, 3)" class="wa-btn btn-lunch">Lunch</button>
-                <button onclick="window.wa(${s.id}, 4)" class="wa-btn btn-alert">Mgmt Alert</button>
-                <button onclick="window.wa(${s.id}, 5)" class="wa-btn btn-exp">Final Call</button>
-            </div>` : '';
-
             let matchName = s.name.toLowerCase().includes(q);
             let matchPhone = s.phone && s.phone.includes(q);
             let matchSeat = s.seat && s.seat.toString().toLowerCase().includes(q);
 
             if((matchName || matchPhone || matchSeat) && (curF=='all' || (curF=='due' && isDue) || (curF=='fol' && isFol) || (curF=='exp' && isExp))) {
-                sH += `<div class="record-item ${isDue ? 'due-alert' : ''}">
-                    <div style="display:flex; align-items:center;">
-                        ${checkboxHTML} <b>${s.name}</b> ${presentBtn} ${histLink}
+                
+                sH += `
+                <div class="record-item ${isDue ? 'due-alert' : ''}">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <b style="font-size:15px;">${s.name}</b> 
+                            ${presentBtn} ${histLink}
+                        </div>
+                        <div>
+                            ${feeDisplayHTML}
+                        </div>
                     </div>
-                    ${feeDisplayHTML}<br>
-                    <small>Seat: ${s.seat} <span style="background:#eee; padding:1px 5px; border-radius:3px; font-size:9px;">${s.shift || 'Full'}</span> | Valid: ${s.fee}</small><br>
+                    
+                    <small style="color:#555; display:block; margin-top:5px;">Seat: <b>${s.seat}</b> <span style="background:#eee; padding:1px 5px; border-radius:3px; font-size:9px;">${s.shift || 'Full'}</span> | Valid: ${s.fee}</small>
                     ${rDateHTML} ${folHTML}
-                    ${waButtonsHTML}
+                    
+                    <div style="margin-top:10px;">
+                        <button onclick="window.toggleActions(${s.id})" style="width:100%; background:#e3f2fd; color:#0277bd; border:1px solid #90caf9; padding:6px; border-radius:4px; font-weight:bold; font-size:11px; cursor:pointer;">
+                            💬 QUICK ACTIONS ▼
+                        </button>
+                        
+                        <div id="actions-${s.id}" class="wa-btn-group" style="display:none; margin-top:8px; border-top:1px dashed #ccc; padding-top:8px;">
+                            <button onclick="window.wa(${s.id}, 1)" class="wa-btn btn-rcpt">Receipt</button>
+                            <button onclick="window.wa(${s.id}, 2)" class="wa-btn btn-due">Due</button>
+                            <button onclick="window.wa(${s.id}, 3)" class="wa-btn btn-lunch">Lunch</button>
+                            <button onclick="window.wa(${s.id}, 4)" class="wa-btn btn-alert">Mgmt Alert</button>
+                            <button onclick="window.wa(${s.id}, 5)" class="wa-btn btn-exp">Final Call</button>
+                        </div>
+                    </div>
+
                     <div style="margin-top:8px;">
                         <span class="action-link" style="color:blue" onclick="window.editStu(${s.id})">✎ EDIT</span>
                         <span class="action-link" style="color:red" onclick="window.delStu(${s.id})">✖ DELETE</span>
@@ -554,9 +512,6 @@
         document.getElementById('netProfit').innerText = '₹' + (tFees - tE);
         document.getElementById('stuList').innerHTML = sH || "<center style='padding:20px'>No records found</center>";
         
-        // Agar search chal rahi hai, toh bulk bar ko jabardasti hide kar do
-        if(isSearchActive) document.getElementById('bulkActionBar').style.display = 'none';
-
         let eH = "";
         let sortedExp = [...expenses].sort((a,b) => new Date(b.date) - new Date(a.date));
         sortedExp.forEach(e => {
