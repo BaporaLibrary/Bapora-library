@@ -1,35 +1,281 @@
-<div class="notice-board" id="waitlist-section" style="border-left-color: var(--gold); margin-top: 10px;">
-    <h3 style="color: #856404;">📝 Join Waiting List (If Seats Full)</h3>
-    <div id="waitlist-form">
-        <input type="text" id="waitName" placeholder="Your Full Name" style="width: 90%; margin: 5px 0; padding: 8px; border-radius: 5px; border: 1px solid #ccc;">
-        <input type="tel" id="waitPhone" placeholder="WhatsApp Number" style="width: 90%; margin: 5px 0; padding: 8px; border-radius: 5px; border: 1px solid #ccc;">
-        <button class="btn" style="background: var(--navy); width: 95%; margin-top: 10px;" onclick="joinWaitlist()">SUBMIT REQUEST 🚀</button>
-    </div>
-    <p id="wait-msg" style="display:none; color: green; font-weight: bold; font-size: 13px; margin-top: 10px;">✅ Request Sent! Admin will contact you soon.</p>
-</div>
-
-<script>
-    // WAITING LIST FUNCTION
-    function joinWaitlist() {
-        const name = document.getElementById('waitName').value;
-        const phone = document.getElementById('waitPhone').value;
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bapora Library - Live Dashboard</title>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
+    <style>
+        :root { --navy: #002b5b; --gold: #c5a059; --green: #2ecc71; --blue: #3498db; --red: #e74c3c; --bg-light: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%); --card-light: #ffffff; --text-light: #222; }
         
-        if(!name || !phone) {
-            alert("Commander, details are missing!");
-            return;
+        /* NIGHT VISION VARIABLES */
+        body.dark-mode { --bg-light: #121212; --card-light: #1e1e1e; --text-light: #e0e0e0; }
+        body.dark-mode .header { background: radial-gradient(circle at center, #001a33 0%, #000000 100%); border-bottom: 5px solid #555; }
+        body.dark-mode .stat-card { border-color: #333; box-shadow: 0 4px 10px rgba(255,255,255,0.05); background: #1e1e1e;}
+        body.dark-mode .lbl { color: #aaa; }
+        body.dark-mode #live-status-box { background: rgba(30, 30, 30, 0.9); }
+        body.dark-mode .section-box { background: rgba(30, 30, 30, 0.8); border-color: #444; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5); }
+        body.dark-mode .st-vacant { background: #222; border-color: #2ecc71; }
+        body.dark-mode .st-vacant:hover { background: #196f3d; }
+        body.dark-mode .notice-board { background: rgba(30, 30, 30, 0.9); border-color: #444; }
+        body.dark-mode .notice-board h3 { color: var(--gold); border-bottom-color: #444;}
+        body.dark-mode .notice-board ul { color: #ccc; }
+        body.dark-mode input { background: #333; color: white; border-color: #555; }
+
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: var(--bg-light); 
+            color: var(--text-light);
+            margin: 0; 
+            padding-bottom: 50px; 
+            text-align: center; 
+            min-height: 100vh;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+        
+        .header { background: radial-gradient(circle at center, #003366 0%, #001a33 100%); color: white; padding: 30px 20px; border-bottom: 5px solid var(--gold); box-shadow: 0 4px 10px rgba(0,0,0,0.3); border-radius: 0 0 15px 15px; margin-bottom: 20px; position: relative;}
+        .header h2 { margin: 0; font-size: 32px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; text-shadow: 2px 2px 4px rgba(0,0,0,0.5), 0 0 10px rgba(255,255,255,0.1); }
+        .tagline { font-size: 12px; color: var(--gold); font-weight: bold; margin-top: 10px; letter-spacing: 1.5px; text-transform: uppercase; background-color: rgba(0,0,0,0.4); display: inline-block; padding: 5px 15px; border-radius: 20px; border: 1px solid rgba(197, 160, 89, 0.3); box-shadow: inset 0 1px 3px rgba(0,0,0,0.5); }
+        
+        #dark-mode-btn { position: absolute; top: 15px; right: 20px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); border-radius: 50%; width: 40px; height: 40px; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.3s; z-index: 10; backdrop-filter: blur(5px);}
+        #dark-mode-btn:hover { transform: scale(1.1); background: rgba(255,255,255,0.4); }
+
+        .dash { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin: 15px 20px; }
+        .stat-card { background: var(--card-light); padding: 15px 10px; border-radius: 16px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); border: 1px solid #e0e0e0; display: flex; flex-direction: column; align-items: center; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
+        .stat-card.total { border-bottom: 4px solid #555; }
+        .stat-card.general { border-bottom: 4px solid var(--blue); }
+        .stat-card.reserved { border-bottom: 4px solid var(--red); }
+        .stat-card.vacant { border-bottom: 4px solid var(--green); }
+        .stat-icon { font-size: 24px; margin-bottom: 5px; filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.2)); }
+        .num { font-size: 26px; font-weight: 900; margin-bottom: 2px; }
+        .lbl { font-size: 11px; color: #555; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;}
+
+        @keyframes breathing { 0% { transform: scale(1); box-shadow: 0 4px 10px rgba(0,0,0,0.1); } 50% { transform: scale(1.02); box-shadow: 0 8px 20px rgba(0,0,0,0.15); } 100% { transform: scale(1); box-shadow: 0 4px 10px rgba(0,0,0,0.1); } }
+        #live-status-box { text-align:center; margin: 20px; padding: 15px; border-radius: 12px; font-weight: bold; font-size: 1.1rem; transition: background 0.3s ease; animation: breathing 3s infinite ease-in-out; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(5px); }
+
+        .section-box { background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.5); margin: 15px 20px; padding: 20px; border-radius: 16px; box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1); transition: background 0.3s ease; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); gap: 12px; }
+        
+        .seat { width: 50px; height: 55px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
+        .st-vacant { background: #fff; color: var(--green); border: 2px dashed var(--green); }
+        .st-general { background: linear-gradient(145deg, #3498db, #2980b9); color: white; border: none; box-shadow: 3px 5px 10px rgba(0,0,0,0.2), inset 1px 1px 2px rgba(255,255,255,0.4); }
+        .st-reserved { background: linear-gradient(145deg, #e74c3c, #c0392b); color: white; border: none; box-shadow: 3px 5px 10px rgba(0,0,0,0.2), inset 1px 1px 2px rgba(255,255,255,0.4); }
+
+        .icon-stu { font-size: 18px; margin-bottom: 2px; line-height: 1; filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.3)); }
+        .seat-no { font-size: 12px; line-height: 1; }
+
+        /* DIGITAL NOTICE BOARD & WAITLIST */
+        .notice-board { background: rgba(255,255,255,0.8); margin: 20px; padding: 15px 20px; border-radius: 12px; text-align: left; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border-left: 5px solid var(--navy); backdrop-filter: blur(5px); transition: background 0.3s ease;}
+        .notice-board h3 { margin-top: 0; color: var(--navy); border-bottom: 1px solid #ccc; padding-bottom: 8px; font-size: 16px; display: flex; align-items: center; gap: 8px;}
+        .notice-board ul { padding-left: 20px; font-size: 13px; color: inherit; line-height: 1.8; margin-bottom: 0;}
+        .btn { padding: 12px 25px; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.3); }
+
+        /* WhatsApp */
+        .whatsapp-float { position: fixed; width: 60px; height: 60px; bottom: 20px; right: 20px; background-color: #25d366; color: #FFF; border-radius: 50px; box-shadow: 2px 4px 15px rgba(37, 211, 102, 0.4); z-index: 1000; display: flex; justify-content: center; align-items: center; text-decoration: none; transition: all 0.3s ease; }
+        .whatsapp-float:hover { transform: scale(1.1) rotate(-5deg); }
+        .whatsapp-icon { width: 35px; height: 35px; }
+    </style>
+</head>
+<body>
+
+    <div id="megaphone-alert" style="display:none; background: linear-gradient(145deg, #e74c3c, #c0392b); color: white; padding: 10px; text-align: center; font-weight: bold; font-size: 15px; position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.3); border-bottom: 2px solid #fff;">
+        📢 <marquee id="megaphone-text" scrollamount="6" style="width: 85%; vertical-align: middle;">Standby for message...</marquee>
+    </div>
+
+    <div class="header">
+        <button id="dark-mode-btn" onclick="toggleDarkMode()">🌙</button>
+        <h2>BAPORA LIBRARY</h2>
+        <div class="tagline">⚓ REAL-TIME SEAT STATUS ⚓</div>
+    </div>
+
+    <div class="dash">
+        <div class="stat-card total">
+            <div class="stat-icon">🏛️</div>
+            <span id="total-count" class="num" style="color:#2c3e50">57</span>
+            <span class="lbl">Total Seats</span>
+        </div>
+        <div class="stat-card general">
+            <div class="stat-icon">📘</div>
+            <span id="gen-count" class="num" style="color:var(--blue)">0</span>
+            <span class="lbl">General</span>
+        </div>
+        <div class="stat-card reserved">
+            <div class="stat-icon">📕</div>
+            <span id="res-count" class="num" style="color:var(--red)">0</span>
+            <span class="lbl">Reserved</span>
+        </div>
+        <div class="stat-card vacant">
+            <div class="stat-icon">✅</div>
+            <span id="vac-count" class="num" style="color:var(--green)">0</span>
+            <span class="lbl">Vacant</span>
+        </div>
+    </div>
+
+    <div id="live-status-box">
+        <span id="seat-status">Syncing with Command Center...</span>
+    </div>
+
+    <div class="section-box">
+        <div class="grid" id="seat-grid"></div>
+    </div>
+
+    <div class="notice-board">
+        <h3>📌 Base Rules & Information</h3>
+        <ul>
+            <li><b>Timings:</b> 06:00 AM to 10:00 PM (Everyday)</li>
+            <li><b>Wi-Fi:</b> Network: <i>Bapora_Lib_5G</i> | Password: <i>Available at Desk</i></li>
+            <li><b>Discipline:</b> Keep phones on silent mode. Take calls outside.</li>
+            <li><b>Cleanliness:</b> Use designated areas for lunch. Keep your desk clean.</li>
+        </ul>
+    </div>
+
+    <div class="notice-board" id="waitlist-section" style="border-left-color: var(--gold); margin-top: 10px;">
+        <h3 style="color: var(--gold);">📝 Join Waiting List (If Seats Full)</h3>
+        <div id="waitlist-form">
+            <input type="text" id="waitName" placeholder="Your Full Name" style="width: 90%; margin: 5px 0; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-family: inherit;">
+            <input type="tel" id="waitPhone" placeholder="WhatsApp Number" style="width: 90%; margin: 5px 0; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-family: inherit;">
+            <button class="btn" style="background: var(--navy); width: 96%; margin-top: 10px; margin-left: 2%;" onclick="joinWaitlist()">SUBMIT REQUEST 🚀</button>
+        </div>
+        <p id="wait-msg" style="display:none; color: var(--green); font-weight: bold; font-size: 14px; margin-top: 10px; text-align: center;">✅ Request Sent! Admin will contact you soon.</p>
+    </div>
+
+    <a href="https://wa.me/919393681565?text=Hello%20Sir!%20I%20have%20a%20query%20regarding%20the%20Bapora%20Library." class="whatsapp-float" target="_blank">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="Chat on WhatsApp" class="whatsapp-icon">
+    </a>
+
+    <script>
+        const firebaseConfig = { 
+            apiKey: "AIzaSyAsF3o3S7fpvTumwVVL_exuqMlAUS5MKXE", 
+            authDomain: "baporalibrary-fea16.firebaseapp.com",
+            databaseURL: "https://baporalibrary-fea16-default-rtdb.firebaseio.com/",
+            projectId: "baporalibrary-fea16"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        let seatData = {};
+
+        // Listen for Seat Changes
+        db.ref('seats').on('value', (snap) => {
+            seatData = snap.val() || {};
+            render();
+        });
+
+        // Listen for Megaphone
+        db.ref('broadcast').on('value', (snap) => {
+            let msg = snap.val();
+            let alertBox = document.getElementById('megaphone-alert');
+            let alertText = document.getElementById('megaphone-text');
+            if (msg && msg.text !== "") {
+                alertText.innerText = "UPDATE: " + msg.text;
+                alertBox.style.display = 'block'; 
+            } else {
+                alertBox.style.display = 'none'; 
+            }
+        });
+
+        // Main Render Engine
+        function render() {
+            const grid = document.getElementById('seat-grid'); 
+            grid.innerHTML = "";
+            let g=0, r=0;
+            const total = 57;
+
+            for(let i=1; i<=total; i++){
+                let div = document.createElement('div');
+                let status = seatData[i] || 'v';
+                div.className = status==='g'?'seat st-general':status==='r'?'seat st-reserved':'seat st-vacant';
+                
+                if(status === 'g' || status === 'r') {
+                    div.innerHTML = `<div class="icon-stu">👤</div><div class="seat-no">${i}</div>`;
+                } else {
+                    div.innerHTML = `<div class="seat-no" style="font-size:16px;">${i}</div>`;
+                }
+
+                if(status==='g') g++; if(status==='r') r++;
+                grid.appendChild(div);
+            }
+            
+            document.getElementById('total-count').innerText = total;
+            document.getElementById('gen-count').innerText = g;
+            document.getElementById('res-count').innerText = r;
+            document.getElementById('vac-count').innerText = total - (g+r);
+
+            updateLiveStatus(g + r);
         }
 
-        const waitData = {
-            name: name,
-            phone: phone,
-            time: new Date().toLocaleString(),
-            status: "Pending"
-        };
+        // Live Status logic
+        function updateLiveStatus(totalOccupied) {
+            const totalSeats = 57;
+            const available = totalSeats - totalOccupied;
+            const statusText = document.getElementById("seat-status");
+            const statusBox = document.getElementById("live-status-box");
+            const isDark = document.body.classList.contains('dark-mode');
 
-        // Yeh data Firebase ke ek naye folder 'waiting_list' mein jayega
-        db.ref('waiting_list').push(waitData).then(() => {
-            document.getElementById('waitlist-form').style.display = 'none';
-            document.getElementById('wait-msg').style.display = 'block';
-        });
-    }
-</script>
+            if (available > 10) {
+                statusText.innerText = "🟢 STATUS: SEATS AVAILABLE";
+                statusText.style.color = isDark ? "#2ecc71" : "#196f3d"; 
+                statusBox.style.border = "2px solid rgba(46, 204, 113, 0.5)";
+            } else if (available > 0) {
+                statusText.innerText = "🟡 STATUS: FILLING FAST (Only " + available + " Left)";
+                statusText.style.color = isDark ? "#f1c40f" : "#d68910"; 
+                statusBox.style.border = "2px solid rgba(243, 156, 18, 0.5)";
+            } else {
+                statusText.innerText = "🔴 STATUS: FULLY OCCUPIED";
+                statusText.style.color = isDark ? "#e74c3c" : "#c0392b"; 
+                statusBox.style.border = "2px solid rgba(231, 76, 60, 0.5)";
+            }
+        }
+
+        // Night Vision Toggle
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const btn = document.getElementById('dark-mode-btn');
+            if(document.body.classList.contains('dark-mode')) {
+                btn.innerText = '☀️'; 
+            } else {
+                btn.innerText = '🌙'; 
+            }
+            const total = parseInt(document.getElementById('gen-count').innerText) + parseInt(document.getElementById('res-count').innerText);
+            updateLiveStatus(total || 0);
+        }
+
+        // Waiting List Submission
+        function joinWaitlist() {
+            const name = document.getElementById('waitName').value;
+            const phone = document.getElementById('waitPhone').value;
+            
+            if(!name || !phone) {
+                alert("Please enter both Name and WhatsApp Number!");
+                return;
+            }
+
+            const waitData = {
+                name: name,
+                phone: phone,
+                time: new Date().toLocaleString(),
+                status: "Pending"
+            };
+
+            db.ref('waiting_list').push(waitData).then(() => {
+                document.getElementById('waitlist-form').style.display = 'none';
+                document.getElementById('wait-msg').style.display = 'block';
+            }).catch((error) => {
+                alert("Network error, please try again.");
+            });
+        }
+
+        // Security Lock
+        document.addEventListener('contextmenu', event => event.preventDefault()); 
+        document.onkeydown = function(e) {
+            if(e.keyCode == 123) { return false; } 
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) { return false; } 
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) { return false; } 
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) { return false; } 
+            if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) { return false; } 
+        };
+    </script>
+</body>
+</html>
