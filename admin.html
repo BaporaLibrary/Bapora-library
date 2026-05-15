@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Bapora Command v10.37 (Full Background Colour)</title>
+    <title>Bapora Command v10.40 (Auto-Pilot Sync Active)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root { --navy: #002347; --gold: #c5a059; --bg: #f4f4f9; --card: #ffffff; --text: #222; --safe: #1b5e20; --danger: #b71c1c; }
@@ -15,9 +15,7 @@
         .section { background: #fafafa; padding: 12px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #e0e0e0; }
         input, select { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #cfd8dc; border-radius: 4px; box-sizing: border-box; }
         
-        /* Base record card styling - Background will be injected dynamically */
         .record-item { padding: 12px; border-radius: 6px; margin-top: 10px; border: 1px solid #d1d5db; position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        
         .follow-up { background: #fff3e0; color: #ef6c00; font-weight: bold; padding: 4px; border-radius: 4px; font-size: 10px; display: inline-block; margin-top: 5px; border: 1px solid #ffe0b2; }
         .remind-date { font-size: 9px; color: #666; display: block; margin-top: 2px; }
         
@@ -80,21 +78,30 @@
                 <div class="stat" style="color:var(--danger); border-color:var(--danger);"><small>Exp This Mnt</small><b id="sumExp">₹0</b></div>
             </div>
 
+            <div style="margin-bottom:15px; background:#fff3cd; padding:10px; border-radius:6px; border:1px solid #ffeeba;">
+                <h4 style="margin:0 0 5px 0; color:#856404; font-size:13px;">📢 PUBLIC DASHBOARD MARQUEE</h4>
+                <div style="display:flex; gap:5px;">
+                    <input type="text" id="marqueeText" placeholder="Announcements for students..." style="width:70%; font-size:12px; padding:6px; margin:0;">
+                    <button class="btn-main" style="width:30%; background:#c82333; padding:6px; margin:0;" onclick="window.setMarquee()">SET LIVE</button>
+                </div>
+                <button class="btn-main" style="width:100%; background:#6c757d; padding:6px; margin-top:5px; font-size:12px;" onclick="window.clearMarquee()">CLEAR ALERT</button>
+            </div>
+
             <div class="section">
                 <input type="hidden" id="editId">
                 <input type="text" id="stuName" placeholder="Student Name">
                 <div style="display:flex; gap:4px;">
-                    <input type="text" id="stuSeat" placeholder="Seat" style="width:25%;">
-                    <select id="stuShift" style="width:40%; font-size:12px; padding:8px;">
+                    <input type="text" id="stuSeat" placeholder="Seat No (Leave blank for Gen)" style="width:50%;">
+                    <select id="stuShift" style="width:50%; font-size:12px; padding:8px;">
                         <option value="Full">Full Day</option>
                         <option value="Morning">Morning</option>
                         <option value="Evening">Evening</option>
                     </select>
-                    <input type="number" id="stuAmt" placeholder="Paid(₹)" style="width:35%;">
                 </div>
+                <input type="number" id="stuAmt" placeholder="Paid(₹)" style="width:100%;">
                 <input type="tel" id="stuPhone" placeholder="WhatsApp No">
                 <input type="date" id="stuFeeDate">
-                <button id="saveBtn" class="btn-main" style="background:var(--navy);" onclick="window.saveStudent()">SAVE TO CLOUD</button>
+                <button id="saveBtn" class="btn-main" style="background:var(--navy);" onclick="window.saveStudent()">SAVE & SYNC TO PUBLIC</button>
                 <button id="cancelBtn" class="btn-main" style="background:#666; display:none;" onclick="window.clearForms()">CANCEL</button>
             </div>
 
@@ -107,7 +114,7 @@
                 <button id="fExp" class="btn-filter" style="border-color:#b71c1c; color:#b71c1c;" onclick="window.setF('exp')">🚨 EXPIRED</button>
             </div>
 
-            <button class="btn-main" style="background: linear-gradient(145deg, #f39c12, #d35400); margin-bottom: 15px; font-size:14px;" onclick="window.startMegaphone()">📢 BROADCAST MESSAGE</button>
+            <button class="btn-main" style="background: linear-gradient(145deg, #f39c12, #d35400); margin-bottom: 15px; font-size:14px;" onclick="window.startMegaphone()">📱 WHATSAPP BROADCAST</button>
 
             <div id="stuList"></div>
 
@@ -197,6 +204,46 @@
         });
     };
     
+    // --- THE AUTO-PILOT ENGINE ---
+    window.syncSeatsToPublic = function() {
+        let publicSeats = {};
+        let generalCount = 0;
+
+        // Step 1: Find valid seats and mark them Reserved ('r')
+        students.forEach(s => {
+            let seatNum = parseInt(s.seat);
+            if (seatNum > 0 && seatNum <= 57) {
+                publicSeats[seatNum] = 'r';
+            } else {
+                generalCount++; // Jiska seat number khali/galat hai wo General me jayega
+            }
+        });
+
+        // Step 2: Assign blue 'General' dots to random vacant seats in public dashboard
+        let currentGen = 0;
+        for (let i = 1; i <= 57; i++) {
+            if (!publicSeats[i] && currentGen < generalCount) {
+                publicSeats[i] = 'g';
+                currentGen++;
+            }
+        }
+
+        // Send calculation to the Public View immediately
+        set(ref(db, 'seats'), publicSeats);
+    };
+
+    window.setMarquee = () => {
+        const txt = document.getElementById('marqueeText').value;
+        set(ref(db, 'broadcast'), { text: txt });
+        alert("Public Dashboard Marquee Updated! 📢");
+    };
+
+    window.clearMarquee = () => {
+        set(ref(db, 'broadcast'), { text: "" });
+        document.getElementById('marqueeText').value = "";
+        alert("Marquee Cleared! 🛑");
+    };
+
     window.showDailyLog = function() {
         const displayBox = document.getElementById('dailyLogDisplay');
         if (displayBox.style.display === 'block') {
@@ -247,10 +294,15 @@
             const data = snap.val();
             if (data) { students = data.students || []; expenses = data.expenses || []; history = data.history || []; }
             window.render();
+            // Automatically push initial visual grid to index.html on load
+            window.syncSeatsToPublic();
         });
     }
 
-    function saveToCloud() { set(ref(db, 'admin_data'), { students, expenses, history }); }
+    function saveToCloud() { 
+        set(ref(db, 'admin_data'), { students, expenses, history }); 
+        window.syncSeatsToPublic(); // Trigger sync manually on save
+    }
 
     window.switchTab = (t) => {
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -316,7 +368,7 @@
     function updateMegaUI() {
         document.getElementById('megaCount').innerText = megaQueue.length;
         if(megaQueue.length > 0) { document.getElementById('megaNextName').innerText = megaQueue[0].name + " (Seat " + megaQueue[0].seat + ")"; } 
-        else { document.getElementById('mega-panel').style.display = 'none'; alert("📢 Megaphone Broadcast Complete!"); }
+        else { document.getElementById('mega-panel').style.display = 'none'; alert("📢 WhatsApp Broadcast Complete!"); }
     }
 
     window.fireMegaphone = function() {
@@ -364,7 +416,6 @@
         }
     };
 
-    // --- 3 DOTS TOGGLE ---
     window.toggleActions = (id) => {
         const div = document.getElementById(`actions-${id}`);
         if(div.style.display === 'none') {
@@ -412,7 +463,6 @@
         window.clearForms();
     };
 
-    // --- MAIN RENDER ENGINE (DYNAMIC BACKGROUND COLOUR) ---
     window.render = () => {
         const q = document.getElementById('stuSearch').value.toLowerCase();
         let sH = "", dCnt = 0, tFees = 0, pCnt = 0;
@@ -465,14 +515,12 @@
 
             if((matchName || matchPhone || matchSeat) && (curF=='all' || (curF=='due' && isDue) || (curF=='fol' && isFol) || (curF=='exp' && isExp))) {
                 
-                // 🎨 YAHI HAI WOH MAIN CODE JO BACKGROUND COLOUR BADLEGA 🎨
-                // Agar Due hai toh Halka Laal (#ffebee), Agar Active hai toh Halka Hara (#e8f5e9)
                 let cardBgColor = isDue ? '#ffebee' : '#e8f5e9'; 
                 let leftBorderColor = isDue ? '#b71c1c' : '#1b5e20';
                 
                 sH += `<div class="record-item" style="background-color: ${cardBgColor}; border-left: 5px solid ${leftBorderColor};">
                     <b>${s.name}</b> ${presentBtn} ${histLink} ${feeDisplayHTML}<br>
-                    <small>Seat: <b>${s.seat}</b> <span style="background:rgba(0,0,0,0.1); padding:1px 5px; border-radius:3px; font-size:9px;">${s.shift || 'Full'}</span> | Valid: <b>${s.fee}</b></small><br>
+                    <small>Seat: <b>${s.seat || 'Gen'}</b> <span style="background:rgba(0,0,0,0.1); padding:1px 5px; border-radius:3px; font-size:9px;">${s.shift || 'Full'}</span> | Valid: <b>${s.fee}</b></small><br>
                     ${rDateHTML} ${folHTML}
                     
                     <div style="text-align: right; margin-top: -15px;">
@@ -539,22 +587,14 @@
         let displayDate = `${parts[2]}/${parts[1]}/${parts[0]}`; 
         let msg = "";
         
-        if(type == 1) {
-            msg = `Namaste ${s.name}, fee amount ₹${s.amount} received. Valid till ${displayDate}. Thank you! Happy Studying 📖 - Bapora Library`;
-        }
-        else if(type == 2) {
-            msg = `Namaste ${s.name}, your fee is pending since ${displayDate}. Please update soon.`;
-        }
-        else if(type == 3) {
-            msg = `Namaste ${s.name}, your lunch has been arrived. Please collect it from reception. 🍱🥄`;
-        }
+        if(type == 1) { msg = `Namaste ${s.name}, fee amount ₹${s.amount} received. Valid till ${displayDate}. Thank you! Happy Studying 📖 - Bapora Library`; }
+        else if(type == 2) { msg = `Namaste ${s.name}, your fee is pending since ${displayDate}. Please update soon.`; }
+        else if(type == 3) { msg = `Namaste ${s.name}, your lunch has been arrived. Please collect it from reception. 🍱🥄`; }
         else if(type == 4) {
             msg = `📢 *Seat Payment Alert*\n\nStudent: *${s.name}*\nSeat No: *${s.seat}* (Shift: ${s.shift || 'Full'})\nAmount Paid: *₹${s.amount}*\nValid Till: *${displayDate}*`;
             return window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`);
         }
-        else if(type == 5) {
-            msg = `Namaste ${s.name}, your library membership expired on ${displayDate}. We haven't heard from you! Please confirm if you are taking a break or planning to continue, so we can manage your seat accordingly. Thank you! 📚 - Admin, Bapora Library`;
-        }
+        else if(type == 5) { msg = `Namaste ${s.name}, your library membership expired on ${displayDate}. We haven't heard from you! Please confirm if you are taking a break or planning to continue, so we can manage your seat accordingly. Thank you! 📚 - Admin, Bapora Library`; }
         
         students[idx].lastRemind = new Date().toISOString();
         saveToCloud(); window.open(`https://wa.me/91${s.phone}?text=${encodeURIComponent(msg)}`);
@@ -634,46 +674,24 @@
     };
 
     window.closeMonthlyLedger = function() {
-        if (!confirm("Commander, kya aap sure hain? Is mahine ka financial data reset ho jayega aur History mein save ho সংযega! (Sytem pehle backup download karega)")) return;
-
+        if (!confirm("Commander, kya aap sure hain? Is mahine ka financial data reset ho jayega!")) return;
         try {
             window.exportData(); 
-            
             const now = new Date();
             const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
             const currentMonthName = monthNames[now.getMonth()];
-            const nextMonthName = monthNames[(now.getMonth() + 1) % 12]; 
-
+            
             const totalFees = students.reduce((a, b) => a + (parseFloat(b.amount) || 0), 0);
             const totalExp = expenses.reduce((a, b) => a + (parseFloat(b.amt) || 0), 0);
             
-            const monthlySummary = {
-                month: currentMonthName + " " + now.getFullYear(),
-                fee: totalFees,
-                exp: totalExp,
-                profit: (totalFees - totalExp)
-            };
+            history.push({ month: currentMonthName + " " + now.getFullYear(), fee: totalFees, exp: totalExp, profit: (totalFees - totalExp) });
 
-            students = students.map(s => ({
-                ...s,
-                lastAmount: (parseFloat(s.amount) > 0) ? s.amount : (s.lastAmount || "0"), 
-                amount: "0",      
-                lastRemind: null  
-            }));
-
+            students = students.map(s => ({ ...s, lastAmount: (parseFloat(s.amount) > 0) ? s.amount : (s.lastAmount || "0"), amount: "0", lastRemind: null }));
             expenses = []; 
-
-            if (!history) history = [];
-            history.push(monthlySummary);
-
             saveToCloud();
-
-            alert(`Mission Successful! ${currentMonthName} Ledger closed. ${nextMonthName} is now active! 📈`);
+            alert(`Mission Successful! Ledger closed.`);
             location.reload();
-
-        } catch (err) {
-            alert("Error during reset: " + err.message);
-        }
+        } catch (err) { alert("Error: " + err.message); }
     };
 </script>
 </body>
