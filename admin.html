@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Bapora Command v10.35 (Vibrant Stealth Active)</title>
+    <title>Bapora Command v10.36 (Original Design Restored)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root { --navy: #002347; --gold: #c5a059; --bg: #f4f4f9; --card: #ffffff; --text: #222; --safe: #1b5e20; --danger: #b71c1c; }
@@ -15,9 +15,9 @@
         .section { background: #fafafa; padding: 12px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #e0e0e0; }
         input, select { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #cfd8dc; border-radius: 4px; box-sizing: border-box; }
         
-        /* Vibrant Record Cards */
-        .record-item { background: white; padding: 12px; border-radius: 8px; margin-top: 10px; border: 1px solid #eceff1; border-left: 5px solid var(--navy); box-shadow: 0 3px 6px rgba(0,0,0,0.05); position: relative;}
-        .due-alert { border-left-color: var(--danger) !important;}
+        /* 🎯 EXACT ORIGINAL RECORD CARD CSS (9:01 AM) */
+        .record-item { background: white; padding: 12px; border-radius: 6px; margin-top: 8px; border: 1px solid #eceff1; position: relative; border-left: 4px solid var(--navy); }
+        .due-alert { border-left-color: var(--danger) !important; background: #fff5f5; }
         
         .follow-up { background: #fff3e0; color: #ef6c00; font-weight: bold; padding: 4px; border-radius: 4px; font-size: 10px; display: inline-block; margin-top: 5px; border: 1px solid #ffe0b2; }
         .remind-date { font-size: 9px; color: #666; display: block; margin-top: 2px; }
@@ -365,7 +365,7 @@
         }
     };
 
-    // --- STEALTH DROPDOWN TOGGLE ---
+    // --- 3 DOTS TOGGLE ---
     window.toggleActions = (id) => {
         const div = document.getElementById(`actions-${id}`);
         if(div.style.display === 'none') {
@@ -413,7 +413,7 @@
         window.clearForms();
     };
 
-    // --- MAIN RENDER ENGINE (Vibrant Patched v10.35) ---
+    // --- EXACT ORIGINAL RENDER ENGINE (9:01 AM) WITH 3 DOTS ---
     window.render = () => {
         const q = document.getElementById('stuSearch').value.toLowerCase();
         let sH = "", dCnt = 0, tFees = 0, pCnt = 0;
@@ -466,53 +466,26 @@
 
             if((matchName || matchPhone || matchSeat) && (curF=='all' || (curF=='due' && isDue) || (curF=='fol' && isFol) || (curF=='exp' && isExp))) {
                 
-                // 🎨 THE SOLUTION: Colorful Design based on Status 🎨
-                
-                // Green for Active, Red for Due
-                let studentNameColor = isDue ? 'var(--danger)' : 'var(--navy)';
-                
-                // Inner Info Box dynamic style
-                let infoBoxBg = isDue ? '#ffebee' : '#e8f5e9'; // Pale Red vs Pale Green
-                let infoBoxBorder = isDue ? '#ffcdd2' : '#c8e6c9';
-                let validDateColor = isDue ? 'var(--danger)' : 'var(--safe)';
-                let shiftBadgeBg = isDue ? 'rgba(183, 28, 28, 0.1)' : 'rgba(27, 94, 32, 0.1)';
-
-                sH += `
-                <div class="record-item ${isDue ? 'due-alert' : ''}">
-                    
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                        <div>
-                            <b style="font-size:16px; color: ${studentNameColor};">${s.name}</b> 
-                            ${presentBtn} ${histLink}
-                        </div>
-                        <div style="text-align:right;">
-                            ${feeDisplayHTML}
-                        </div>
-                    </div>
-                    
-                    <div style="background:${infoBoxBg}; padding:6px 10px; border-radius:6px; margin-top:8px; border:1px solid ${infoBoxBorder}; display:flex; justify-content:space-between; align-items:center;">
-                        <span style="font-size:12px; color:#333;">Seat: <b style="font-size:14px; color:#000;">${s.seat}</b> <span style="background:${shiftBadgeBg}; padding:1px 5px; border-radius:3px; font-size:9px; font-weight:bold; color:#000;">${s.shift || 'Full'}</span></span>
-                        <span style="font-size:12px; color:#333;">Valid: <b style="color:${validDateColor}; font-size:13px;">${s.fee}</b></span>
-                    </div>
-
+                // EXACT ORIGINAL HTML STRUCTURE 
+                sH += `<div class="record-item ${isDue ? 'due-alert' : ''}">
+                    <b>${s.name}</b> ${presentBtn} ${histLink} ${feeDisplayHTML}<br>
+                    <small>Seat: ${s.seat} <span style="background:#eee; padding:1px 5px; border-radius:3px; font-size:9px;">${s.shift || 'Full'}</span> | Valid: ${s.fee}</small><br>
                     ${rDateHTML} ${folHTML}
                     
-                    <div style="text-align: right; margin-top: -5px; position:relative; z-index:2;">
-                        <span onclick="window.toggleActions(${s.id})" style="cursor:pointer; font-size:20px; color:#6c757d; font-weight:bold; padding:0 15px; display:inline-block;">⋮</span>
+                    <div style="text-align: right; margin-top: -15px;">
+                        <span onclick="window.toggleActions(${s.id})" style="cursor:pointer; font-size:24px; color:#555; padding: 0 10px; font-weight:bold;">⋮</span>
                     </div>
                     
-                    <div id="actions-${s.id}" class="wa-btn-group" style="display:none; margin-bottom:10px; background:#f1f3f5; padding:8px; border-radius:6px; border:1px solid #dee2e6;">
-                        <button onclick="window.wa(${s.id}, 1)" class="wa-btn btn-rcpt" style="color:#fff;">Receipt</button>
-                        <button onclick="window.wa(${s.id}, 2)" class="wa-btn btn-due" style="color:#fff;">Due</button>
-                        <button onclick="window.wa(${s.id}, 3)" class="wa-btn btn-lunch" style="color:#fff;">Lunch</button>
-                        <button onclick="window.wa(${s.id}, 4)" class="wa-btn btn-alert" style="color:#fff;">Mgmt Alert</button>
-                        <button onclick="window.wa(${s.id}, 5)" class="wa-btn btn-exp" style="color:#fff;">Final Call</button>
+                    <div id="actions-${s.id}" class="wa-btn-group" style="display:none; border-top:1px solid #eee; padding-top:8px; margin-top:5px;">
+                        <button onclick="window.wa(${s.id}, 1)" class="wa-btn btn-rcpt">Receipt</button>
+                        <button onclick="window.wa(${s.id}, 2)" class="wa-btn btn-due">Due</button>
+                        <button onclick="window.wa(${s.id}, 3)" class="wa-btn btn-lunch">Lunch</button>
+                        <button onclick="window.wa(${s.id}, 4)" class="wa-btn btn-alert">Mgmt Alert</button>
+                        <button onclick="window.wa(${s.id}, 5)" class="wa-btn btn-exp">Final Call</button>
                     </div>
 
-                    <div style="margin-top:2px; border-top:1px solid #eee; padding-top:6px; display:flex; gap:15px;">
-                        <span class="action-link" style="color:#0056b3; margin:0;" onclick="window.editStu(${s.id})">✎ EDIT</span>
-                        <span class="action-link" style="color:#c82333; margin:0;" onclick="window.delStu(${s.id})">✖ DELETE</span>
-                    </div>
+                    <span class="action-link" style="color:blue" onclick="window.editStu(${s.id})">✎ EDIT</span>
+                    <span class="action-link" style="color:red" onclick="window.delStu(${s.id})">✖ DELETE</span>
                 </div>`;
             }
         });
