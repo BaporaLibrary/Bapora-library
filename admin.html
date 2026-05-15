@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Bapora Command v10.32 (Stealth UI Active)</title>
+    <title>Bapora Command v10.33 (Vibrant Stealth Active)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root { --navy: #002347; --gold: #c5a059; --bg: #f4f4f9; --card: #ffffff; --text: #222; --safe: #1b5e20; --danger: #b71c1c; }
@@ -16,8 +16,7 @@
         input, select { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #cfd8dc; border-radius: 4px; box-sizing: border-box; }
         
         /* Colorful Record Cards */
-        .record-item { background: white; padding: 12px; border-radius: 6px; margin-top: 8px; border: 1px solid #eceff1; position: relative; border-left: 4px solid var(--navy); box-shadow: 0 2px 4px rgba(0,0,0,0.04); }
-        .due-alert { border-left-color: var(--danger) !important; background: #fff5f5; }
+        .record-item { background: white; padding: 12px; border-radius: 8px; margin-top: 10px; border: 1px solid #eceff1; border-left: 5px solid var(--navy); box-shadow: 0 3px 6px rgba(0,0,0,0.05); }
         
         .follow-up { background: #fff3e0; color: #ef6c00; font-weight: bold; padding: 4px; border-radius: 4px; font-size: 10px; display: inline-block; margin-top: 5px; border: 1px solid #ffe0b2; }
         .remind-date { font-size: 9px; color: #666; display: block; margin-top: 2px; }
@@ -413,7 +412,7 @@
         window.clearForms();
     };
 
-    // --- MAIN RENDER ENGINE (With Stealth UI Colors & 3 Dots) ---
+    // --- MAIN RENDER ENGINE (With Vibrant Color Logic & Stylized 3 Dots) ---
     window.render = () => {
         const q = document.getElementById('stuSearch').value.toLowerCase();
         let sH = "", dCnt = 0, tFees = 0, pCnt = 0;
@@ -466,8 +465,14 @@
 
             if((matchName || matchPhone || matchSeat) && (curF=='all' || (curF=='due' && isDue) || (curF=='fol' && isFol) || (curF=='exp' && isExp))) {
                 
+                // 🎨 DYNAMIC COLOR LOGIC: Active vs Due 
+                let borderColor = isDue ? 'var(--danger)' : '#28a745'; // Left thick border
+                let boxBg = isDue ? '#ffebee' : '#e8f5e9'; // Background color of the middle box
+                let boxBorder = isDue ? '#ffcdd2' : '#c8e6c9'; // Border color of the middle box
+                
                 sH += `
-                <div class="record-item ${isDue ? 'due-alert' : ''}">
+                <div class="record-item" style="border-left-color: ${borderColor};">
+                    
                     <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                         <div>
                             <b style="font-size:16px; color:var(--navy);">${s.name}</b> 
@@ -478,16 +483,17 @@
                         </div>
                     </div>
                     
-                    <div style="background:#f8f9fa; padding:6px 8px; border-radius:4px; margin-top:8px; border:1px solid #e9ecef;">
-                        <small style="color:#495057;">Seat: <b style="color:#000; font-size:13px;">${s.seat}</b> <span style="background:#dee2e6; padding:1px 5px; border-radius:3px; font-size:9px; color:#212529;">${s.shift || 'Full'}</span> | Valid: <b style="color:${isDue ? 'var(--danger)' : 'var(--safe)'};">${s.fee}</b></small>
+                    <div style="background:${boxBg}; padding:8px 10px; border-radius:6px; margin-top:10px; border:1px solid ${boxBorder}; display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-size:12px; color:#333;">Seat: <b style="font-size:14px; color:#000;">${s.seat}</b> <span style="background:rgba(0,0,0,0.08); padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold; color:#222;">${s.shift || 'Full'}</span></span>
+                        <span style="font-size:12px; color:#333;">Valid: <b style="color:${isDue ? 'var(--danger)' : 'var(--safe)'}; font-size:13px;">${s.fee}</b></span>
                     </div>
                     ${rDateHTML} ${folHTML}
                     
-                    <div style="text-align: right; margin-top: -5px; position:relative; z-index:2;">
-                        <span onclick="window.toggleActions(${s.id})" style="cursor:pointer; font-size:20px; color:#6c757d; font-weight:bold; padding:0 15px; display:inline-block;">⋮</span>
+                    <div style="text-align: right; margin-top: 5px; position:relative; z-index:2;">
+                        <button onclick="window.toggleActions(${s.id})" style="background:#e3f2fd; color:#0277bd; border:1px solid #90caf9; padding:2px 15px; border-radius:12px; font-weight:bold; font-size:16px; cursor:pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">⋮</button>
                     </div>
                     
-                    <div id="actions-${s.id}" class="wa-btn-group" style="display:none; margin-bottom:8px; background:#f1f3f5; padding:8px; border-radius:6px; border:1px solid #dee2e6;">
+                    <div id="actions-${s.id}" class="wa-btn-group" style="display:none; margin-top:8px; background:#f1f3f5; padding:8px; border-radius:6px; border:1px solid #dee2e6;">
                         <button onclick="window.wa(${s.id}, 1)" class="wa-btn btn-rcpt" style="color:#fff;">Receipt</button>
                         <button onclick="window.wa(${s.id}, 2)" class="wa-btn btn-due" style="color:#fff;">Due</button>
                         <button onclick="window.wa(${s.id}, 3)" class="wa-btn btn-lunch" style="color:#fff;">Lunch</button>
@@ -495,9 +501,9 @@
                         <button onclick="window.wa(${s.id}, 5)" class="wa-btn btn-exp" style="color:#fff;">Final Call</button>
                     </div>
 
-                    <div style="margin-top:2px; border-top:1px solid #eee; padding-top:6px;">
-                        <span class="action-link" style="color:#0056b3;" onclick="window.editStu(${s.id})">✎ EDIT</span>
-                        <span class="action-link" style="color:#c82333;" onclick="window.delStu(${s.id})">✖ DELETE</span>
+                    <div style="margin-top:8px; border-top:1px solid #eee; padding-top:8px; display:flex; gap:15px;">
+                        <span class="action-link" style="color:#0056b3; margin:0;" onclick="window.editStu(${s.id})">✎ EDIT</span>
+                        <span class="action-link" style="color:#c82333; margin:0;" onclick="window.delStu(${s.id})">✖ DELETE</span>
                     </div>
                 </div>`;
             }
@@ -644,7 +650,7 @@
     };
 
     window.closeMonthlyLedger = function() {
-        if (!confirm("Commander, kya aap sure hain? Is mahine ka financial data reset ho jayega aur History mein save ho jayega! (Sytem pehle backup download karega)")) return;
+        if (!confirm("Commander, kya aap sure hain? Is mahine ka financial data reset ho jayega aur History mein save ho সংযega! (Sytem pehle backup download karega)")) return;
 
         try {
             window.exportData(); 
