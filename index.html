@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bapora Library - Secure Control</title>
+    <title>Bapora Library - Live Dashboard</title>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-auth-compat.js"></script>
     <style>
         :root { --navy: #002b5b; --gold: #c5a059; --green: #2ecc71; --blue: #3498db; --red: #e74c3c; }
         
@@ -62,11 +61,7 @@
             border: 1px solid #e0e0e0;
             display: flex; flex-direction: column; align-items: center; 
             transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); 
-            cursor: pointer;
         }
-        
-        .stat-card:hover { transform: translateY(-6px); box-shadow: 0 12px 20px rgba(0, 0, 0, 0.2); }
-        .stat-card:active { transform: scale(0.96); }
         
         .stat-card.total { border-bottom: 4px solid #555; }
         .stat-card.general { border-bottom: 4px solid var(--blue); }
@@ -100,30 +95,15 @@
         .seat { 
             width: 50px; height: 55px; border-radius: 10px; display: flex; flex-direction: column;
             align-items: center; justify-content: center; font-size: 13px; font-weight: bold; 
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
-        .seat:hover { transform: translateY(-4px) scale(1.05); }
         
         .st-vacant { background: #fff; color: var(--green); border: 2px dashed var(--green); }
-        .st-vacant:hover { box-shadow: 0 6px 12px rgba(46, 204, 113, 0.3); background: #f0fdf4; }
-        
         .st-general { background: linear-gradient(145deg, #3498db, #2980b9); color: white; border: none; box-shadow: 3px 5px 10px rgba(0,0,0,0.2), inset 1px 1px 2px rgba(255,255,255,0.4); }
-        .st-general:hover { box-shadow: 0 8px 15px rgba(52, 152, 219, 0.5); }
-        
         .st-reserved { background: linear-gradient(145deg, #e74c3c, #c0392b); color: white; border: none; box-shadow: 3px 5px 10px rgba(0,0,0,0.2), inset 1px 1px 2px rgba(255,255,255,0.4); }
-        .st-reserved:hover { box-shadow: 0 8px 15px rgba(231, 76, 60, 0.5); }
 
         .icon-stu { font-size: 18px; margin-bottom: 2px; line-height: 1; filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.3)); }
         .seat-no { font-size: 12px; line-height: 1; }
-
-        /* STEALTH ADMIN SECTION */
-        .admin-trigger { 
-            background: transparent; border: none; color: transparent; height: 60px; width: 100%; cursor: default; outline: none; margin-top: 10px;
-        }
-        #admin-panel { display: none; margin: 20px; padding: 20px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 2px solid var(--navy); border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-        input { padding: 12px; margin: 8px; width: 85%; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; outline: none; background: rgba(255,255,255,0.8); }
-        .btn { padding: 12px 25px; background: linear-gradient(145deg, var(--navy), #001f3f); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.3); }
 
         /* WhatsApp */
         .whatsapp-float { position: fixed; width: 60px; height: 60px; bottom: 20px; right: 20px; background-color: #25d366; color: #FFF; border-radius: 50px; box-shadow: 2px 4px 15px rgba(37, 211, 102, 0.4); z-index: 1000; display: flex; justify-content: center; align-items: center; text-decoration: none; transition: all 0.3s ease; }
@@ -139,7 +119,7 @@
 
     <div class="header">
         <h2>BAPORA LIBRARY</h2>
-        <div class="tagline">⚓ VETERAN SECURE SYSTEM ⚓</div>
+        <div class="tagline">⚓ REAL-TIME SEAT STATUS ⚓</div>
     </div>
 
     <div class="dash">
@@ -166,39 +146,14 @@
     </div>
 
     <div id="live-status-box">
-        <span id="seat-status">Checking Status...</span>
+        <span id="seat-status">Syncing with Command Center...</span>
     </div>
 
     <div class="section-box">
         <div class="grid" id="seat-grid"></div>
     </div>
 
-    <button class="admin-trigger" onclick="showAdmin()"></button>
-
-    <div id="admin-panel">
-        <h3 style="color:var(--navy); margin-top:0; text-shadow: 1px 1px 2px rgba(0,0,0,0.1);">MASTER CONTROL 🔐</h3>
-        <input type="email" id="email" placeholder="Email Address">
-        <input type="password" id="pass" placeholder="Password">
-        <button class="btn" onclick="handleLogin()">LOGIN ⚓</button>
-        
-        <div id="admin-controls" style="display:none; margin-top:20px; border-top: 2px solid #eee; padding-top:20px;">
-            
-            <div style="background: rgba(0,0,0,0.05); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ddd;">
-                <h4 style="margin: 0 0 10px 0; color: var(--navy); font-size: 14px;">📢 MEGAPHONE BROADCAST</h4>
-                <input type="text" id="broadcast-msg" placeholder="Type your announcement here..." style="width: 85%; margin: 0 auto; display: block;">
-                <div style="display: flex; gap: 10px; justify-content: center; margin-top: 10px;">
-                    <button class="btn" style="background: var(--blue); width: 45%; padding: 10px;" onclick="sendBroadcast()">SEND 🚀</button>
-                    <button class="btn" style="background: #95a5a6; width: 45%; padding: 10px;" onclick="clearBroadcast()">CLEAR 🛑</button>
-                </div>
-            </div>
-
-            <div id="admin-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); gap:5px; margin-bottom:15px;"></div>
-            <button class="btn" style="width:100%; background:linear-gradient(145deg, #2ecc71, #27ae60);" onclick="updateCloud()">SYNC TO DATABASE</button>
-            <button class="btn" style="width:100%; background:linear-gradient(145deg, #e74c3c, #c0392b); margin-top:10px;" onclick="location.reload()">LOGOUT</button>
-        </div>
-    </div>
-
-    <a href="https://wa.me/919393681565?text=Hello%20Sir!%20I%20have%20a%20query%20regarding%20the%20Bapora%20Library." class="whatsapp-float" target="_blank" rel="noopener noreferrer">
+    <a href="https://wa.me/919393681565?text=Hello%20Sir!%20I%20have%20a%20query%20regarding%20the%20Bapora%20Library." class="whatsapp-float" target="_blank">
         <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="Chat on WhatsApp" class="whatsapp-icon">
     </a>
 
@@ -211,24 +166,22 @@
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-        const auth = firebase.auth();
 
         let seatData = {};
 
-        // SEAT LISTENER
+        // 100% Secure Read-Only Link to the Seats node
         db.ref('seats').on('value', (snap) => {
             seatData = snap.val() || {};
             render();
         });
 
-        // MEGAPHONE LISTENER
+        // Live Megaphone Broadcast Link
         db.ref('broadcast').on('value', (snap) => {
             let msg = snap.val();
             let alertBox = document.getElementById('megaphone-alert');
             let alertText = document.getElementById('megaphone-text');
-            
             if (msg && msg.text !== "") {
-                alertText.innerText = "ADMIN MESSAGE: " + msg.text;
+                alertText.innerText = "UPDATE: " + msg.text;
                 alertBox.style.display = 'block'; 
             } else {
                 alertBox.style.display = 'none'; 
@@ -288,67 +241,7 @@
             }
         }
 
-        function showAdmin() { 
-            document.getElementById('admin-panel').style.display='block'; 
-            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-        }
-
-        function handleLogin() {
-            const email = document.getElementById('email').value;
-            const pass = document.getElementById('pass').value;
-            auth.signInWithEmailAndPassword(email, pass)
-                .then(() => {
-                    alert("Welcome Petty Officer! System Unlocked.");
-                    document.getElementById('admin-controls').style.display='block';
-                    renderAdmin();
-                })
-                .catch(e => alert("ACCESS DENIED: Wrong Email or Password."));
-        }
-
-        function renderAdmin() {
-            const ag = document.getElementById('admin-grid'); ag.innerHTML = "";
-            for(let i=1; i<=57; i++){
-                const b = document.createElement('button');
-                b.innerText = i; b.style.padding="8px"; b.style.border="none"; b.style.color="white"; b.style.borderRadius="6px";
-                let status = seatData[i] || 'v';
-                b.style.background = (status==='g')?'#3498db':(status==='r')?'#e74c3c':'#2ecc71';
-                b.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
-                b.onclick = () => {
-                    if(!seatData[i] || seatData[i]==='v') seatData[i]='g';
-                    else if(seatData[i]==='g') seatData[i]='r';
-                    else delete seatData[i];
-                    renderAdmin();
-                };
-                ag.appendChild(b);
-            }
-        }
-
-        function updateCloud() {
-            db.ref('seats').set(seatData).then(() => {
-                alert("Database Synced! ✅");
-            }).catch(e => alert("Permission Denied! Log in first."));
-        }
-
-        // MEGAPHONE SEND MESSAGE
-        function sendBroadcast() {
-            let msg = document.getElementById('broadcast-msg').value;
-            if(msg.trim() === "") { 
-                alert("Commander, message is empty!"); 
-                return; 
-            }
-            db.ref('broadcast').set({ text: msg }).then(() => {
-                alert("Broadcast Sent! 📢 Every student can see it now.");
-            }).catch(e => alert("Transmission Failed!"));
-        }
-
-        // MEGAPHONE CLEAR MESSAGE
-        function clearBroadcast() {
-            db.ref('broadcast').set({ text: "" }).then(() => {
-                document.getElementById('broadcast-msg').value = "";
-                alert("Broadcast Cleared! 🛑 The alert bar is hidden.");
-            });
-        }
-        
+        // Security Lock: Stop F12 and Right Click
         document.addEventListener('contextmenu', event => event.preventDefault()); 
         document.onkeydown = function(e) {
             if(e.keyCode == 123) { return false; } 
