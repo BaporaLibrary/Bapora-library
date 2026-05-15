@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Bapora Command v10.40 (Auto-Pilot Sync Active)</title>
+    <title>Bapora Command v10.45 (Auto-Pilot & Waitlist)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root { --navy: #002347; --gold: #c5a059; --bg: #f4f4f9; --card: #ffffff; --text: #222; --safe: #1b5e20; --danger: #b71c1c; }
         body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); color: var(--text); padding: 0; margin: 0; }
         .container { max-width: 480px; margin: auto; background: var(--card); border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border-top: 5px solid var(--navy); overflow: hidden; padding: 8px; padding-bottom: 60px; }
         .tabs { display: flex; background: #eceff1; }
-        .tab-btn { flex: 1; padding: 14px 5px; border: none; background: none; font-weight: bold; cursor: pointer; color: #546e7a; font-size: 12px; border-bottom: 3px solid transparent; }
+        .tab-btn { flex: 1; padding: 14px 2px; border: none; background: none; font-weight: bold; cursor: pointer; color: #546e7a; font-size: 11px; border-bottom: 3px solid transparent; display:flex; align-items:center; justify-content:center; }
         .tab-btn.active { color: var(--navy); border-bottom: 3px solid var(--navy); background: #fff; }
         .tab-content { display: none; padding: 12px; }
         .tab-content.active { display: block; }
@@ -64,6 +64,7 @@
     <div class="container">
         <div class="tabs">
             <button id="tabLBtn" class="tab-btn active" onclick="window.switchTab('lib-tab')">LIBRARIAN</button>
+            <button id="tabWBtn" class="tab-btn" onclick="window.switchTab('wait-tab')">WAITLIST <span id="wCount" style="background:var(--danger);color:white;border-radius:10px;padding:2px 6px;font-size:10px;margin-left:4px;">0</span></button>
             <button id="tabEBtn" class="tab-btn" onclick="window.switchTab('exp-tab')">FINANCE</button>
         </div>
 
@@ -145,6 +146,12 @@
             </div>
         </div>
 
+        <div id="wait-tab" class="tab-content">
+            <h3 style="color:var(--navy); margin-top:0; border-bottom:2px solid var(--gold); padding-bottom:10px;">⏳ STANDBY QUEUE</h3>
+            <p style="font-size:12px; color:#555;">Bacchon ki list jinhone public site se seat ki request bheji hai.</p>
+            <div id="waitlist-container"></div>
+        </div>
+
         <div id="exp-tab" class="tab-content">
             <div class="stat" style="background:var(--navy); color:white; margin-bottom:15px; padding:15px; border-radius:6px; text-align:center;">
                 <small>Net Profit (This Month)</small><b id="netProfit" style="font-size:24px;">₹0</b>
@@ -191,6 +198,7 @@
 
     let students = [], expenses = [], history = [], curF = 'all';
     let megaQueue = [], megaMessage = "";
+    let waitlistData = {};
 
     window.login = function() {
         const email = document.getElementById('loginEmail').value;
@@ -209,17 +217,15 @@
         let publicSeats = {};
         let generalCount = 0;
 
-        // Step 1: Find valid seats and mark them Reserved ('r')
         students.forEach(s => {
             let seatNum = parseInt(s.seat);
             if (seatNum > 0 && seatNum <= 57) {
                 publicSeats[seatNum] = 'r';
             } else {
-                generalCount++; // Jiska seat number khali/galat hai wo General me jayega
+                generalCount++; 
             }
         });
 
-        // Step 2: Assign blue 'General' dots to random vacant seats in public dashboard
         let currentGen = 0;
         for (let i = 1; i <= 57; i++) {
             if (!publicSeats[i] && currentGen < generalCount) {
@@ -227,11 +233,56 @@
                 currentGen++;
             }
         }
-
-        // Send calculation to the Public View immediately
         set(ref(db, 'seats'), publicSeats);
     };
 
+    // --- WAITLIST ENGINE ---
+    function setupWaitlistSync() {
+        onValue(ref(db, 'waiting_list'), (snap) => {
+            waitlistData = snap.val() || {};
+            window.renderWaitlist();
+        });
+    }
+
+    window.renderWaitlist = () => {
+        const container = document.getElementById('waitlist-container');
+        const keys = Object.keys(waitlistData);
+        document.getElementById('wCount').innerText = keys.length;
+        
+        if(keys.length === 0) {
+            container.innerHTML = "<center style='padding:20px; color:#666;'>Abhi koi waitlist mein nahi hai.</center>";
+            return;
+        }
+
+        let html = "";
+        // Reverse taaki naya banda upar aaye
+        keys.reverse().forEach(k => {
+            const w = waitlistData[k];
+            html += `
+            <div class="record-item" style="border-left: 5px solid var(--gold); background: #fffcf2;">
+                <b>${w.name}</b> <span style="float:right; font-size:10px; color:#666;">${w.time}</span><br>
+                <small style="color:var(--navy); font-weight:bold;">📞 ${w.phone}</small><br>
+                <div style="margin-top:10px; display:flex; gap:10px;">
+                    <button onclick="window.waWaitlist('${w.phone}', '${w.name}')" class="btn-main" style="background:#28a745; padding:8px; font-size:11px; margin:0; flex:1;">💬 Message (Seat Free)</button>
+                    <button onclick="window.delWaitlist('${k}')" class="btn-main" style="background:#dc3545; padding:8px; font-size:11px; margin:0; width:30%;">✖ Clear</button>
+                </div>
+            </div>`;
+        });
+        container.innerHTML = html;
+    };
+
+    window.waWaitlist = (phone, name) => {
+        const msg = `Namaste ${name}! Good news from Bapora Library. A seat is now available for you. Please confirm if you would like to join today! 📚`;
+        window.open(`https://wa.me/91${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+    };
+
+    window.delWaitlist = (key) => {
+        if(confirm("Commander, is student ko waitlist se hatana hai?")) {
+            set(ref(db, `waiting_list/${key}`), null);
+        }
+    };
+
+    // --- MARQUEE ---
     window.setMarquee = () => {
         const txt = document.getElementById('marqueeText').value;
         set(ref(db, 'broadcast'), { text: txt });
@@ -246,33 +297,13 @@
 
     window.showDailyLog = function() {
         const displayBox = document.getElementById('dailyLogDisplay');
-        if (displayBox.style.display === 'block') {
-            displayBox.style.display = 'none';
-            return;
-        }
-
+        if (displayBox.style.display === 'block') { displayBox.style.display = 'none'; return; }
         let dailyCounts = {};
-        students.forEach(s => {
-            if (s.attendanceHistory) {
-                s.attendanceHistory.forEach(date => {
-                    dailyCounts[date] = (dailyCounts[date] || 0) + 1;
-                });
-            }
-        });
-
+        students.forEach(s => { if (s.attendanceHistory) { s.attendanceHistory.forEach(date => { dailyCounts[date] = (dailyCounts[date] || 0) + 1; }); } });
         let resultHTML = "<b style='color:#0277bd;'>Daily Present Report:</b><br><ul style='padding-left:20px; margin-top:5px; color:#333;'>";
         let dates = Object.keys(dailyCounts).sort().reverse(); 
-        
-        if (dates.length === 0) {
-            resultHTML += "<li>Abhi tak koi attendance data nahi hai.</li>";
-        } else {
-            dates.forEach(d => {
-                resultHTML += `<li style="margin-bottom:3px;">${d} : <b>${dailyCounts[d]} Students Present</b></li>`;
-            });
-        }
-        resultHTML += "</ul>";
-        displayBox.innerHTML = resultHTML;
-        displayBox.style.display = 'block'; 
+        if (dates.length === 0) { resultHTML += "<li>Abhi tak koi attendance data nahi hai.</li>"; } else { dates.forEach(d => { resultHTML += `<li style="margin-bottom:3px;">${d} : <b>${dailyCounts[d]} Students Present</b></li>`; }); }
+        resultHTML += "</ul>"; displayBox.innerHTML = resultHTML; displayBox.style.display = 'block'; 
     };
 
     window.logout = () => signOut(auth);
@@ -282,6 +313,7 @@
             document.getElementById('login-screen').style.display = "none";
             document.getElementById('app-screen').style.display = "block";
             setupCloudSync();
+            setupWaitlistSync(); // Initialize Waitlist fetch
         } else {
             document.getElementById('login-screen').style.display = "flex";
             document.getElementById('app-screen').style.display = "none";
@@ -294,21 +326,22 @@
             const data = snap.val();
             if (data) { students = data.students || []; expenses = data.expenses || []; history = data.history || []; }
             window.render();
-            // Automatically push initial visual grid to index.html on load
             window.syncSeatsToPublic();
         });
     }
 
     function saveToCloud() { 
         set(ref(db, 'admin_data'), { students, expenses, history }); 
-        window.syncSeatsToPublic(); // Trigger sync manually on save
+        window.syncSeatsToPublic(); 
     }
 
     window.switchTab = (t) => {
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(t).classList.add('active');
-        document.getElementById(t + 'Btn').classList.add('active');
+        if(t === 'lib-tab') document.getElementById('tabLBtn').classList.add('active');
+        if(t === 'wait-tab') document.getElementById('tabWBtn').classList.add('active');
+        if(t === 'exp-tab') document.getElementById('tabEBtn').classList.add('active');
     };
 
     window.setF = (f) => {
@@ -329,18 +362,11 @@
         students.forEach(s => {
             const isDue = (s.fee && now >= new Date(s.fee));
             let isFol = false, isExp = false;
-            
             const daysOverdue = isDue ? Math.floor((now - new Date(s.fee)) / (1000 * 60 * 60 * 24)) : 0;
             if(daysOverdue >= 5) isExp = true; 
+            if(s.lastRemind) { const diff = Math.floor((now - new Date(s.lastRemind)) / (1000 * 60 * 60 * 24)); isFol = isDue && diff >= 3; }
             
-            if(s.lastRemind) {
-                const diff = Math.floor((now - new Date(s.lastRemind)) / (1000 * 60 * 60 * 24));
-                isFol = isDue && diff >= 3;
-            }
-            
-            let matchName = s.name.toLowerCase().includes(q);
-            let matchPhone = s.phone && s.phone.includes(q);
-            let matchSeat = s.seat && s.seat.toString().toLowerCase().includes(q);
+            let matchName = s.name.toLowerCase().includes(q); let matchPhone = s.phone && s.phone.includes(q); let matchSeat = s.seat && s.seat.toString().toLowerCase().includes(q);
 
             if((matchName || matchPhone || matchSeat) && (curF=='all' || (curF=='due' && isDue) || (curF=='fol' && isFol) || (curF=='exp' && isExp))) {
                 if(s.phone) megaQueue.push(s);
@@ -350,19 +376,13 @@
         if(megaQueue.length === 0) return alert("No valid students found in current filter!");
 
         let defaultTemplate = "";
-        if (curF === 'exp') {
-            defaultTemplate = "your library membership expired on [DATE]. We haven't heard from you! Please confirm if you are taking a break or planning to continue. Thank you! 📚 - Admin, Bapora Library";
-        } else if (curF === 'due' || curF === 'fol') {
-            defaultTemplate = "your fee is pending since [DATE]. Please update soon.";
-        } else {
-            defaultTemplate = "Please type your general announcement here...";
-        }
+        if (curF === 'exp') { defaultTemplate = "your library membership expired on [DATE]. We haven't heard from you! Please confirm if you are taking a break or planning to continue. Thank you! 📚 - Admin, Bapora Library"; } 
+        else if (curF === 'due' || curF === 'fol') { defaultTemplate = "your fee is pending since [DATE]. Please update soon."; } 
+        else { defaultTemplate = "Please type your general announcement here..."; }
 
         let inputMsg = prompt(`Broadcast to ${megaQueue.length} students.\n\nKeep [DATE] in the text, and the system will automatically change it to their exact expiry date!`, defaultTemplate);
         
-        if(inputMsg && inputMsg.trim() !== "") {
-            megaMessage = inputMsg; updateMegaUI(); document.getElementById('mega-panel').style.display = 'block';
-        }
+        if(inputMsg && inputMsg.trim() !== "") { megaMessage = inputMsg; updateMegaUI(); document.getElementById('mega-panel').style.display = 'block'; }
     };
 
     function updateMegaUI() {
@@ -375,10 +395,7 @@
         if(megaQueue.length > 0) {
             let s = megaQueue.shift(); 
             let displayDate = "N/A";
-            if(s.fee) {
-                let parts = s.fee.split('-');
-                displayDate = `${parts[2]}/${parts[1]}/${parts[0]}`; 
-            }
+            if(s.fee) { let parts = s.fee.split('-'); displayDate = `${parts[2]}/${parts[1]}/${parts[0]}`; }
             let customizedBody = megaMessage.replace(/\[DATE\]/g, displayDate);
             let finalMsg = `Namaste ${s.name},\n\n${customizedBody}`;
             
@@ -394,35 +411,21 @@
     window.markPresent = (id) => {
         const idx = students.findIndex(x => x.id == id);
         const todayStr = new Date().toLocaleDateString('en-GB'); 
-        
         if (!students[idx].attendanceHistory) students[idx].attendanceHistory = [];
-        
         const dateIndex = students[idx].attendanceHistory.indexOf(todayStr);
-        if (dateIndex > -1) {
-            students[idx].attendanceHistory.splice(dateIndex, 1); 
-        } else {
-            students[idx].attendanceHistory.push(todayStr); 
-        }
+        if (dateIndex > -1) { students[idx].attendanceHistory.splice(dateIndex, 1); } else { students[idx].attendanceHistory.push(todayStr); }
         saveToCloud();
     };
 
     window.viewAttendance = (id) => {
         const s = students.find(x => x.id == id);
         const hist = s.attendanceHistory || [];
-        if (hist.length === 0) {
-            alert(`⚠️ No attendance record found for ${s.name} yet.`);
-        } else {
-            alert(`📅 ATTENDANCE HISTORY FOR ${s.name.toUpperCase()}\n\nTotal Days Present: ${hist.length}\n\nDates Present:\n${hist.join("\n")}`);
-        }
+        if (hist.length === 0) { alert(`⚠️ No attendance record found for ${s.name} yet.`); } else { alert(`📅 ATTENDANCE HISTORY FOR ${s.name.toUpperCase()}\n\nTotal Days Present: ${hist.length}\n\nDates Present:\n${hist.join("\n")}`); }
     };
 
     window.toggleActions = (id) => {
         const div = document.getElementById(`actions-${id}`);
-        if(div.style.display === 'none') {
-            div.style.display = 'flex';
-        } else {
-            div.style.display = 'none';
-        }
+        if(div.style.display === 'none') { div.style.display = 'flex'; } else { div.style.display = 'none'; }
     };
 
     window.saveStudent = () => {
@@ -438,85 +441,45 @@
         const idx = students.findIndex(s => s.id == id);
         
         const data = { 
-            id: parseInt(id), 
-            name, 
-            phone, 
-            fee, 
-            amount, 
-            seat, 
-            shift, 
-            lastRemind: students[idx]?.lastRemind || null, 
-            lastAmount: students[idx]?.lastAmount || "0", 
-            attendanceHistory: students[idx]?.attendanceHistory || [],
-            isCounted: true 
+            id: parseInt(id), name, phone, fee, amount, seat, shift, 
+            lastRemind: students[idx]?.lastRemind || null, lastAmount: students[idx]?.lastAmount || "0", attendanceHistory: students[idx]?.attendanceHistory || [], isCounted: true 
         };
         
         if(idx > -1) students[idx] = data; else students.push(data);
         saveToCloud(); 
 
-        if(amount && confirm(`Record Saved! ✅\nDo you want to send a WhatsApp receipt to ${name} for ₹${amount}?`)) {
-            window.wa(data.id, 1);
-        } 
-        else if (amount && confirm(`Do you want to alert the Management Team about this payment?`)) {
-            window.wa(data.id, 4);
-        }
+        if(amount && confirm(`Record Saved! ✅\nDo you want to send a WhatsApp receipt to ${name} for ₹${amount}?`)) { window.wa(data.id, 1); } 
+        else if (amount && confirm(`Do you want to alert the Management Team about this payment?`)) { window.wa(data.id, 4); }
         window.clearForms();
     };
 
     window.render = () => {
         const q = document.getElementById('stuSearch').value.toLowerCase();
         let sH = "", dCnt = 0, tFees = 0, pCnt = 0;
-        const now = new Date();
-        const todayStr = now.toLocaleDateString('en-GB'); 
+        const now = new Date(); const todayStr = now.toLocaleDateString('en-GB'); 
         
         students.forEach(s => {
             if(s.isCounted !== false) tFees += parseFloat(s.amount) || 0;
             const isDue = (s.fee && now >= new Date(s.fee));
             if(isDue) dCnt++;
-            
-            let histArray = s.attendanceHistory || [];
-            let isPresent = histArray.includes(todayStr);
-            if(isPresent) pCnt++;
+            let histArray = s.attendanceHistory || []; let isPresent = histArray.includes(todayStr); if(isPresent) pCnt++;
 
             let isFol = false, isExp = false, folHTML = "", rDateHTML = "";
             const daysOverdue = isDue ? Math.floor((now - new Date(s.fee)) / (1000 * 60 * 60 * 24)) : 0;
             
-            if(daysOverdue >= 5) {
-                isExp = true;
-                folHTML = `<div class="follow-up" style="background:#ffcdd2; color:#b71c1c; border-color:#ef9a9a;">🚨 Membership Expired (${daysOverdue} days ago)</div>`;
-            }
-
-            if(s.lastRemind) {
-                const diff = Math.floor((now - new Date(s.lastRemind)) / (1000 * 60 * 60 * 24));
-                if(isDue && diff >= 3 && !isExp) { 
-                    isFol = true;
-                    folHTML = `<div class="follow-up">⚠️ Follow-up Needed (${diff}d ago)</div>`;
-                }
-                rDateHTML = `<span class="remind-date">Last Sent: ${new Date(s.lastRemind).toLocaleDateString()}</span>`;
-            }
+            if(daysOverdue >= 5) { isExp = true; folHTML = `<div class="follow-up" style="background:#ffcdd2; color:#b71c1c; border-color:#ef9a9a;">🚨 Membership Expired (${daysOverdue} days ago)</div>`; }
+            if(s.lastRemind) { const diff = Math.floor((now - new Date(s.lastRemind)) / (1000 * 60 * 60 * 24)); if(isDue && diff >= 3 && !isExp) { isFol = true; folHTML = `<div class="follow-up">⚠️ Follow-up Needed (${diff}d ago)</div>`; } rDateHTML = `<span class="remind-date">Last Sent: ${new Date(s.lastRemind).toLocaleDateString()}</span>`; }
 
             let feeDisplayHTML = "";
-            if (s.amount > 0) {
-                feeDisplayHTML = `<span style="float:right; color:var(--safe); font-weight:bold;">₹${s.amount}</span>`;
-            } else {
-                let prevInfo = s.lastAmount > 0 ? `(Last: ₹${s.lastAmount})` : "";
-                feeDisplayHTML = `
-                    <span style="float:right; color:var(--danger); font-weight:bold;">₹0</span><br>
-                    <span style="float:right; color:#9e9e9e; font-size:10px; margin-top:2px;">${prevInfo}</span>
-                `;
-            }
+            if (s.amount > 0) { feeDisplayHTML = `<span style="float:right; color:var(--safe); font-weight:bold;">₹${s.amount}</span>`; } else { let prevInfo = s.lastAmount > 0 ? `(Last: ₹${s.lastAmount})` : ""; feeDisplayHTML = `<span style="float:right; color:var(--danger); font-weight:bold;">₹0</span><br><span style="float:right; color:#9e9e9e; font-size:10px; margin-top:2px;">${prevInfo}</span>`; }
 
             let presentBtn = `<button onclick="window.markPresent(${s.id})" style="border:1px solid ${isPresent ? '#28a745' : '#aaa'}; background:${isPresent ? '#c8e6c9' : '#fff'}; color:${isPresent ? '#1b5e20' : '#444'}; border-radius:4px; padding:2px 6px; font-size:10px; cursor:pointer; margin-left:10px;">${isPresent ? '✅ Present' : '☑️ Mark Present'}</button>`;
             let histLink = `<span style="font-size:10px; color:#1976d2; cursor:pointer; margin-left:8px; text-decoration:underline;" onclick="window.viewAttendance(${s.id})">📅 History (${histArray.length})</span>`;
 
-            let matchName = s.name.toLowerCase().includes(q);
-            let matchPhone = s.phone && s.phone.includes(q);
-            let matchSeat = s.seat && s.seat.toString().toLowerCase().includes(q);
+            let matchName = s.name.toLowerCase().includes(q); let matchPhone = s.phone && s.phone.includes(q); let matchSeat = s.seat && s.seat.toString().toLowerCase().includes(q);
 
             if((matchName || matchPhone || matchSeat) && (curF=='all' || (curF=='due' && isDue) || (curF=='fol' && isFol) || (curF=='exp' && isExp))) {
-                
-                let cardBgColor = isDue ? '#ffebee' : '#e8f5e9'; 
-                let leftBorderColor = isDue ? '#b71c1c' : '#1b5e20';
+                let cardBgColor = isDue ? '#ffebee' : '#e8f5e9'; let leftBorderColor = isDue ? '#b71c1c' : '#1b5e20';
                 
                 sH += `<div class="record-item" style="background-color: ${cardBgColor}; border-left: 5px solid ${leftBorderColor};">
                     <b>${s.name}</b> ${presentBtn} ${histLink} ${feeDisplayHTML}<br>
@@ -534,7 +497,6 @@
                         <button onclick="window.wa(${s.id}, 4)" class="wa-btn btn-alert">Mgmt Alert</button>
                         <button onclick="window.wa(${s.id}, 5)" class="wa-btn btn-exp">Final Call</button>
                     </div>
-
                     <span class="action-link" style="color:#0d47a1" onclick="window.editStu(${s.id})">✎ EDIT</span>
                     <span class="action-link" style="color:#b71c1c" onclick="window.delStu(${s.id})">✖ DELETE</span>
                 </div>`;
@@ -542,157 +504,34 @@
         });
 
         const tE = expenses.reduce((a, b) => a + (parseFloat(b.amt) || 0), 0);
-        document.getElementById('countTotal').innerText = students.length;
-        document.getElementById('countPresent').innerText = pCnt; 
-        document.getElementById('countDue').innerText = dCnt;
-        document.getElementById('sumFees').innerText = '₹' + tFees;
-        document.getElementById('sumExp').innerText = '₹' + tE;
-        document.getElementById('netProfit').innerText = '₹' + (tFees - tE);
-        document.getElementById('stuList').innerHTML = sH || "<center style='padding:20px'>No records found</center>";
+        document.getElementById('countTotal').innerText = students.length; document.getElementById('countPresent').innerText = pCnt; document.getElementById('countDue').innerText = dCnt; document.getElementById('sumFees').innerText = '₹' + tFees; document.getElementById('sumExp').innerText = '₹' + tE; document.getElementById('netProfit').innerText = '₹' + (tFees - tE); document.getElementById('stuList').innerHTML = sH || "<center style='padding:20px'>No records found</center>";
         
-        let eH = "";
-        let sortedExp = [...expenses].sort((a,b) => new Date(b.date) - new Date(a.date));
-        sortedExp.forEach(e => {
-            eH += `<div class="record-item" style="border-left-color:red">
-                <b>${e.note}</b> <span style="float:right;">₹${e.amt}</span><br>
-                <small>${new Date(e.date).toLocaleDateString('en-GB')}</small><br>
-                <span class="action-link" style="color:blue" onclick="window.editExp(${e.id})">✎ EDIT</span>
-                <span class="action-link" style="color:red" onclick="window.delExp(${e.id})">✖ DELETE</span>
-            </div>`;
-        });
+        let eH = ""; let sortedExp = [...expenses].sort((a,b) => new Date(b.date) - new Date(a.date));
+        sortedExp.forEach(e => { eH += `<div class="record-item" style="border-left-color:red"><b>${e.note}</b> <span style="float:right;">₹${e.amt}</span><br><small>${new Date(e.date).toLocaleDateString('en-GB')}</small><br><span class="action-link" style="color:blue" onclick="window.editExp(${e.id})">✎ EDIT</span><span class="action-link" style="color:red" onclick="window.delExp(${e.id})">✖ DELETE</span></div>`; });
         document.getElementById('expList').innerHTML = eH || "<small><br>No expenses logged.</small>";
 
-        let hH = "<b>📜 MONTHLY REPORTS & TACTICAL CHARTS</b>";
-        let maxVal = Math.max(...history.map(h => Math.max(h.fee, h.exp)), 1); 
-        
-        [...history].reverse().forEach(h => { 
-            let wF = (h.fee / maxVal) * 100;
-            let wE = (h.exp / maxVal) * 100;
-            
-            hH += `<div class="history-card">
-                <b>${h.month}</b><br>
-                <div style="font-size:10px; display:flex; justify-content:space-between; margin-top:4px;"><span>Income: ₹${h.fee}</span><span>Cost: ₹${h.exp}</span></div>
-                <div style="background:#ddd; height:5px; margin:2px 0; border-radius:2px;"><div style="width:${wF}%; background:var(--safe); height:100%; border-radius:2px;"></div></div>
-                <div style="background:#ddd; height:5px; margin:2px 0 6px 0; border-radius:2px;"><div style="width:${wE}%; background:var(--danger); height:100%; border-radius:2px;"></div></div>
-                <b>Profit: ₹${h.profit}</b>
-            </div>`; 
-        });
+        let hH = "<b>📜 MONTHLY REPORTS & TACTICAL CHARTS</b>"; let maxVal = Math.max(...history.map(h => Math.max(h.fee, h.exp)), 1); 
+        [...history].reverse().forEach(h => { let wF = (h.fee / maxVal) * 100; let wE = (h.exp / maxVal) * 100; hH += `<div class="history-card"><b>${h.month}</b><br><div style="font-size:10px; display:flex; justify-content:space-between; margin-top:4px;"><span>Income: ₹${h.fee}</span><span>Cost: ₹${h.exp}</span></div><div style="background:#ddd; height:5px; margin:2px 0; border-radius:2px;"><div style="width:${wF}%; background:var(--safe); height:100%; border-radius:2px;"></div></div><div style="background:#ddd; height:5px; margin:2px 0 6px 0; border-radius:2px;"><div style="width:${wE}%; background:var(--danger); height:100%; border-radius:2px;"></div></div><b>Profit: ₹${h.profit}</b></div>`; });
         document.getElementById('historyList').innerHTML = hH;
     };
 
     window.wa = (id, type) => {
-        const idx = students.findIndex(x => x.id == id);
-        const s = students[idx];
-        let parts = s.fee.split('-');
-        let displayDate = `${parts[2]}/${parts[1]}/${parts[0]}`; 
-        let msg = "";
-        
-        if(type == 1) { msg = `Namaste ${s.name}, fee amount ₹${s.amount} received. Valid till ${displayDate}. Thank you! Happy Studying 📖 - Bapora Library`; }
-        else if(type == 2) { msg = `Namaste ${s.name}, your fee is pending since ${displayDate}. Please update soon.`; }
-        else if(type == 3) { msg = `Namaste ${s.name}, your lunch has been arrived. Please collect it from reception. 🍱🥄`; }
-        else if(type == 4) {
-            msg = `📢 *Seat Payment Alert*\n\nStudent: *${s.name}*\nSeat No: *${s.seat}* (Shift: ${s.shift || 'Full'})\nAmount Paid: *₹${s.amount}*\nValid Till: *${displayDate}*`;
-            return window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`);
-        }
-        else if(type == 5) { msg = `Namaste ${s.name}, your library membership expired on ${displayDate}. We haven't heard from you! Please confirm if you are taking a break or planning to continue, so we can manage your seat accordingly. Thank you! 📚 - Admin, Bapora Library`; }
-        
-        students[idx].lastRemind = new Date().toISOString();
-        saveToCloud(); window.open(`https://wa.me/91${s.phone}?text=${encodeURIComponent(msg)}`);
+        const idx = students.findIndex(x => x.id == id); const s = students[idx]; let parts = s.fee.split('-'); let displayDate = `${parts[2]}/${parts[1]}/${parts[0]}`; let msg = "";
+        if(type == 1) { msg = `Namaste ${s.name}, fee amount ₹${s.amount} received. Valid till ${displayDate}. Thank you! Happy Studying 📖 - Bapora Library`; } else if(type == 2) { msg = `Namaste ${s.name}, your fee is pending since ${displayDate}. Please update soon.`; } else if(type == 3) { msg = `Namaste ${s.name}, your lunch has been arrived. Please collect it from reception. 🍱🥄`; } else if(type == 4) { msg = `📢 *Seat Payment Alert*\n\nStudent: *${s.name}*\nSeat No: *${s.seat}* (Shift: ${s.shift || 'Full'})\nAmount Paid: *₹${s.amount}*\nValid Till: *${displayDate}*`; return window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`); } else if(type == 5) { msg = `Namaste ${s.name}, your library membership expired on ${displayDate}. We haven't heard from you! Please confirm if you are taking a break or planning to continue, so we can manage your seat accordingly. Thank you! 📚 - Admin, Bapora Library`; }
+        students[idx].lastRemind = new Date().toISOString(); saveToCloud(); window.open(`https://wa.me/91${s.phone}?text=${encodeURIComponent(msg)}`);
     };
 
-    window.addExpense = () => {
-        const id = document.getElementById('editExpId').value || Date.now();
-        const amt = document.getElementById('expAmt').value;
-        const note = document.getElementById('expNote').value;
-        const date = document.getElementById('expDate').value;
-        if(!amt || !date) return alert("Enter Amt/Date");
-        const idx = expenses.findIndex(e => e.id == id);
-        const data = { id: parseInt(id), amt: parseFloat(amt), note, date };
-        if(idx > -1) expenses[idx] = data; else expenses.push(data);
-        saveToCloud(); window.clearExpForm();
-    };
-
-    window.editExp = (id) => {
-        const e = expenses.find(x => x.id == id);
-        document.getElementById('editExpId').value = e.id;
-        document.getElementById('expAmt').value = e.amt;
-        document.getElementById('expNote').value = e.note;
-        document.getElementById('expDate').value = e.date;
-        document.getElementById('saveExpBtn').innerText = "UPDATE CLOUD EXPENSE";
-        document.getElementById('cancelExpBtn').style.display = "block";
-        window.scrollTo(0,0);
-    };
-
+    window.addExpense = () => { const id = document.getElementById('editExpId').value || Date.now(); const amt = document.getElementById('expAmt').value; const note = document.getElementById('expNote').value; const date = document.getElementById('expDate').value; if(!amt || !date) return alert("Enter Amt/Date"); const idx = expenses.findIndex(e => e.id == id); const data = { id: parseInt(id), amt: parseFloat(amt), note, date }; if(idx > -1) expenses[idx] = data; else expenses.push(data); saveToCloud(); window.clearExpForm(); };
+    window.editExp = (id) => { const e = expenses.find(x => x.id == id); document.getElementById('editExpId').value = e.id; document.getElementById('expAmt').value = e.amt; document.getElementById('expNote').value = e.note; document.getElementById('expDate').value = e.date; document.getElementById('saveExpBtn').innerText = "UPDATE CLOUD EXPENSE"; document.getElementById('cancelExpBtn').style.display = "block"; window.scrollTo(0,0); };
     window.delExp = (id) => { if(confirm("Delete expense?")) { expenses = expenses.filter(e => e.id != id); saveToCloud(); } };
     window.delStu = (id) => { if(confirm("Delete student?")) { students = students.filter(s => s.id != id); saveToCloud(); } };
-    
-    window.editStu = (id) => {
-        const s = students.find(x => x.id == id);
-        document.getElementById('editId').value = s.id;
-        document.getElementById('stuName').value = s.name;
-        document.getElementById('stuPhone').value = s.phone;
-        document.getElementById('stuFeeDate').value = s.fee;
-        document.getElementById('stuAmt').value = s.amount;
-        document.getElementById('stuSeat').value = s.seat;
-        document.getElementById('stuShift').value = s.shift || 'Full'; 
-        document.getElementById('saveBtn').innerText = "UPDATE CLOUD RECORD";
-        document.getElementById('cancelBtn').style.display = "block";
-        window.scrollTo(0,0);
-    };
-
-    window.clearForms = () => { document.querySelectorAll('#lib-tab input').forEach(i => i.value = ''); document.getElementById('stuShift').value = 'Full'; document.getElementById('saveBtn').innerText = "SAVE TO CLOUD"; document.getElementById('cancelBtn').style.display = "none"; };
+    window.editStu = (id) => { const s = students.find(x => x.id == id); document.getElementById('editId').value = s.id; document.getElementById('stuName').value = s.name; document.getElementById('stuPhone').value = s.phone; document.getElementById('stuFeeDate').value = s.fee; document.getElementById('stuAmt').value = s.amount; document.getElementById('stuSeat').value = s.seat; document.getElementById('stuShift').value = s.shift || 'Full'; document.getElementById('saveBtn').innerText = "UPDATE CLOUD RECORD"; document.getElementById('cancelBtn').style.display = "block"; window.scrollTo(0,0); };
+    window.clearForms = () => { document.querySelectorAll('#lib-tab input').forEach(i => i.value = ''); document.getElementById('stuShift').value = 'Full'; document.getElementById('saveBtn').innerText = "SAVE & SYNC TO PUBLIC"; document.getElementById('cancelBtn').style.display = "none"; };
     window.clearExpForm = () => { document.querySelectorAll('#exp-tab input').forEach(i => i.value = ''); document.getElementById('saveExpBtn').innerText = "LOG EXPENSE"; document.getElementById('cancelExpBtn').style.display = "none"; };
-    
-    window.importData = () => {
-        const f = document.getElementById('importFile').files[0];
-        if(!f) { alert("Pehle file select karein!"); return; }
-        const r = new FileReader();
-        r.onload = (e) => {
-            try {
-                const d = JSON.parse(e.target.result);
-                if(d.Students_Snapshot) { students = d.Students_Snapshot; expenses = d.Detailed_Expenses || []; } 
-                else if (d.students) { students = d.students; expenses = d.expenses || []; history = d.history || []; } 
-                else { alert("Galat file format!"); return; }
-                saveToCloud(); alert("System Successfully Restored from Backup! ✅");
-            } catch(err) { alert("Format Error!"); }
-        };
-        r.readAsText(f);
-    };
-
-    window.exportData = () => {
-        const blob = new Blob([JSON.stringify({students, expenses, history})], {type: 'text/plain'});
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-        a.download = "bapora_master_backup.txt"; a.click();
-    };
-
-    window.exportToExcel = () => {
-        let csv = "Name,Seat,Shift,Phone,Fee,Amount\n";
-        students.forEach(s => { csv += `${s.name},${s.seat},${s.shift || 'Full'},${s.phone},${s.fee},${s.amount}\n`; });
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-        a.download = "Library_Report.csv"; a.click();
-    };
-
-    window.closeMonthlyLedger = function() {
-        if (!confirm("Commander, kya aap sure hain? Is mahine ka financial data reset ho jayega!")) return;
-        try {
-            window.exportData(); 
-            const now = new Date();
-            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-            const currentMonthName = monthNames[now.getMonth()];
-            
-            const totalFees = students.reduce((a, b) => a + (parseFloat(b.amount) || 0), 0);
-            const totalExp = expenses.reduce((a, b) => a + (parseFloat(b.amt) || 0), 0);
-            
-            history.push({ month: currentMonthName + " " + now.getFullYear(), fee: totalFees, exp: totalExp, profit: (totalFees - totalExp) });
-
-            students = students.map(s => ({ ...s, lastAmount: (parseFloat(s.amount) > 0) ? s.amount : (s.lastAmount || "0"), amount: "0", lastRemind: null }));
-            expenses = []; 
-            saveToCloud();
-            alert(`Mission Successful! Ledger closed.`);
-            location.reload();
-        } catch (err) { alert("Error: " + err.message); }
-    };
+    window.importData = () => { const f = document.getElementById('importFile').files[0]; if(!f) { alert("Pehle file select karein!"); return; } const r = new FileReader(); r.onload = (e) => { try { const d = JSON.parse(e.target.result); if(d.Students_Snapshot) { students = d.Students_Snapshot; expenses = d.Detailed_Expenses || []; } else if (d.students) { students = d.students; expenses = d.expenses || []; history = d.history || []; } else { alert("Galat file format!"); return; } saveToCloud(); alert("System Successfully Restored from Backup! ✅"); } catch(err) { alert("Format Error!"); } }; r.readAsText(f); };
+    window.exportData = () => { const blob = new Blob([JSON.stringify({students, expenses, history})], {type: 'text/plain'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = "bapora_master_backup.txt"; a.click(); };
+    window.exportToExcel = () => { let csv = "Name,Seat,Shift,Phone,Fee,Amount\n"; students.forEach(s => { csv += `${s.name},${s.seat},${s.shift || 'Full'},${s.phone},${s.fee},${s.amount}\n`; }); const blob = new Blob([csv], { type: 'text/csv' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = "Library_Report.csv"; a.click(); };
+    window.closeMonthlyLedger = function() { if (!confirm("Commander, kya aap sure hain? Is mahine ka financial data reset ho jayega!")) return; try { window.exportData(); const now = new Date(); const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]; const currentMonthName = monthNames[now.getMonth()]; const totalFees = students.reduce((a, b) => a + (parseFloat(b.amount) || 0), 0); const totalExp = expenses.reduce((a, b) => a + (parseFloat(b.amt) || 0), 0); history.push({ month: currentMonthName + " " + now.getFullYear(), fee: totalFees, exp: totalExp, profit: (totalFees - totalExp) }); students = students.map(s => ({ ...s, lastAmount: (parseFloat(s.amount) > 0) ? s.amount : (s.lastAmount || "0"), amount: "0", lastRemind: null })); expenses = []; saveToCloud(); alert(`Mission Successful! Ledger closed.`); location.reload(); } catch (err) { alert("Error: " + err.message); } };
 </script>
 </body>
 </html>
