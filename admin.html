@@ -70,7 +70,7 @@
 
         <div id="lib-tab" class="tab-content active">
             <div class="stat-grid-3">
-                <div class="stat"><small>Students</small><b id="countTotal">0</b></div>
+                <div class="stat"><small>Active Students</small><b id="countTotal">0</b></div>
                 <div class="stat" style="color:#0277bd; border-color:#0277bd;"><small>Present</small><b id="countPresent">0</b></div>
                 <div class="stat" style="color:var(--danger); border-color:var(--danger);"><small>Due Now</small><b id="countDue">0</b></div>
             </div>
@@ -216,13 +216,29 @@
     window.syncSeatsToPublic = function() {
         let publicSeats = {};
         let generalCount = 0;
+        
+        const now = new Date();
+        now.setHours(0,0,0,0);
 
         students.forEach(s => {
-            let seatNum = parseInt(s.seat);
-            if (seatNum > 0 && seatNum <= 57) {
-                publicSeats[seatNum] = 'r';
-            } else {
-                generalCount++; 
+            let isExpired = false;
+            // 5 Day Expiry Check
+            if(s.fee) {
+                let feeDate = new Date(s.fee);
+                feeDate.setHours(0,0,0,0);
+                let daysOverdue = Math.floor((now - feeDate) / (1000 * 60 * 60 * 24));
+                if (daysOverdue > 5) {
+                    isExpired = true; // Seat will NOT be synced to public
+                }
+            }
+
+            if (!isExpired) {
+                let seatNum = parseInt(s.seat);
+                if (seatNum > 0 && seatNum <= 57) {
+                    publicSeats[seatNum] = 'r';
+                } else {
+                    generalCount++; 
+                }
             }
         });
 
@@ -356,19 +372,26 @@
 
     window.startMegaphone = function() {
         const q = document.getElementById('stuSearch').value.toLowerCase();
-        const now = new Date();
+        const now = new Date(); now.setHours(0,0,0,0);
         megaQueue = [];
 
         students.forEach(s => {
-            const isDue = (s.fee && now >= new Date(s.fee));
+            let feeDate = new Date(s.fee); feeDate.setHours(0,0,0,0);
+            const isDue = (s.fee && now > feeDate);
             let isFol = false, isExp = false;
-            const daysOverdue = isDue ? Math.floor((now - new Date(s.fee)) / (1000 * 60 * 60 * 24)) : 0;
-            if(daysOverdue >= 5) isExp = true; 
-            if(s.lastRemind) { const diff = Math.floor((now - new Date(s.lastRemind)) / (1000 * 60 * 60 * 24)); isFol = isDue && diff >= 3; }
+            
+            const daysOverdue = isDue ? Math.floor((now - feeDate) / (1000 * 60 * 60 * 24)) : 0;
+            if(daysOverdue > 5) isExp = true; 
+            
+            if(s.lastRemind) { 
+                let lrDate = new Date(s.lastRemind); lrDate.setHours(0,0,0,0);
+                const diff = Math.floor((now - lrDate) / (1000 * 60 * 60 * 24)); 
+                isFol = isDue && diff >= 3; 
+            }
             
             let matchName = s.name.toLowerCase().includes(q); let matchPhone = s.phone && s.phone.includes(q); let matchSeat = s.seat && s.seat.toString().toLowerCase().includes(q);
 
-            if((matchName || matchPhone || matchSeat) && (curF=='all' || (curF=='due' && isDue) || (curF=='fol' && isFol) || (curF=='exp' && isExp))) {
+            if((matchName || matchPhone || matchSeat) && (curF=='all' || (curF=='due' && isDue && !isExp) || (curF=='fol' && isFol) || (curF=='exp' && isExp))) {
                 if(s.phone) megaQueue.push(s);
             }
         });
@@ -455,20 +478,40 @@
 
     window.render = () => {
         const q = document.getElementById('stuSearch').value.toLowerCase();
-        let sH = "", dCnt = 0, tFees = 0, pCnt = 0;
-        const now = new Date(); const todayStr = now.toLocaleDateString('en-GB'); 
+        let sH = "", dCnt = 0, tFees = 0, pCnt = 0, activeCount = 0;
+        
+        const now = new Date(); now.setHours(0,0,0,0);
+        const todayStr = new Date().toLocaleDateString('en-GB'); 
         
         students.forEach(s => {
             if(s.isCounted !== false) tFees += parseFloat(s.amount) || 0;
-            const isDue = (s.fee && now >= new Date(s.fee));
-            if(isDue) dCnt++;
-            let histArray = s.attendanceHistory || []; let isPresent = histArray.includes(todayStr); if(isPresent) pCnt++;
+            
+            let feeDate = new Date(s.fee); feeDate.setHours(0,0,0,0);
+            const isDue = (s.fee && now > feeDate);
+            let daysOverdue = 0;
+            if(isDue) { daysOverdue = Math.floor((now - feeDate) / (1000 * 60 * 60 * 24)); }
 
             let isFol = false, isExp = false, folHTML = "", rDateHTML = "";
-            const daysOverdue = isDue ? Math.floor((now - new Date(s.fee)) / (1000 * 60 * 60 * 24)) : 0;
             
-            if(daysOverdue >= 5) { isExp = true; folHTML = `<div class="follow-up" style="background:#ffcdd2; color:#b71c1c; border-color:#ef9a9a;">🚨 Membership Expired (${daysOverdue} days ago)</div>`; }
-            if(s.lastRemind) { const diff = Math.floor((now - new Date(s.lastRemind)) / (1000 * 60 * 60 * 24)); if(isDue && diff >= 3 && !isExp) { isFol = true; folHTML = `<div class="follow-up">⚠️ Follow-up Needed (${diff}d ago)</div>`; } rDateHTML = `<span class="remind-date">Last Sent: ${new Date(s.lastRemind).toLocaleDateString()}</span>`; }
+            if(daysOverdue > 5) {
+                isExp = true; 
+                folHTML = `<div class="follow-up" style="background:#ffcdd2; color:#b71c1c; border-color:#ef9a9a;">🚨 AWOL: Seat Vacated (${daysOverdue} days overdue)</div>`; 
+            } else {
+                activeCount++;
+                if(isDue) dCnt++;
+            }
+
+            let histArray = s.attendanceHistory || []; let isPresent = histArray.includes(todayStr); if(isPresent) pCnt++;
+
+            if(s.lastRemind) { 
+                let lrDate = new Date(s.lastRemind); lrDate.setHours(0,0,0,0);
+                const diff = Math.floor((now - lrDate) / (1000 * 60 * 60 * 24)); 
+                if(isDue && diff >= 3 && !isExp) { 
+                    isFol = true; 
+                    folHTML = `<div class="follow-up">⚠️ Follow-up Needed (${diff}d ago)</div>`; 
+                } 
+                rDateHTML = `<span class="remind-date">Last Sent: ${new Date(s.lastRemind).toLocaleDateString()}</span>`; 
+            }
 
             let feeDisplayHTML = "";
             if (s.amount > 0) { feeDisplayHTML = `<span style="float:right; color:var(--safe); font-weight:bold;">₹${s.amount}</span>`; } else { let prevInfo = s.lastAmount > 0 ? `(Last: ₹${s.lastAmount})` : ""; feeDisplayHTML = `<span style="float:right; color:var(--danger); font-weight:bold;">₹0</span><br><span style="float:right; color:#9e9e9e; font-size:10px; margin-top:2px;">${prevInfo}</span>`; }
@@ -478,12 +521,14 @@
 
             let matchName = s.name.toLowerCase().includes(q); let matchPhone = s.phone && s.phone.includes(q); let matchSeat = s.seat && s.seat.toString().toLowerCase().includes(q);
 
-            if((matchName || matchPhone || matchSeat) && (curF=='all' || (curF=='due' && isDue) || (curF=='fol' && isFol) || (curF=='exp' && isExp))) {
+            if((matchName || matchPhone || matchSeat) && (curF=='all' || (curF=='due' && isDue && !isExp) || (curF=='fol' && isFol) || (curF=='exp' && isExp))) {
                 let cardBgColor = isDue ? '#ffebee' : '#e8f5e9'; let leftBorderColor = isDue ? '#b71c1c' : '#1b5e20';
+                
+                let seatHtml = isExp ? `<strike>${s.seat || 'Gen'}</strike> <b style="color:var(--danger)">(Vacated)</b>` : `<b>${s.seat || 'Gen'}</b>`;
                 
                 sH += `<div class="record-item" style="background-color: ${cardBgColor}; border-left: 5px solid ${leftBorderColor};">
                     <b>${s.name}</b> ${presentBtn} ${histLink} ${feeDisplayHTML}<br>
-                    <small>Seat: <b>${s.seat || 'Gen'}</b> <span style="background:rgba(0,0,0,0.1); padding:1px 5px; border-radius:3px; font-size:9px;">${s.shift || 'Full'}</span> | Valid: <b>${s.fee}</b></small><br>
+                    <small>Seat: ${seatHtml} <span style="background:rgba(0,0,0,0.1); padding:1px 5px; border-radius:3px; font-size:9px;">${s.shift || 'Full'}</span> | Valid: <b>${s.fee}</b></small><br>
                     ${rDateHTML} ${folHTML}
                     
                     <div style="text-align: right; margin-top: -15px;">
@@ -504,7 +549,13 @@
         });
 
         const tE = expenses.reduce((a, b) => a + (parseFloat(b.amt) || 0), 0);
-        document.getElementById('countTotal').innerText = students.length; document.getElementById('countPresent').innerText = pCnt; document.getElementById('countDue').innerText = dCnt; document.getElementById('sumFees').innerText = '₹' + tFees; document.getElementById('sumExp').innerText = '₹' + tE; document.getElementById('netProfit').innerText = '₹' + (tFees - tE); document.getElementById('stuList').innerHTML = sH || "<center style='padding:20px'>No records found</center>";
+        document.getElementById('countTotal').innerText = activeCount; 
+        document.getElementById('countPresent').innerText = pCnt; 
+        document.getElementById('countDue').innerText = dCnt; 
+        document.getElementById('sumFees').innerText = '₹' + tFees; 
+        document.getElementById('sumExp').innerText = '₹' + tE; 
+        document.getElementById('netProfit').innerText = '₹' + (tFees - tE); 
+        document.getElementById('stuList').innerHTML = sH || "<center style='padding:20px'>No records found</center>";
         
         let eH = ""; let sortedExp = [...expenses].sort((a,b) => new Date(b.date) - new Date(a.date));
         sortedExp.forEach(e => { eH += `<div class="record-item" style="border-left-color:red"><b>${e.note}</b> <span style="float:right;">₹${e.amt}</span><br><small>${new Date(e.date).toLocaleDateString('en-GB')}</small><br><span class="action-link" style="color:blue" onclick="window.editExp(${e.id})">✎ EDIT</span><span class="action-link" style="color:red" onclick="window.delExp(${e.id})">✖ DELETE</span></div>`; });
