@@ -447,8 +447,8 @@
         if (dateIndex > -1) { students[idx].attendanceHistory.splice(dateIndex, 1); } else { students[idx].attendanceHistory.push(todayStr); }
         saveToCloud();
     };
-
-    // MODIFIED TO USE THE NEW CUSTOM SCROLLING MODAL
+    
+    // MODIFIED TO SHOW NEWEST DATE AT THE TOP (REVERSED)
     window.viewAttendance = (id) => {
         const s = students.find(x => x.id == id);
         const hist = s.attendanceHistory || [];
@@ -456,7 +456,11 @@
             alert(`⚠️ No attendance record found for ${s.name} yet.`); 
         } else { 
             document.getElementById('histModalTitle').innerText = `📅 HISTORY: ${s.name.toUpperCase()}`;
-            document.getElementById('histModalContent').innerText = `Total Days Present: ${hist.length}\n\nDates Present:\n${hist.join("\n")}`;
+            
+            // 🚨 TACTICAL FIX: Creating a reversed copy so latest date is on top
+            let reversedHist = [...hist].reverse(); 
+            
+            document.getElementById('histModalContent').innerText = `Total Days Present: ${hist.length}\n\nDates Present:\n${reversedHist.join("\n")}`;
             document.getElementById('historyModal').style.display = 'flex';
         }
     };
