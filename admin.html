@@ -319,15 +319,40 @@
         alert("Marquee Cleared! 🛑");
     };
 
-    window.showDailyLog = function() {
+    // --- NEW LOGIC FOR DYNAMIC DAILY TOTALS SYNC ---
+    window.renderDailyLogHTML = function() {
         const displayBox = document.getElementById('dailyLogDisplay');
-        if (displayBox.style.display === 'block') { displayBox.style.display = 'none'; return; }
         let dailyCounts = {};
-        students.forEach(s => { if (s.attendanceHistory) { s.attendanceHistory.forEach(date => { dailyCounts[date] = (dailyCounts[date] || 0) + 1; }); } });
+        students.forEach(s => { 
+            if (s.attendanceHistory) { 
+                s.attendanceHistory.forEach(date => { 
+                    dailyCounts[date] = (dailyCounts[date] || 0) + 1; 
+                }); 
+            } 
+        });
+        
         let resultHTML = "<b style='color:#0277bd;'>Daily Present Report:</b><br><ul style='padding-left:20px; margin-top:5px; color:#333;'>";
         let dates = Object.keys(dailyCounts).sort().reverse(); 
-        if (dates.length === 0) { resultHTML += "<li>Abhi tak koi attendance data nahi hai.</li>"; } else { dates.forEach(d => { resultHTML += `<li style="margin-bottom:3px;">${d} : <b>${dailyCounts[d]} Students Present</b></li>`; }); }
-        resultHTML += "</ul>"; displayBox.innerHTML = resultHTML; displayBox.style.display = 'block'; 
+        
+        if (dates.length === 0) { 
+            resultHTML += "<li>Abhi tak koi attendance data nahi hai.</li>"; 
+        } else { 
+            dates.forEach(d => { 
+                resultHTML += `<li style="margin-bottom:3px;">${d} : <b>${dailyCounts[d]} Students Present</b></li>`; 
+            }); 
+        }
+        resultHTML += "</ul>"; 
+        displayBox.innerHTML = resultHTML;
+    };
+
+    window.showDailyLog = function() {
+        const displayBox = document.getElementById('dailyLogDisplay');
+        if (displayBox.style.display === 'block') { 
+            displayBox.style.display = 'none'; 
+        } else { 
+            window.renderDailyLogHTML();
+            displayBox.style.display = 'block'; 
+        }
     };
 
     window.logout = () => signOut(auth);
@@ -583,6 +608,11 @@
         let hH = "<b>📜 MONTHLY REPORTS & TACTICAL CHARTS</b>"; let maxVal = Math.max(...history.map(h => Math.max(h.fee, h.exp)), 1); 
         [...history].reverse().forEach(h => { let wF = (h.fee / maxVal) * 100; let wE = (h.exp / maxVal) * 100; hH += `<div class="history-card"><b>${h.month}</b><br><div style="font-size:10px; display:flex; justify-content:space-between; margin-top:4px;"><span>Income: ₹${h.fee}</span><span>Cost: ₹${h.exp}</span></div><div style="background:#ddd; height:5px; margin:2px 0; border-radius:2px;"><div style="width:${wF}%; background:var(--safe); height:100%; border-radius:2px;"></div></div><div style="background:#ddd; height:5px; margin:2px 0 6px 0; border-radius:2px;"><div style="width:${wE}%; background:var(--danger); height:100%; border-radius:2px;"></div></div><b>Profit: ₹${h.profit}</b></div>`; });
         document.getElementById('historyList').innerHTML = hH;
+
+        // 👇 THIS ENSURES DAILY LOG REFRESHES AUTOMATICALLY 👇
+        if (document.getElementById('dailyLogDisplay').style.display === 'block') {
+            window.renderDailyLogHTML();
+        }
     };
 
     window.wa = (id, type) => {
