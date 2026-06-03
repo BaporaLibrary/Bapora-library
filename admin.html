@@ -162,6 +162,7 @@
                 <p style="font-size:11px; margin:0 0 10px 0; color:#555;">Details of fees collected day by day. Click on any date to see the student breakdown.</p>
                 <div id="dailyCollectionsDisplay"></div>
             </div>
+
             <div class="section">
                 <input type="hidden" id="editExpId">
                 <input type="date" id="expDate">
@@ -210,7 +211,6 @@
     const auth = getAuth(app);
     const db = getDatabase(app);
 
-    // 🚨 ADDED "collections" array HERE
     let students = [], expenses = [], history = [], collections = [], curF = 'all';
     let megaQueue = [], megaMessage = "";
     let waitlistData = {};
@@ -237,13 +237,12 @@
 
         students.forEach(s => {
             let isExpired = false;
-            // 5 Day Expiry Check
             if(s.fee) {
                 let feeDate = new Date(s.fee);
                 feeDate.setHours(0,0,0,0);
                 let daysOverdue = Math.floor((now - feeDate) / (1000 * 60 * 60 * 24));
                 if (daysOverdue > 5) {
-                    isExpired = true; // Seat will NOT be synced to public
+                    isExpired = true; 
                 }
             }
 
@@ -286,7 +285,6 @@
         }
 
         let html = "";
-        // Reverse taaki naya banda upar aaye
         keys.reverse().forEach(k => {
             const w = waitlistData[k];
             html += `
@@ -313,7 +311,6 @@
         }
     };
 
-    // --- MARQUEE ---
     window.setMarquee = () => {
         const txt = document.getElementById('marqueeText').value;
         set(ref(db, 'broadcast'), { text: txt });
@@ -384,7 +381,7 @@
                 students = data.students || []; 
                 expenses = data.expenses || []; 
                 history = data.history || []; 
-                collections = data.collections || []; // Load daily collections
+                collections = data.collections || []; 
             }
             window.render();
             window.syncSeatsToPublic();
@@ -515,11 +512,11 @@
         if(!name || !phone || !fee) return alert("Fill Name, Phone and Date");
         const idx = students.findIndex(s => s.id == id);
         
-        // 🚨 TACTICAL UPDATE: Log Daily Collection when Amount Changes
+        // 🚨 TACTICAL UPDATE: Smart Filter - Only record if amount INCREASES
         const oldAmt = idx > -1 ? (parseFloat(students[idx].amount) || 0) : 0;
         const newAmt = parseFloat(amount) || 0;
         
-        if (newAmt !== oldAmt) {
+        if (newAmt > oldAmt) {
             const diff = newAmt - oldAmt;
             const todayStr = new Date().toLocaleDateString('en-GB');
             collections.push({ id: Date.now(), name: name, amt: diff, date: todayStr });
@@ -627,7 +624,6 @@
         [...history].reverse().forEach(h => { let wF = (h.fee / maxVal) * 100; let wE = (h.exp / maxVal) * 100; hH += `<div class="history-card"><b>${h.month}</b><br><div style="font-size:10px; display:flex; justify-content:space-between; margin-top:4px;"><span>Income: ₹${h.fee}</span><span>Cost: ₹${h.exp}</span></div><div style="background:#ddd; height:5px; margin:2px 0; border-radius:2px;"><div style="width:${wF}%; background:var(--safe); height:100%; border-radius:2px;"></div></div><div style="background:#ddd; height:5px; margin:2px 0 6px 0; border-radius:2px;"><div style="width:${wE}%; background:var(--danger); height:100%; border-radius:2px;"></div></div><b>Profit: ₹${h.profit}</b></div>`; });
         document.getElementById('historyList').innerHTML = hH;
         
-        // 🚨 TACTICAL UPDATE: Render Daily Collections Feature 🚨
         let colByDate = {};
         collections.forEach(c => {
             if (!colByDate[c.date]) colByDate[c.date] = { total: 0, list: [] };
@@ -690,7 +686,7 @@
             history.push({ month: currentMonthName + " " + now.getFullYear(), fee: totalFees, exp: totalExp, profit: (totalFees - totalExp) }); 
             students = students.map(s => ({ ...s, lastAmount: (parseFloat(s.amount) > 0) ? s.amount : (s.lastAmount || "0"), amount: "0", lastRemind: null })); 
             expenses = []; 
-            collections = []; // 🚨 TACTICAL UPDATE: Daily collections cleared for the new month
+            collections = []; 
             saveToCloud(); 
             alert(`Mission Successful! Ledger closed.`); location.reload(); 
         } catch (err) { alert("Error: " + err.message); } 
