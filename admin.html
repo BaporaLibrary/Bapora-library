@@ -156,6 +156,12 @@
             <div class="stat" style="background:var(--navy); color:white; margin-bottom:15px; padding:15px; border-radius:6px; text-align:center;">
                 <small>Net Profit (This Month)</small><b id="netProfit" style="font-size:24px;">₹0</b>
             </div>
+            
+            <div class="section" style="background:#e8f5e9; border-left:4px solid #28a745;">
+                <h4 style="color:#1b5e20; margin:0 0 10px 0;">💰 DAILY FEE DEPOSITS</h4>
+                <p style="font-size:11px; margin:0 0 10px 0; color:#555;">Details of fees collected day by day. Click on any date to see the student breakdown.</p>
+                <div id="dailyCollectionsDisplay"></div>
+            </div>
             <div class="section">
                 <input type="hidden" id="editExpId">
                 <input type="date" id="expDate">
@@ -204,7 +210,8 @@
     const auth = getAuth(app);
     const db = getDatabase(app);
 
-    let students = [], expenses = [], history = [], curF = 'all';
+    // 🚨 ADDED "collections" array HERE
+    let students = [], expenses = [], history = [], collections = [], curF = 'all';
     let megaQueue = [], megaMessage = "";
     let waitlistData = {};
 
@@ -319,7 +326,6 @@
         alert("Marquee Cleared! 🛑");
     };
 
-    // 🚨 YAHAN PAR FIX APPLY KIYA GAYA HAI 🚨
     window.showDailyLog = function() {
         const displayBox = document.getElementById('dailyLogDisplay');
         if (displayBox.style.display === 'block') { displayBox.style.display = 'none'; return; }
@@ -335,13 +341,12 @@
         
         let resultHTML = "<b style='color:#0277bd;'>Daily Present Report:</b><br><ul style='padding-left:20px; margin-top:5px; color:#333;'>";
         
-        // Naya Sorting Logic jo DD/MM/YYYY text ko real Date mein convert karke sort karega
         let dates = Object.keys(dailyCounts).sort((a, b) => {
             let parseDate = (str) => {
                 let parts = str.includes('/') ? str.split('/') : str.split('-');
                 return parts.length === 3 ? new Date(parts[2], parts[1]-1, parts[0]).getTime() : 0;
             };
-            return parseDate(b) - parseDate(a); // Latest Date Top par aayegi
+            return parseDate(b) - parseDate(a);
         });
         
         if (dates.length === 0) { 
@@ -364,7 +369,7 @@
             document.getElementById('login-screen').style.display = "none";
             document.getElementById('app-screen').style.display = "block";
             setupCloudSync();
-            setupWaitlistSync(); // Initialize Waitlist fetch
+            setupWaitlistSync(); 
         } else {
             document.getElementById('login-screen').style.display = "flex";
             document.getElementById('app-screen').style.display = "none";
@@ -375,14 +380,19 @@
     function setupCloudSync() {
         onValue(ref(db, 'admin_data'), (snap) => {
             const data = snap.val();
-            if (data) { students = data.students || []; expenses = data.expenses || []; history = data.history || []; }
+            if (data) { 
+                students = data.students || []; 
+                expenses = data.expenses || []; 
+                history = data.history || []; 
+                collections = data.collections || []; // Load daily collections
+            }
             window.render();
             window.syncSeatsToPublic();
         });
     }
 
     function saveToCloud() { 
-        set(ref(db, 'admin_data'), { students, expenses, history }); 
+        set(ref(db, 'admin_data'), { students, expenses, history, collections }); 
         window.syncSeatsToPublic(); 
     }
 
@@ -475,7 +485,6 @@
         saveToCloud();
     };
     
-    // MODIFIED TO SHOW NEWEST DATE AT THE TOP (REVERSED)
     window.viewAttendance = (id) => {
         const s = students.find(x => x.id == id);
         const hist = s.attendanceHistory || [];
@@ -483,10 +492,7 @@
             alert(`⚠️ No attendance record found for ${s.name} yet.`); 
         } else { 
             document.getElementById('histModalTitle').innerText = `📅 HISTORY: ${s.name.toUpperCase()}`;
-            
-            // 🚨 TACTICAL FIX: Creating a reversed copy so latest date is on top
             let reversedHist = [...hist].reverse(); 
-            
             document.getElementById('histModalContent').innerText = `Total Days Present: ${hist.length}\n\nDates Present:\n${reversedHist.join("\n")}`;
             document.getElementById('historyModal').style.display = 'flex';
         }
@@ -509,6 +515,16 @@
         if(!name || !phone || !fee) return alert("Fill Name, Phone and Date");
         const idx = students.findIndex(s => s.id == id);
         
+        // 🚨 TACTICAL UPDATE: Log Daily Collection when Amount Changes
+        const oldAmt = idx > -1 ? (parseFloat(students[idx].amount) || 0) : 0;
+        const newAmt = parseFloat(amount) || 0;
+        
+        if (newAmt !== oldAmt) {
+            const diff = newAmt - oldAmt;
+            const todayStr = new Date().toLocaleDateString('en-GB');
+            collections.push({ id: Date.now(), name: name, amt: diff, date: todayStr });
+        }
+
         const data = { 
             id: parseInt(id), name, phone, fee, amount, seat, shift, 
             lastRemind: students[idx]?.lastRemind || null, lastAmount: students[idx]?.lastAmount || "0", attendanceHistory: students[idx]?.attendanceHistory || [], isCounted: true 
@@ -610,6 +626,38 @@
         let hH = "<b>📜 MONTHLY REPORTS & TACTICAL CHARTS</b>"; let maxVal = Math.max(...history.map(h => Math.max(h.fee, h.exp)), 1); 
         [...history].reverse().forEach(h => { let wF = (h.fee / maxVal) * 100; let wE = (h.exp / maxVal) * 100; hH += `<div class="history-card"><b>${h.month}</b><br><div style="font-size:10px; display:flex; justify-content:space-between; margin-top:4px;"><span>Income: ₹${h.fee}</span><span>Cost: ₹${h.exp}</span></div><div style="background:#ddd; height:5px; margin:2px 0; border-radius:2px;"><div style="width:${wF}%; background:var(--safe); height:100%; border-radius:2px;"></div></div><div style="background:#ddd; height:5px; margin:2px 0 6px 0; border-radius:2px;"><div style="width:${wE}%; background:var(--danger); height:100%; border-radius:2px;"></div></div><b>Profit: ₹${h.profit}</b></div>`; });
         document.getElementById('historyList').innerHTML = hH;
+        
+        // 🚨 TACTICAL UPDATE: Render Daily Collections Feature 🚨
+        let colByDate = {};
+        collections.forEach(c => {
+            if (!colByDate[c.date]) colByDate[c.date] = { total: 0, list: [] };
+            colByDate[c.date].total += c.amt;
+            colByDate[c.date].list.push(`${c.name}: ₹${c.amt}`);
+        });
+        
+        let cH_html = "";
+        let cDates = Object.keys(colByDate).sort((a,b) => {
+            let pA = a.split('/'); let pB = b.split('/');
+            return new Date(pB[2], pB[1]-1, pB[0]) - new Date(pA[2], pA[1]-1, pA[0]);
+        });
+        
+        if (cDates.length === 0) {
+            cH_html = "<small style='color:#666;'>Abhi tak is mahine koi fees jama nahi hui hai.</small>";
+        } else {
+            cDates.forEach(d => {
+                let dayData = colByDate[d];
+                cH_html += `
+                <details style="background:#fff; padding:8px; border-radius:4px; margin-bottom:5px; border:1px solid #c8e6c9; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                    <summary style="font-weight:bold; color:#1b5e20; font-size:12px; cursor:pointer; list-style-type: '➕ ';">
+                        📅 ${d} ➔ Total: ₹${dayData.total} <span style="color:#666; font-size:10px; font-weight:normal;">(${dayData.list.length} Logs)</span>
+                    </summary>
+                    <ul style="margin:8px 0 0 0; padding-left:20px; font-size:11px; color:#333; border-top:1px dashed #ccc; padding-top:5px;">
+                        <li>${dayData.list.join("</li><li>")}</li>
+                    </ul>
+                </details>`;
+            });
+        }
+        document.getElementById('dailyCollectionsDisplay').innerHTML = cH_html;
     };
 
     window.wa = (id, type) => {
@@ -625,10 +673,28 @@
     window.editStu = (id) => { const s = students.find(x => x.id == id); document.getElementById('editId').value = s.id; document.getElementById('stuName').value = s.name; document.getElementById('stuPhone').value = s.phone; document.getElementById('stuFeeDate').value = s.fee; document.getElementById('stuAmt').value = s.amount; document.getElementById('stuSeat').value = s.seat; document.getElementById('stuShift').value = s.shift || 'Full'; document.getElementById('saveBtn').innerText = "UPDATE CLOUD RECORD"; document.getElementById('cancelBtn').style.display = "block"; window.scrollTo(0,0); };
     window.clearForms = () => { document.querySelectorAll('#lib-tab input').forEach(i => i.value = ''); document.getElementById('stuShift').value = 'Full'; document.getElementById('saveBtn').innerText = "SAVE & SYNC TO PUBLIC"; document.getElementById('cancelBtn').style.display = "none"; };
     window.clearExpForm = () => { document.querySelectorAll('#exp-tab input').forEach(i => i.value = ''); document.getElementById('saveExpBtn').innerText = "LOG EXPENSE"; document.getElementById('cancelExpBtn').style.display = "none"; };
-    window.importData = () => { const f = document.getElementById('importFile').files[0]; if(!f) { alert("Pehle file select karein!"); return; } const r = new FileReader(); r.onload = (e) => { try { const d = JSON.parse(e.target.result); if(d.Students_Snapshot) { students = d.Students_Snapshot; expenses = d.Detailed_Expenses || []; } else if (d.students) { students = d.students; expenses = d.expenses || []; history = d.history || []; } else { alert("Galat file format!"); return; } saveToCloud(); alert("System Successfully Restored from Backup! ✅"); } catch(err) { alert("Format Error!"); } }; r.readAsText(f); };
-    window.exportData = () => { const blob = new Blob([JSON.stringify({students, expenses, history})], {type: 'text/plain'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = "bapora_master_backup.txt"; a.click(); };
+    
+    window.importData = () => { const f = document.getElementById('importFile').files[0]; if(!f) { alert("Pehle file select karein!"); return; } const r = new FileReader(); r.onload = (e) => { try { const d = JSON.parse(e.target.result); if(d.Students_Snapshot) { students = d.Students_Snapshot; expenses = d.Detailed_Expenses || []; } else if (d.students) { students = d.students; expenses = d.expenses || []; history = d.history || []; collections = d.collections || []; } else { alert("Galat file format!"); return; } saveToCloud(); alert("System Successfully Restored from Backup! ✅"); } catch(err) { alert("Format Error!"); } }; r.readAsText(f); };
+    
+    window.exportData = () => { const blob = new Blob([JSON.stringify({students, expenses, history, collections})], {type: 'text/plain'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = "bapora_master_backup.txt"; a.click(); };
+    
     window.exportToExcel = () => { let csv = "Name,Seat,Shift,Phone,Fee,Amount\n"; students.forEach(s => { csv += `${s.name},${s.seat},${s.shift || 'Full'},${s.phone},${s.fee},${s.amount}\n`; }); const blob = new Blob([csv], { type: 'text/csv' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = "Library_Report.csv"; a.click(); };
-    window.closeMonthlyLedger = function() { if (!confirm("Commander, kya aap sure hain? Is mahine ka financial data reset ho jayega!")) return; try { window.exportData(); const now = new Date(); const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]; const currentMonthName = monthNames[now.getMonth()]; const totalFees = students.reduce((a, b) => a + (parseFloat(b.amount) || 0), 0); const totalExp = expenses.reduce((a, b) => a + (parseFloat(b.amt) || 0), 0); history.push({ month: currentMonthName + " " + now.getFullYear(), fee: totalFees, exp: totalExp, profit: (totalFees - totalExp) }); students = students.map(s => ({ ...s, lastAmount: (parseFloat(s.amount) > 0) ? s.amount : (s.lastAmount || "0"), amount: "0", lastRemind: null })); expenses = []; saveToCloud(); alert(`Mission Successful! Ledger closed.`); location.reload(); } catch (err) { alert("Error: " + err.message); } };
+    
+    window.closeMonthlyLedger = function() { 
+        if (!confirm("Commander, kya aap sure hain? Is mahine ka financial data reset ho jayega!")) return; 
+        try { 
+            window.exportData(); 
+            const now = new Date(); const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]; const currentMonthName = monthNames[now.getMonth()]; 
+            const totalFees = students.reduce((a, b) => a + (parseFloat(b.amount) || 0), 0); 
+            const totalExp = expenses.reduce((a, b) => a + (parseFloat(b.amt) || 0), 0); 
+            history.push({ month: currentMonthName + " " + now.getFullYear(), fee: totalFees, exp: totalExp, profit: (totalFees - totalExp) }); 
+            students = students.map(s => ({ ...s, lastAmount: (parseFloat(s.amount) > 0) ? s.amount : (s.lastAmount || "0"), amount: "0", lastRemind: null })); 
+            expenses = []; 
+            collections = []; // 🚨 TACTICAL UPDATE: Daily collections cleared for the new month
+            saveToCloud(); 
+            alert(`Mission Successful! Ledger closed.`); location.reload(); 
+        } catch (err) { alert("Error: " + err.message); } 
+    };
 </script>
 </body>
 </html>
