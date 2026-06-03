@@ -166,7 +166,7 @@
             opacity: 0.9;
         }
 
-        /* Tables */
+        /* Responsive Tables */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -201,6 +201,7 @@
 </head>
 <body>
 
+    <!-- Sidebar Menu Options -->
     <div class="sidebar">
         <h2>Bapora Library</h2>
         <button class="active" onclick="switchTab('dashboard')">Dashboard</button>
@@ -210,12 +211,14 @@
         <button onclick="switchTab('manage-students')">Add/Manage Students</button>
     </div>
 
+    <!-- Main Workspace Container -->
     <div class="main-content">
         <div class="header">
             <h1>Admin Panel</h1>
             <div id="current-date-display" style="font-weight: 600; color: var(--dark);"></div>
         </div>
 
+        <!-- Metric Counter Blocks -->
         <div class="stats-grid">
             <div class="card primary">
                 <h3>Total Registered Members</h3>
@@ -231,11 +234,13 @@
             </div>
         </div>
 
+        <!-- SECTION 1: DASHBOARD OVERVIEW -->
         <div id="dashboard" class="section active">
             <h2>Welcome Back, Administrator</h2>
             <p>Use the navigation panel on the left to track library student metrics, manage records, modify historical logs, and view dynamically updated real-time totals.</p>
         </div>
 
+        <!-- SECTION 2: MARK DAILY ATTENDANCE -->
         <div id="mark-attendance" class="section">
             <h2>Mark Daily Attendance</h2>
             <div class="form-group" style="max-width: 300px;">
@@ -251,12 +256,14 @@
                     </tr>
                 </thead>
                 <tbody id="mark-attendance-tbody">
-                    </tbody>
+                    <!-- Dynamic Rows Added by JS -->
+                </tbody>
             </table>
             <br>
             <button class="btn" onclick="saveDailyAttendance()">Save Daily Attendance</button>
         </div>
 
+        <!-- SECTION 3: ATTENDANCE HISTORY (The Editing/Fix Interface) -->
         <div id="attendance-history" class="section">
             <h2>Attendance History Log</h2>
             <p style="color: #7f8c8d; margin-bottom: 15px;">Modifying a dropdown selection here instantly fixes and syncs the data across all layout screens.</p>
@@ -270,10 +277,12 @@
                     </tr>
                 </thead>
                 <tbody id="history-tbody">
-                    </tbody>
+                    <!-- Dynamic Rows Added by JS -->
+                </tbody>
             </table>
         </div>
 
+        <!-- SECTION 4: VIEW DAILY TOTALS (The Previously Broken Screen) -->
         <div id="daily-totals" class="section">
             <h2>Daily Aggregation Totals</h2>
             <table>
@@ -285,10 +294,12 @@
                     </tr>
                 </thead>
                 <tbody id="daily-totals-tbody">
-                    </tbody>
+                    <!-- Dynamic Rows Added by JS -->
+                </tbody>
             </table>
         </div>
 
+        <!-- SECTION 5: MANAGE STUDENTS -->
         <div id="manage-students" class="section">
             <h2>Add New Student Record</h2>
             <div style="max-width: 400px; margin-bottom: 30px;">
@@ -307,30 +318,36 @@
                     </tr>
                 </thead>
                 <tbody id="students-list-tbody">
-                    </tbody>
+                    <!-- Dynamic Rows Added by JS -->
+                </tbody>
             </table>
         </div>
     </div>
 
+    <!-- JAVASCRIPT LOGIC ARCHITECTURE -->
     <script>
-        // Core Database Initialization
+        // Core Database Arrays/Objects initialized from LocalStorage
         let students = JSON.parse(localStorage.getItem('lib_students')) || [
             { id: "101", name: "Amit Kumar" },
             { id: "102", name: "Priya Sharma" },
             { id: "103", name: "Sandeep Singh" }
         ];
 
+        // Format: { "2026-06-02": { "101": "Present", "102": "Absent" } }
         let attendanceData = JSON.parse(localStorage.getItem('lib_attendance')) || {};
 
+        // App Initializer Run
         window.onload = function() {
             const todayStr = getTodayDateString();
             document.getElementById('attendance-date').value = todayStr;
             document.getElementById('current-date-display').innerText = "System Date: " + todayStr;
             
+            // Sync initial state if empty storage exists
             saveToStorage();
             refreshAllViews();
         };
 
+        // Date String Generator Utility (YYYY-MM-DD local timezone adjusted)
         function getTodayDateString() {
             const d = new Date();
             const offset = d.getTimezoneOffset();
@@ -338,6 +355,7 @@
             return localDate.toISOString().split('T')[0];
         }
 
+        // Global Navigation Tab Changer
         function switchTab(tabId) {
             document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
             document.querySelectorAll('.sidebar button').forEach(btn => btn.classList.remove('active'));
@@ -348,11 +366,14 @@
             refreshAllViews();
         }
 
+        // Commits structural states to LocalStorage Safely
         function saveToStorage() {
             localStorage.setItem('lib_students', JSON.stringify(students));
             localStorage.setItem('lib_attendance', JSON.stringify(attendanceData));
         }
 
+        // THE CORE RE-CALCULATION FIX Engine
+        // This coordinates view updates seamlessly to avoid view desync errors.
         function refreshAllViews() {
             updateDashboardCounters();
             loadMarkAttendanceTable();
@@ -361,6 +382,7 @@
             renderStudentsTable();
         }
 
+        // Recalculates Dashboard Aggregates
         function updateDashboardCounters() {
             const todayStr = getTodayDateString();
             document.getElementById('stat-total-students').innerText = students.length;
@@ -379,29 +401,7 @@
             document.getElementById('stat-absent-today').innerText = absentCount;
         }
 
-        // CRITICAL FIX: Safe Date Parser for perfect chronological sorting (Handles YYYY-MM-DD, DD-MM-YYYY, DD/MM/YYYY)
-        function parseDateToTimestamp(dateStr) {
-            if (!dateStr) return 0;
-            
-            // Format YYYY-MM-DD
-            if (dateStr.includes('-') && dateStr.split('-')[0].length === 4) {
-                return new Date(dateStr).getTime();
-            }
-            
-            // Format DD-MM-YYYY or DD/MM/YYYY
-            const separator = dateStr.includes('-') ? '-' : '/';
-            const parts = dateStr.split(separator);
-            if (parts.length === 3) {
-                if (parts[0].length === 4) {
-                    return new Date(parts[0], parts[1] - 1, parts[2]).getTime();
-                }
-                // Convert DD-MM-YYYY to true Javascript Date Object
-                return new Date(parts[2], parts[1] - 1, parts[0]).getTime();
-            }
-            
-            return new Date(dateStr).getTime() || 0;
-        }
-
+        // Renders Interactive Form Rows to log regular checkins
         function loadMarkAttendanceTable() {
             const targetDate = document.getElementById('attendance-date').value;
             const tbody = document.getElementById('mark-attendance-tbody');
@@ -428,6 +428,7 @@
                 tbody.appendChild(tr);
             });
 
+            // Add runtime UI color handling variables on dropdown adjustments
             tbody.querySelectorAll('select').forEach(select => {
                 select.addEventListener('change', function() {
                     this.className = `status-select ${this.value}`;
@@ -435,6 +436,7 @@
             });
         }
 
+        // Submits daily logs from the active editing forms grid
         function saveDailyAttendance() {
             const targetDate = document.getElementById('attendance-date').value;
             if(!targetDate) return alert('Please select a valid date form option first.');
@@ -449,17 +451,17 @@
             });
 
             saveToStorage();
-            refreshAllViews();
+            refreshAllViews(); // Cascades changes down to total counters
             alert('Attendance records configured successfully!');
         }
 
-        // Renders History logs sorted chronologically (Newest first)
+        // Populates historical operational logs inside section 3
         function renderHistoryTable() {
             const tbody = document.getElementById('history-tbody');
             tbody.innerHTML = '';
 
-            // Sorted using parsed timestamps
-            const datesSorted = Object.keys(attendanceData).sort((a, b) => parseDateToTimestamp(b) - parseDateToTimestamp(a));
+            // Sort dates linearly descending
+            const datesSorted = Object.keys(attendanceData).sort((a,b) => b.localeCompare(a));
 
             if(datesSorted.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#7f8c8d;">No historical logs discovered yet.</td></tr>`;
@@ -491,23 +493,31 @@
             });
         }
 
+        // THE ABSOLUTE CRITICAL RUNTIME FIX
+        // Triggers dynamically whenever data fields within "Attendance History Logs" are edited
         function modifyHistoryRecord(dateStr, studentId, newStatus) {
             if (attendanceData[dateStr] && attendanceData[dateStr][studentId] !== undefined) {
+                // 1. Modify the historical property value
                 attendanceData[dateStr][studentId] = newStatus;
+                
+                // 2. Commit structural state update to persistent LocalStorage
                 saveToStorage();
+                
+                // 3. FORCE AUTOMATIC REFERSH ON BOTH METRIC CARDS & DAILY TOTAL TABLES
                 updateDashboardCounters();
                 renderDailyTotalsTable();
+                
+                // 4. Update element layout styles
                 event.target.className = `status-select ${newStatus}`;
             }
         }
 
-        // FIXED: Daily Totals now perfectly orders June above May in sequence
+        // Computes and builds the dynamic "Daily Totals Table" layout elements
         function renderDailyTotalsTable() {
             const tbody = document.getElementById('daily-totals-tbody');
             tbody.innerHTML = '';
 
-            // Corrected Sorting Mechanism using parsed date objects
-            const datesSorted = Object.keys(attendanceData).sort((a, b) => parseDateToTimestamp(b) - parseDateToTimestamp(a));
+            const datesSorted = Object.keys(attendanceData).sort((a,b) => b.localeCompare(a));
 
             if(datesSorted.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#7f8c8d;">No daily tracking calculations found.</td></tr>`;
@@ -533,6 +543,7 @@
             });
         }
 
+        // UI component handlers managing internal user generation models
         function renderStudentsTable() {
             const tbody = document.getElementById('students-list-tbody');
             tbody.innerHTML = '';
@@ -549,6 +560,7 @@
             
             if(!name) return alert('Please enter a valid student name.');
 
+            // Simple Auto Incrementing ID allocation algorithm
             const nextId = students.length > 0 ? (Math.max(...students.map(s => parseInt(s.id))) + 1).toString() : "101";
 
             students.push({ id: nextId, name: name });
