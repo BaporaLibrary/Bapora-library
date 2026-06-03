@@ -227,46 +227,30 @@
         });
     };
     
-    // --- THE AUTO-PILOT ENGINE ---
     window.syncSeatsToPublic = function() {
         let publicSeats = {};
         let generalCount = 0;
-        
-        const now = new Date();
-        now.setHours(0,0,0,0);
-
+        const now = new Date(); now.setHours(0,0,0,0);
         students.forEach(s => {
             let isExpired = false;
             if(s.fee) {
-                let feeDate = new Date(s.fee);
-                feeDate.setHours(0,0,0,0);
+                let feeDate = new Date(s.fee); feeDate.setHours(0,0,0,0);
                 let daysOverdue = Math.floor((now - feeDate) / (1000 * 60 * 60 * 24));
-                if (daysOverdue > 5) {
-                    isExpired = true; 
-                }
+                if (daysOverdue > 5) isExpired = true; 
             }
-
             if (!isExpired) {
                 let seatNum = parseInt(s.seat);
-                if (seatNum > 0 && seatNum <= 57) {
-                    publicSeats[seatNum] = 'r';
-                } else {
-                    generalCount++; 
-                }
+                if (seatNum > 0 && seatNum <= 57) { publicSeats[seatNum] = 'r'; } 
+                else { generalCount++; }
             }
         });
-
         let currentGen = 0;
         for (let i = 1; i <= 57; i++) {
-            if (!publicSeats[i] && currentGen < generalCount) {
-                publicSeats[i] = 'g';
-                currentGen++;
-            }
+            if (!publicSeats[i] && currentGen < generalCount) { publicSeats[i] = 'g'; currentGen++; }
         }
         set(ref(db, 'seats'), publicSeats);
     };
 
-    // --- WAITLIST ENGINE ---
     function setupWaitlistSync() {
         onValue(ref(db, 'waiting_list'), (snap) => {
             waitlistData = snap.val() || {};
@@ -278,17 +262,11 @@
         const container = document.getElementById('waitlist-container');
         const keys = Object.keys(waitlistData);
         document.getElementById('wCount').innerText = keys.length;
-        
-        if(keys.length === 0) {
-            container.innerHTML = "<center style='padding:20px; color:#666;'>Abhi koi waitlist mein nahi hai.</center>";
-            return;
-        }
-
+        if(keys.length === 0) { container.innerHTML = "<center style='padding:20px; color:#666;'>Abhi koi waitlist mein nahi hai.</center>"; return; }
         let html = "";
         keys.reverse().forEach(k => {
             const w = waitlistData[k];
-            html += `
-            <div class="record-item" style="border-left: 5px solid var(--gold); background: #fffcf2;">
+            html += `<div class="record-item" style="border-left: 5px solid var(--gold); background: #fffcf2;">
                 <b>${w.name}</b> <span style="float:right; font-size:10px; color:#666;">${w.time}</span><br>
                 <small style="color:var(--navy); font-weight:bold;">📞 ${w.phone}</small><br>
                 <div style="margin-top:10px; display:flex; gap:10px;">
@@ -300,98 +278,39 @@
         container.innerHTML = html;
     };
 
-    window.waWaitlist = (phone, name) => {
-        const msg = `Namaste ${name}! Good news from Bapora Library. A seat is now available for you. Please confirm if you would like to join today! 📚`;
-        window.open(`https://wa.me/91${phone}?text=${encodeURIComponent(msg)}`, '_blank');
-    };
-
-    window.delWaitlist = (key) => {
-        if(confirm("Commander, is student ko waitlist se hatana hai?")) {
-            set(ref(db, `waiting_list/${key}`), null);
-        }
-    };
-
-    window.setMarquee = () => {
-        const txt = document.getElementById('marqueeText').value;
-        set(ref(db, 'broadcast'), { text: txt });
-        alert("Public Dashboard Marquee Updated! 📢");
-    };
-
-    window.clearMarquee = () => {
-        set(ref(db, 'broadcast'), { text: "" });
-        document.getElementById('marqueeText').value = "";
-        alert("Marquee Cleared! 🛑");
-    };
+    window.waWaitlist = (phone, name) => { window.open(`https://wa.me/91${phone}?text=${encodeURIComponent(`Namaste ${name}! Good news from Bapora Library. A seat is now available for you. Please confirm if you would like to join today! 📚`)}`, '_blank'); };
+    window.delWaitlist = (key) => { if(confirm("Commander, is student ko waitlist se hatana hai?")) set(ref(db, `waiting_list/${key}`), null); };
+    window.setMarquee = () => { set(ref(db, 'broadcast'), { text: document.getElementById('marqueeText').value }); alert("Public Dashboard Marquee Updated! 📢"); };
+    window.clearMarquee = () => { set(ref(db, 'broadcast'), { text: "" }); document.getElementById('marqueeText').value = ""; alert("Marquee Cleared! 🛑"); };
 
     window.showDailyLog = function() {
         const displayBox = document.getElementById('dailyLogDisplay');
         if (displayBox.style.display === 'block') { displayBox.style.display = 'none'; return; }
-        
         let dailyCounts = {};
-        students.forEach(s => { 
-            if (s.attendanceHistory) { 
-                s.attendanceHistory.forEach(date => { 
-                    dailyCounts[date] = (dailyCounts[date] || 0) + 1; 
-                }); 
-            } 
-        });
-        
+        students.forEach(s => { if (s.attendanceHistory) { s.attendanceHistory.forEach(date => { dailyCounts[date] = (dailyCounts[date] || 0) + 1; }); } });
         let resultHTML = "<b style='color:#0277bd;'>Daily Present Report:</b><br><ul style='padding-left:20px; margin-top:5px; color:#333;'>";
-        
-        let dates = Object.keys(dailyCounts).sort((a, b) => {
-            let parseDate = (str) => {
-                let parts = str.includes('/') ? str.split('/') : str.split('-');
-                return parts.length === 3 ? new Date(parts[2], parts[1]-1, parts[0]).getTime() : 0;
-            };
-            return parseDate(b) - parseDate(a);
-        });
-        
-        if (dates.length === 0) { 
-            resultHTML += "<li>Abhi tak koi attendance data nahi hai.</li>"; 
-        } else { 
-            dates.forEach(d => { 
-                resultHTML += `<li style="margin-bottom:3px;">${d} : <b>${dailyCounts[d]} Students Present</b></li>`; 
-            }); 
-        }
-        
-        resultHTML += "</ul>"; 
-        displayBox.innerHTML = resultHTML; 
-        displayBox.style.display = 'block'; 
+        let dates = Object.keys(dailyCounts).sort((a, b) => { let parseDate = (str) => { let parts = str.includes('/') ? str.split('/') : str.split('-'); return parts.length === 3 ? new Date(parts[2], parts[1]-1, parts[0]).getTime() : 0; }; return parseDate(b) - parseDate(a); });
+        if (dates.length === 0) { resultHTML += "<li>Abhi tak koi attendance data nahi hai.</li>"; } 
+        else { dates.forEach(d => { resultHTML += `<li style="margin-bottom:3px;">${d} : <b>${dailyCounts[d]} Students Present</b></li>`; }); }
+        resultHTML += "</ul>"; displayBox.innerHTML = resultHTML; displayBox.style.display = 'block'; 
     };
 
     window.logout = () => signOut(auth);
 
     onAuthStateChanged(auth, (user) => {
-        if (user) {
-            document.getElementById('login-screen').style.display = "none";
-            document.getElementById('app-screen').style.display = "block";
-            setupCloudSync();
-            setupWaitlistSync(); 
-        } else {
-            document.getElementById('login-screen').style.display = "flex";
-            document.getElementById('app-screen').style.display = "none";
-            document.getElementById('loginBtn').innerText = "UNLOCK SYSTEM";
-        }
+        if (user) { document.getElementById('login-screen').style.display = "none"; document.getElementById('app-screen').style.display = "block"; setupCloudSync(); setupWaitlistSync(); } 
+        else { document.getElementById('login-screen').style.display = "flex"; document.getElementById('app-screen').style.display = "none"; document.getElementById('loginBtn').innerText = "UNLOCK SYSTEM"; }
     });
 
     function setupCloudSync() {
         onValue(ref(db, 'admin_data'), (snap) => {
             const data = snap.val();
-            if (data) { 
-                students = data.students || []; 
-                expenses = data.expenses || []; 
-                history = data.history || []; 
-                collections = data.collections || []; 
-            }
-            window.render();
-            window.syncSeatsToPublic();
+            if (data) { students = data.students || []; expenses = data.expenses || []; history = data.history || []; collections = data.collections || []; }
+            window.render(); window.syncSeatsToPublic();
         });
     }
 
-    function saveToCloud() { 
-        set(ref(db, 'admin_data'), { students, expenses, history, collections }); 
-        window.syncSeatsToPublic(); 
-    }
+    function saveToCloud() { set(ref(db, 'admin_data'), { students, expenses, history, collections }); window.syncSeatsToPublic(); }
 
     window.switchTab = (t) => {
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -403,50 +322,29 @@
     };
 
     window.setF = (f) => {
-        curF = f;
-        document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
-        if(f=='all') document.getElementById('fAll').classList.add('active');
-        if(f=='due') document.getElementById('fDue').classList.add('active');
-        if(f=='fol') document.getElementById('fFol').classList.add('active');
-        if(f=='exp') document.getElementById('fExp').classList.add('active');
+        curF = f; document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
+        if(f=='all') document.getElementById('fAll').classList.add('active'); if(f=='due') document.getElementById('fDue').classList.add('active');
+        if(f=='fol') document.getElementById('fFol').classList.add('active'); if(f=='exp') document.getElementById('fExp').classList.add('active');
         window.render();
     };
 
     window.startMegaphone = function() {
-        const q = document.getElementById('stuSearch').value.toLowerCase();
-        const now = new Date(); now.setHours(0,0,0,0);
-        megaQueue = [];
-
+        const q = document.getElementById('stuSearch').value.toLowerCase(); const now = new Date(); now.setHours(0,0,0,0); megaQueue = [];
         students.forEach(s => {
             let feeDate = new Date(s.fee); feeDate.setHours(0,0,0,0);
-            const isDue = (s.fee && now > feeDate);
-            let isFol = false, isExp = false;
-            
+            const isDue = (s.fee && now > feeDate); let isFol = false, isExp = false;
             const daysOverdue = isDue ? Math.floor((now - feeDate) / (1000 * 60 * 60 * 24)) : 0;
             if(daysOverdue > 5) isExp = true; 
-            
-            if(s.lastRemind) { 
-                let lrDate = new Date(s.lastRemind); lrDate.setHours(0,0,0,0);
-                const diff = Math.floor((now - lrDate) / (1000 * 60 * 60 * 24)); 
-                isFol = isDue && diff >= 3; 
-            }
-            
+            if(s.lastRemind) { let lrDate = new Date(s.lastRemind); lrDate.setHours(0,0,0,0); const diff = Math.floor((now - lrDate) / (1000 * 60 * 60 * 24)); isFol = isDue && diff >= 3; }
             let matchName = s.name.toLowerCase().includes(q); let matchPhone = s.phone && s.phone.includes(q); let matchSeat = s.seat && s.seat.toString().toLowerCase().includes(q);
-
-            if((matchName || matchPhone || matchSeat) && (curF=='all' || (curF=='due' && isDue && !isExp) || (curF=='fol' && isFol) || (curF=='exp' && isExp))) {
-                if(s.phone) megaQueue.push(s);
-            }
+            if((matchName || matchPhone || matchSeat) && (curF=='all' || (curF=='due' && isDue && !isExp) || (curF=='fol' && isFol) || (curF=='exp' && isExp))) { if(s.phone) megaQueue.push(s); }
         });
-
         if(megaQueue.length === 0) return alert("No valid students found in current filter!");
-
         let defaultTemplate = "";
         if (curF === 'exp') { defaultTemplate = "your library membership expired on [DATE]. We haven't heard from you! Please confirm if you are taking a break or planning to continue. Thank you! 📚 - Admin, Bapora Library"; } 
         else if (curF === 'due' || curF === 'fol') { defaultTemplate = "your fee is pending since [DATE]. Please update soon."; } 
         else { defaultTemplate = "Please type your general announcement here..."; }
-
         let inputMsg = prompt(`Broadcast to ${megaQueue.length} students.\n\nKeep [DATE] in the text, and the system will automatically change it to their exact expiry date!`, defaultTemplate);
-        
         if(inputMsg && inputMsg.trim() !== "") { megaMessage = inputMsg; updateMegaUI(); document.getElementById('mega-panel').style.display = 'block'; }
     };
 
@@ -458,12 +356,9 @@
 
     window.fireMegaphone = function() {
         if(megaQueue.length > 0) {
-            let s = megaQueue.shift(); 
-            let displayDate = "N/A";
+            let s = megaQueue.shift(); let displayDate = "N/A";
             if(s.fee) { let parts = s.fee.split('-'); displayDate = `${parts[2]}/${parts[1]}/${parts[0]}`; }
-            let customizedBody = megaMessage.replace(/\[DATE\]/g, displayDate);
-            let finalMsg = `Namaste ${s.name},\n\n${customizedBody}`;
-            
+            let customizedBody = megaMessage.replace(/\[DATE\]/g, displayDate); let finalMsg = `Namaste ${s.name},\n\n${customizedBody}`;
             window.open(`https://wa.me/91${s.phone}?text=${encodeURIComponent(finalMsg)}`, '_blank');
             const idx = students.findIndex(x => x.id == s.id);
             if(idx > -1) { students[idx].lastRemind = new Date().toISOString(); saveToCloud(); }
@@ -474,8 +369,7 @@
     window.stopMegaphone = function() { megaQueue = []; document.getElementById('mega-panel').style.display = 'none'; };
 
     window.markPresent = (id) => {
-        const idx = students.findIndex(x => x.id == id);
-        const todayStr = new Date().toLocaleDateString('en-GB'); 
+        const idx = students.findIndex(x => x.id == id); const todayStr = new Date().toLocaleDateString('en-GB'); 
         if (!students[idx].attendanceHistory) students[idx].attendanceHistory = [];
         const dateIndex = students[idx].attendanceHistory.indexOf(todayStr);
         if (dateIndex > -1) { students[idx].attendanceHistory.splice(dateIndex, 1); } else { students[idx].attendanceHistory.push(todayStr); }
@@ -483,11 +377,9 @@
     };
     
     window.viewAttendance = (id) => {
-        const s = students.find(x => x.id == id);
-        const hist = s.attendanceHistory || [];
-        if (hist.length === 0) { 
-            alert(`⚠️ No attendance record found for ${s.name} yet.`); 
-        } else { 
+        const s = students.find(x => x.id == id); const hist = s.attendanceHistory || [];
+        if (hist.length === 0) { alert(`⚠️ No attendance record found for ${s.name} yet.`); } 
+        else { 
             document.getElementById('histModalTitle').innerText = `📅 HISTORY: ${s.name.toUpperCase()}`;
             let reversedHist = [...hist].reverse(); 
             document.getElementById('histModalContent').innerText = `Total Days Present: ${hist.length}\n\nDates Present:\n${reversedHist.join("\n")}`;
@@ -495,10 +387,7 @@
         }
     };
 
-    window.toggleActions = (id) => {
-        const div = document.getElementById(`actions-${id}`);
-        if(div.style.display === 'none') { div.style.display = 'flex'; } else { div.style.display = 'none'; }
-    };
+    window.toggleActions = (id) => { const div = document.getElementById(`actions-${id}`); div.style.display = (div.style.display === 'none') ? 'flex' : 'none'; };
 
     window.saveStudent = () => {
         const id = document.getElementById('editId').value || Date.now();
@@ -512,14 +401,22 @@
         if(!name || !phone || !fee) return alert("Fill Name, Phone and Date");
         const idx = students.findIndex(s => s.id == id);
         
-        // 🚨 TACTICAL UPDATE: Smart Filter - Only record if amount INCREASES
+        // 🚨 TACTICAL UPDATE: Smart Merge Logic - Prevents duplicates!
         const oldAmt = idx > -1 ? (parseFloat(students[idx].amount) || 0) : 0;
         const newAmt = parseFloat(amount) || 0;
         
-        if (newAmt > oldAmt) {
+        if (newAmt !== oldAmt) {
             const diff = newAmt - oldAmt;
             const todayStr = new Date().toLocaleDateString('en-GB');
-            collections.push({ id: Date.now(), name: name, amt: diff, date: todayStr });
+            
+            // Find if this student already has an entry TODAY
+            let existingIdx = collections.findIndex(c => c.name === name && c.date === todayStr);
+            if (existingIdx > -1) {
+                collections[existingIdx].amt += diff;
+                if (collections[existingIdx].amt === 0) collections.splice(existingIdx, 1); // Clean up if diff goes back to 0
+            } else {
+                if (diff !== 0) collections.push({ id: Date.now(), name: name, amt: diff, date: todayStr });
+            }
         }
 
         const data = { 
@@ -536,39 +433,24 @@
     };
 
     window.render = () => {
-        const q = document.getElementById('stuSearch').value.toLowerCase();
-        let sH = "", dCnt = 0, tFees = 0, pCnt = 0, activeCount = 0;
-        
-        const now = new Date(); now.setHours(0,0,0,0);
-        const todayStr = new Date().toLocaleDateString('en-GB'); 
+        const q = document.getElementById('stuSearch').value.toLowerCase(); let sH = "", dCnt = 0, tFees = 0, pCnt = 0, activeCount = 0;
+        const now = new Date(); now.setHours(0,0,0,0); const todayStr = new Date().toLocaleDateString('en-GB'); 
         
         students.forEach(s => {
             if(s.isCounted !== false) tFees += parseFloat(s.amount) || 0;
-            
-            let feeDate = new Date(s.fee); feeDate.setHours(0,0,0,0);
-            const isDue = (s.fee && now > feeDate);
-            let daysOverdue = 0;
-            if(isDue) { daysOverdue = Math.floor((now - feeDate) / (1000 * 60 * 60 * 24)); }
-
+            let feeDate = new Date(s.fee); feeDate.setHours(0,0,0,0); const isDue = (s.fee && now > feeDate);
+            let daysOverdue = 0; if(isDue) { daysOverdue = Math.floor((now - feeDate) / (1000 * 60 * 60 * 24)); }
             let isFol = false, isExp = false, folHTML = "", rDateHTML = "";
             
-            if(daysOverdue > 5) {
-                isExp = true; 
-                folHTML = `<div class="follow-up" style="background:#ffcdd2; color:#b71c1c; border-color:#ef9a9a;">🚨 AWOL: Seat Vacated (${daysOverdue} days overdue)</div>`; 
-            } else {
-                activeCount++;
-                if(isDue) dCnt++;
-            }
+            if(daysOverdue > 5) { isExp = true; folHTML = `<div class="follow-up" style="background:#ffcdd2; color:#b71c1c; border-color:#ef9a9a;">🚨 AWOL: Seat Vacated (${daysOverdue} days overdue)</div>`; } 
+            else { activeCount++; if(isDue) dCnt++; }
 
             let histArray = s.attendanceHistory || []; let isPresent = histArray.includes(todayStr); if(isPresent) pCnt++;
 
             if(s.lastRemind) { 
                 let lrDate = new Date(s.lastRemind); lrDate.setHours(0,0,0,0);
                 const diff = Math.floor((now - lrDate) / (1000 * 60 * 60 * 24)); 
-                if(isDue && diff >= 3 && !isExp) { 
-                    isFol = true; 
-                    folHTML = `<div class="follow-up">⚠️ Follow-up Needed (${diff}d ago)</div>`; 
-                } 
+                if(isDue && diff >= 3 && !isExp) { isFol = true; folHTML = `<div class="follow-up">⚠️ Follow-up Needed (${diff}d ago)</div>`; } 
                 rDateHTML = `<span class="remind-date">Last Sent: ${new Date(s.lastRemind).toLocaleDateString()}</span>`; 
             }
 
@@ -582,7 +464,6 @@
 
             if((matchName || matchPhone || matchSeat) && (curF=='all' || (curF=='due' && isDue && !isExp) || (curF=='fol' && isFol) || (curF=='exp' && isExp))) {
                 let cardBgColor = isDue ? '#ffebee' : '#e8f5e9'; let leftBorderColor = isDue ? '#b71c1c' : '#1b5e20';
-                
                 let seatHtml = isExp ? `<strike>${s.seat || 'Gen'}</strike> <b style="color:var(--danger)">(Vacated)</b>` : `<b>${s.seat || 'Gen'}</b>`;
                 
                 sH += `<div class="record-item" style="background-color: ${cardBgColor}; border-left: 5px solid ${leftBorderColor};">
@@ -624,11 +505,14 @@
         [...history].reverse().forEach(h => { let wF = (h.fee / maxVal) * 100; let wE = (h.exp / maxVal) * 100; hH += `<div class="history-card"><b>${h.month}</b><br><div style="font-size:10px; display:flex; justify-content:space-between; margin-top:4px;"><span>Income: ₹${h.fee}</span><span>Cost: ₹${h.exp}</span></div><div style="background:#ddd; height:5px; margin:2px 0; border-radius:2px;"><div style="width:${wF}%; background:var(--safe); height:100%; border-radius:2px;"></div></div><div style="background:#ddd; height:5px; margin:2px 0 6px 0; border-radius:2px;"><div style="width:${wE}%; background:var(--danger); height:100%; border-radius:2px;"></div></div><b>Profit: ₹${h.profit}</b></div>`; });
         document.getElementById('historyList').innerHTML = hH;
         
+        // 🚨 TACTICAL UPDATE: Render & Aggregate existing messy data cleanly 🚨
         let colByDate = {};
         collections.forEach(c => {
-            if (!colByDate[c.date]) colByDate[c.date] = { total: 0, list: [] };
+            if (!colByDate[c.date]) colByDate[c.date] = { total: 0, studentMap: {} };
+            if (!colByDate[c.date].studentMap[c.name]) colByDate[c.date].studentMap[c.name] = 0;
+            
+            colByDate[c.date].studentMap[c.name] += c.amt;
             colByDate[c.date].total += c.amt;
-            colByDate[c.date].list.push(`${c.name}: ₹${c.amt}`);
         });
         
         let cH_html = "";
@@ -642,18 +526,31 @@
         } else {
             cDates.forEach(d => {
                 let dayData = colByDate[d];
-                cH_html += `
-                <details style="background:#fff; padding:8px; border-radius:4px; margin-bottom:5px; border:1px solid #c8e6c9; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-                    <summary style="font-weight:bold; color:#1b5e20; font-size:12px; cursor:pointer; list-style-type: '➕ ';">
-                        📅 ${d} ➔ Total: ₹${dayData.total} <span style="color:#666; font-size:10px; font-weight:normal;">(${dayData.list.length} Logs)</span>
-                    </summary>
-                    <ul style="margin:8px 0 0 0; padding-left:20px; font-size:11px; color:#333; border-top:1px dashed #ccc; padding-top:5px;">
-                        <li>${dayData.list.join("</li><li>")}</li>
-                    </ul>
-                </details>`;
+                let listItems = [];
+                let validCount = 0;
+                
+                for (let stuName in dayData.studentMap) {
+                    let stuTotal = dayData.studentMap[stuName];
+                    if (stuTotal > 0) {
+                        listItems.push(`<b>${stuName}</b>: ₹${stuTotal}`);
+                        validCount++;
+                    }
+                }
+                
+                if (validCount > 0) {
+                    cH_html += `
+                    <details style="background:#fff; padding:8px; border-radius:4px; margin-bottom:5px; border:1px solid #c8e6c9; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                        <summary style="font-weight:bold; color:#1b5e20; font-size:12px; cursor:pointer; list-style-type: '➕ ';">
+                            📅 ${d} ➔ Total: ₹${dayData.total} <span style="color:#666; font-size:10px; font-weight:normal;">(${validCount} Logs)</span>
+                        </summary>
+                        <ul style="margin:8px 0 0 0; padding-left:20px; font-size:11px; color:#333; border-top:1px dashed #ccc; padding-top:5px;">
+                            <li>${listItems.join("</li><li>")}</li>
+                        </ul>
+                    </details>`;
+                }
             });
         }
-        document.getElementById('dailyCollectionsDisplay').innerHTML = cH_html;
+        document.getElementById('dailyCollectionsDisplay').innerHTML = cH_html || "<small style='color:#666;'>Abhi tak is mahine koi fees jama nahi hui hai.</small>";
     };
 
     window.wa = (id, type) => {
