@@ -1,637 +1,563 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Bapora Command v10.45 (Auto-Pilot & Waitlist)</title>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bapora Library - Admin Dashboard</title>
     <style>
-        :root { --navy: #002347; --gold: #c5a059; --bg: #f4f4f9; --card: #ffffff; --text: #222; --safe: #1b5e20; --danger: #b71c1c; }
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); color: var(--text); padding: 0; margin: 0; }
-        .container { max-width: 480px; margin: auto; background: var(--card); border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border-top: 5px solid var(--navy); overflow: hidden; padding: 8px; padding-bottom: 60px; }
-        .tabs { display: flex; background: #eceff1; }
-        .tab-btn { flex: 1; padding: 14px 2px; border: none; background: none; font-weight: bold; cursor: pointer; color: #546e7a; font-size: 11px; border-bottom: 3px solid transparent; display:flex; align-items:center; justify-content:center; }
-        .tab-btn.active { color: var(--navy); border-bottom: 3px solid var(--navy); background: #fff; }
-        .tab-content { display: none; padding: 12px; }
-        .tab-content.active { display: block; }
-        .section { background: #fafafa; padding: 12px; border-radius: 6px; margin-bottom: 15px; border: 1px solid #e0e0e0; }
-        input, select { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #cfd8dc; border-radius: 4px; box-sizing: border-box; }
-        
-        .record-item { padding: 12px; border-radius: 6px; margin-top: 10px; border: 1px solid #d1d5db; position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .follow-up { background: #fff3e0; color: #ef6c00; font-weight: bold; padding: 4px; border-radius: 4px; font-size: 10px; display: inline-block; margin-top: 5px; border: 1px solid #ffe0b2; }
-        .remind-date { font-size: 9px; color: #666; display: block; margin-top: 2px; }
-        
-        .wa-btn-group { display: flex; gap: 4px; margin-top: 8px; flex-wrap: wrap; justify-content: space-between;}
-        .wa-btn { flex: 1; min-width: 30%; color: white; padding: 8px 2px; border-radius: 4px; font-size: 10px; font-weight: bold; text-align: center; border: none; cursor: pointer; margin-bottom: 2px; }
-        .btn-rcpt { background: var(--safe); }
-        .btn-due { background: #ff9800; }
-        .btn-lunch { background: #007bff; }
-        .btn-alert { background: #8e44ad; }
-        .btn-exp { background: var(--danger); } 
-        
-        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
-        .stat-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
-        .stat { background: #fff; border: 1px solid var(--navy); padding: 8px; border-radius: 6px; text-align: center; color: var(--navy); }
-        .stat b { font-size: 14px; display: block; }
-        .btn-main { padding: 12px; width: 100%; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; color: white; margin-top: 5px; }
-        
-        .filter-bar { display: flex; gap: 4px; margin-bottom: 10px; flex-wrap: wrap; }
-        .btn-filter { flex: 1; min-width: 20%; font-size: 9px; padding: 8px 2px; border: 1px solid var(--navy); background: white; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        .btn-filter.active { background: var(--navy); color: white; }
-        
-        .action-link { font-size: 10px; font-weight: bold; cursor: pointer; margin-top: 8px; display: inline-block; margin-right: 15px; }
-        .history-card { background: #e3f2fd; padding: 10px; border-radius: 6px; margin-top: 8px; font-size: 11px; border-left: 4px solid var(--gold); }
-        
-        #mega-panel { display: none; position: fixed; bottom: 0; left: 0; width: 100%; background: var(--navy); color: white; padding: 15px; box-sizing: border-box; box-shadow: 0 -5px 15px rgba(0,0,0,0.3); z-index: 9999; text-align: center; border-top: 3px solid var(--gold); }
-        .btn-mega { background: var(--gold); color: black; font-weight: bold; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 5px; font-size: 16px; width: 100%; }
-        
-        #login-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; background:var(--navy); }
-        .login-box { background:white; padding:30px; border-radius:10px; text-align:center; width:280px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        :root {
+            --primary: #2c3e50;
+            --secondary: #18bc9c;
+            --danger: #e74c3c;
+            --light: #ecf0f1;
+            --dark: #34495e;
+            --white: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            display: flex;
+            background-color: var(--light);
+            color: var(--dark);
+            min-height: 100vh;
+        }
+
+        /* Sidebar Navigation */
+        .sidebar {
+            width: 260px;
+            background-color: var(--primary);
+            color: var(--white);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 22px;
+            letter-spacing: 1px;
+            border-bottom: 2px solid var(--secondary);
+            padding-bottom: 10px;
+        }
+
+        .sidebar button {
+            background: none;
+            border: none;
+            color: var(--white);
+            padding: 12px 15px;
+            text-align: left;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .sidebar button:hover, .sidebar button.active {
+            background-color: var(--secondary);
+            font-weight: bold;
+        }
+
+        /* Main Content Area */
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #bdc3c7;
+            padding-bottom: 15px;
+        }
+
+        /* Dashboard Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: var(--white);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+            border-top: 4px solid var(--secondary);
+        }
+
+        .card.danger { border-top-color: var(--danger); }
+        .card.primary { border-top-color: var(--primary); }
+
+        .card h3 {
+            font-size: 14px;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .card p {
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--dark);
+        }
+
+        /* Content Sections */
+        .section {
+            background: var(--white);
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .section h2 {
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+
+        /* Form Controls */
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #bdc3c7;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .btn {
+            background-color: var(--secondary);
+            color: var(--white);
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: var(--primary);
+            color: var(--white);
+        }
+
+        tr:hover {
+            background-color: #f9f9f9;
+        }
+
+        /* Status Badges */
+        .status-select {
+            padding: 5px;
+            border-radius: 4px;
+            font-weight: bold;
+            width: auto;
+        }
+        .status-select.Present { background-color: #d4edda; color: #155724; border-color: #c3e6cb; }
+        .status-select.Absent { background-color: #f8d7da; color: #721c24; border-color: #f5c6cb; }
     </style>
 </head>
 <body>
 
-<div id="login-screen">
-    <div class="login-box">
-        <h2 style="color:var(--navy); margin-top:0;">Bapora Command</h2>
-        <p style="font-size:12px; color:#666; font-weight:bold;">SECURE CLOUD ACCESS</p>
-        <input type="email" id="loginEmail" placeholder="Admin Email">
-        <input type="password" id="loginPass" placeholder="Master Password">
-        <button id="loginBtn" class="btn-main" style="background:var(--gold); color:black;" onclick="window.login()">UNLOCK SYSTEM</button>
-        <p id="loginError" style="color:red; font-size:12px; margin-top:10px; font-weight:bold;"></p>
+    <div class="sidebar">
+        <h2>Bapora Library</h2>
+        <button class="active" onclick="switchTab('dashboard')">Dashboard</button>
+        <button onclick="switchTab('mark-attendance')">Mark Attendance</button>
+        <button onclick="switchTab('attendance-history')">Attendance History</button>
+        <button onclick="switchTab('daily-totals')">Daily Totals</button>
+        <button onclick="switchTab('manage-students')">Add/Manage Students</button>
     </div>
-</div>
 
-<div id="app-screen" style="display:none; padding:8px;">
-    <div class="container">
-        <div class="tabs">
-            <button id="tabLBtn" class="tab-btn active" onclick="window.switchTab('lib-tab')">LIBRARIAN</button>
-            <button id="tabWBtn" class="tab-btn" onclick="window.switchTab('wait-tab')">WAITLIST <span id="wCount" style="background:var(--danger);color:white;border-radius:10px;padding:2px 6px;font-size:10px;margin-left:4px;">0</span></button>
-            <button id="tabEBtn" class="tab-btn" onclick="window.switchTab('exp-tab')">FINANCE</button>
+    <div class="main-content">
+        <div class="header">
+            <h1>Admin Panel</h1>
+            <div id="current-date-display" style="font-weight: 600; color: var(--dark);"></div>
         </div>
 
-        <div id="lib-tab" class="tab-content active">
-            <div class="stat-grid-3">
-                <div class="stat"><small>Active Students</small><b id="countTotal">0</b></div>
-                <div class="stat" style="color:#0277bd; border-color:#0277bd;"><small>Present</small><b id="countPresent">0</b></div>
-                <div class="stat" style="color:var(--danger); border-color:var(--danger);"><small>Due Now</small><b id="countDue">0</b></div>
+        <div class="stats-grid">
+            <div class="card primary">
+                <h3>Total Registered Members</h3>
+                <p id="stat-total-students">0</p>
             </div>
-            <div class="stat-grid">
-                <div class="stat" style="color:var(--safe); border-color:var(--safe);"><small>Fees This Mnt</small><b id="sumFees">₹0</b></div>
-                <div class="stat" style="color:var(--danger); border-color:var(--danger);"><small>Exp This Mnt</small><b id="sumExp">₹0</b></div>
+            <div class="card">
+                <h3>Present Today</h3>
+                <p id="stat-present-today">0</p>
             </div>
-
-            <div style="margin-bottom:15px; background:#fff3cd; padding:10px; border-radius:6px; border:1px solid #ffeeba;">
-                <h4 style="margin:0 0 5px 0; color:#856404; font-size:13px;">📢 PUBLIC DASHBOARD MARQUEE</h4>
-                <div style="display:flex; gap:5px;">
-                    <input type="text" id="marqueeText" placeholder="Announcements for students..." style="width:70%; font-size:12px; padding:6px; margin:0;">
-                    <button class="btn-main" style="width:30%; background:#c82333; padding:6px; margin:0;" onclick="window.setMarquee()">SET LIVE</button>
-                </div>
-                <button class="btn-main" style="width:100%; background:#6c757d; padding:6px; margin-top:5px; font-size:12px;" onclick="window.clearMarquee()">CLEAR ALERT</button>
-            </div>
-
-            <div class="section">
-                <input type="hidden" id="editId">
-                <input type="text" id="stuName" placeholder="Student Name">
-                <div style="display:flex; gap:4px;">
-                    <input type="text" id="stuSeat" placeholder="Seat No (Leave blank for Gen)" style="width:50%;">
-                    <select id="stuShift" style="width:50%; font-size:12px; padding:8px;">
-                        <option value="Full">Full Day</option>
-                        <option value="Morning">Morning</option>
-                        <option value="Evening">Evening</option>
-                    </select>
-                </div>
-                <input type="number" id="stuAmt" placeholder="Paid(₹)" style="width:100%;">
-                <input type="tel" id="stuPhone" placeholder="WhatsApp No">
-                <input type="date" id="stuFeeDate">
-                <button id="saveBtn" class="btn-main" style="background:var(--navy);" onclick="window.saveStudent()">SAVE & SYNC TO PUBLIC</button>
-                <button id="cancelBtn" class="btn-main" style="background:#666; display:none;" onclick="window.clearForms()">CANCEL</button>
-            </div>
-
-            <input type="text" id="stuSearch" placeholder="🔍 Search by Name, Seat, or Mobile..." onkeyup="window.render()">
-            
-            <div class="filter-bar">
-                <button id="fAll" class="btn-filter active" onclick="window.setF('all')">ALL</button>
-                <button id="fDue" class="btn-filter" onclick="window.setF('due')">DUE</button>
-                <button id="fFol" class="btn-filter" style="border-color:#ef6c00;" onclick="window.setF('fol')">⚠️ FOLLOW UP</button>
-                <button id="fExp" class="btn-filter" style="border-color:#b71c1c; color:#b71c1c;" onclick="window.setF('exp')">🚨 EXPIRED</button>
-            </div>
-
-            <button class="btn-main" style="background: linear-gradient(145deg, #f39c12, #d35400); margin-bottom: 15px; font-size:14px;" onclick="window.startMegaphone()">📱 WHATSAPP BROADCAST</button>
-
-            <div id="stuList"></div>
-
-            <div class="section" style="margin-top:20px; text-align:center; background:#eee;">
-                <div style="display:flex; gap:5px; margin-bottom:10px;">
-                    <button class="btn-main" style="background:var(--gold); color:#000; flex:1;" onclick="window.exportData()">💾 DOWNLOAD</button>
-                    <button class="btn-main" style="background:#28a745; color:#fff; flex:1;" onclick="window.exportToExcel()">📊 EXCEL</button>
-                </div>
-                <div style="border-top:1px solid #ccc; padding-top:10px;">
-                    <input type="file" id="importFile" style="font-size:10px;" accept=".txt">
-                    <button class="btn-main" style="background:var(--navy);" onclick="window.importData()">🔄 UPLOAD/RESTORE TO CLOUD</button>
-                </div>
-                
-                <div class="section" style="margin-top:15px; background:#e3f2fd; border-left:4px solid #0277bd;">
-                    <h4 style="color:#0277bd; margin:0 0 10px 0;">📊 DAILY ATTENDANCE LOG</h4>
-                    <p style="font-size:11px; margin:0 0 10px 0;">Pichle dino mein total kitne students present the, yahan dekhein.</p>
-                    <button class="btn-main" style="background:#0277bd; font-size:12px;" onclick="window.showDailyLog()">👀 VIEW DAILY TOTALS</button>
-                    <div id="dailyLogDisplay" style="display:none; margin-top:10px; font-size:11px; background:#fff; padding:10px; border-radius:4px; border:1px solid #ccc;"></div>
-                </div>
-                
-                <div style="border-top:2px solid var(--danger); margin-top:15px; padding-top:15px;">
-                    <h4 style="color:var(--danger); margin:0;">🏁 MONTH-END CLOSE</h4>
-                    <p style="font-size:11px; margin:5px 0;">Reset Fees & Expenses to 0. (Last paid amount saved in grey flag)</p>
-                    <button class="btn-main" style="background:var(--danger); font-size:14px;" onclick="window.closeMonthlyLedger()">🚀 CLOSE CURRENT MONTH & RESET</button>
-                </div>
-                
-                <button class="btn-main" style="background:#b71c1c; margin-top:15px;" onclick="window.logout()">LOGOUT</button>
+            <div class="card danger">
+                <h3>Absent Today</h3>
+                <p id="stat-absent-today">0</p>
             </div>
         </div>
 
-        <div id="wait-tab" class="tab-content">
-            <h3 style="color:var(--navy); margin-top:0; border-bottom:2px solid var(--gold); padding-bottom:10px;">⏳ STANDBY QUEUE</h3>
-            <p style="font-size:12px; color:#555;">Bacchon ki list jinhone public site se seat ki request bheji hai.</p>
-            <div id="waitlist-container"></div>
+        <div id="dashboard" class="section active">
+            <h2>Welcome Back, Administrator</h2>
+            <p>Use the navigation panel on the left to track library student metrics, manage records, modify historical logs, and view dynamically updated real-time totals.</p>
         </div>
 
-        <div id="exp-tab" class="tab-content">
-            <div class="stat" style="background:var(--navy); color:white; margin-bottom:15px; padding:15px; border-radius:6px; text-align:center;">
-                <small>Net Profit (This Month)</small><b id="netProfit" style="font-size:24px;">₹0</b>
+        <div id="mark-attendance" class="section">
+            <h2>Mark Daily Attendance</h2>
+            <div class="form-group" style="max-width: 300px;">
+                <label for="attendance-date">Select Target Date:</label>
+                <input type="date" id="attendance-date" onchange="loadMarkAttendanceTable()">
             </div>
-            <div class="section">
-                <input type="hidden" id="editExpId">
-                <input type="date" id="expDate">
-                <input type="number" id="expAmt" placeholder="Amount (₹)">
-                <input type="text" id="expNote" placeholder="Note (Electricity etc.)">
-                <button id="saveExpBtn" class="btn-main" style="background:var(--danger);" onclick="window.addExpense()">LOG EXPENSE</button>
-                <button id="cancelExpBtn" class="btn-main" style="background:#666; display:none;" onclick="window.clearExpForm()">CANCEL EDIT</button>
-            </div>
-            <div id="historyList"></div>
-            <hr><div id="expList"></div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Student ID</th>
+                        <th>Full Name</th>
+                        <th>Status Selection</th>
+                    </tr>
+                </thead>
+                <tbody id="mark-attendance-tbody">
+                    </tbody>
+            </table>
+            <br>
+            <button class="btn" onclick="saveDailyAttendance()">Save Daily Attendance</button>
         </div>
-    </div>
-</div>
 
-<div id="historyModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:10000; align-items:center; justify-content:center; padding:20px; box-sizing:border-box;">
-    <div style="background:#fff; width:100%; max-width:400px; border-radius:10px; padding:20px; max-height:80vh; display:flex; flex-direction:column; box-shadow: 0 5px 15px rgba(0,0,0,0.5);">
-        <h3 id="histModalTitle" style="margin-top:0; color:var(--navy); border-bottom:2px solid var(--gold); padding-bottom:10px; font-size:16px;">ATTENDANCE HISTORY</h3>
-        <div id="histModalContent" style="overflow-y:auto; flex:1; font-size:14px; line-height:1.6; margin-bottom:15px; white-space: pre-wrap; color:#333;"></div>
-        <button class="btn-main" style="background:var(--danger); margin-top:0;" onclick="document.getElementById('historyModal').style.display='none'">CLOSE</button>
-    </div>
-</div>
+        <div id="attendance-history" class="section">
+            <h2>Attendance History Log</h2>
+            <p style="color: #7f8c8d; margin-bottom: 15px;">Modifying a dropdown selection here instantly fixes and syncs the data across all layout screens.</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Log Date</th>
+                        <th>Student ID</th>
+                        <th>Full Name</th>
+                        <th>Attendance Status</th>
+                    </tr>
+                </thead>
+                <tbody id="history-tbody">
+                    </tbody>
+            </table>
+        </div>
 
-<div id="mega-panel">
-    <div style="font-size: 14px; margin-bottom: 5px;">📢 <b>MEGAPHONE ACTIVE</b></div>
-    <div style="font-size: 12px; margin-bottom: 10px; color: var(--gold);">Students Left in Queue: <b id="megaCount">0</b></div>
-    <div style="font-size: 11px; margin-bottom: 10px;">Next: <span id="megaNextName" style="font-weight:bold; color:#fff;"></span></div>
-    <div style="display: flex; gap: 10px;">
-        <button class="btn-main" style="background: #e74c3c; width: 40%; margin-top: 0;" onclick="window.stopMegaphone()">STOP 🛑</button>
-        <button class="btn-mega" style="width: 60%; margin-top: 0;" onclick="window.fireMegaphone()">FIRE NEXT 🚀</button>
-    </div>
-</div>
+        <div id="daily-totals" class="section">
+            <h2>Daily Aggregation Totals</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Calendar Date</th>
+                        <th>Total Headcount Present</th>
+                        <th>Total Headcount Absent</th>
+                    </tr>
+                </thead>
+                <tbody id="daily-totals-tbody">
+                    </tbody>
+            </table>
+        </div>
 
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-database.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyAsF3o3S7fpvTumwVVL_exuqMlAUS5MKXE",
-      authDomain: "baporalibrary-fea16.firebaseapp.com",
-      databaseURL: "https://baporalibrary-fea16-default-rtdb.firebaseio.com",
-      projectId: "baporalibrary-fea16"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getDatabase(app);
-
-    let students = [], expenses = [], history = [], curF = 'all';
-    let megaQueue = [], megaMessage = "";
-    let waitlistData = {};
-
-    window.login = function() {
-        const email = document.getElementById('loginEmail').value;
-        const pass = document.getElementById('loginPass').value;
-        document.getElementById('loginBtn').innerText = "Verifying...";
-        document.getElementById('loginError').innerText = "";
-        
-        signInWithEmailAndPassword(auth, email, pass).catch((error) => {
-            document.getElementById('loginBtn').innerText = "UNLOCK SYSTEM";
-            document.getElementById('loginError').innerText = "❌ Wrong Email or Password!";
-        });
-    };
-    
-    // --- THE AUTO-PILOT ENGINE ---
-    window.syncSeatsToPublic = function() {
-        let publicSeats = {};
-        let generalCount = 0;
-        
-        const now = new Date();
-        now.setHours(0,0,0,0);
-
-        students.forEach(s => {
-            let isExpired = false;
-            // 5 Day Expiry Check
-            if(s.fee) {
-                let feeDate = new Date(s.fee);
-                feeDate.setHours(0,0,0,0);
-                let daysOverdue = Math.floor((now - feeDate) / (1000 * 60 * 60 * 24));
-                if (daysOverdue > 5) {
-                    isExpired = true; // Seat will NOT be synced to public
-                }
-            }
-
-            if (!isExpired) {
-                let seatNum = parseInt(s.seat);
-                if (seatNum > 0 && seatNum <= 57) {
-                    publicSeats[seatNum] = 'r';
-                } else {
-                    generalCount++; 
-                }
-            }
-        });
-
-        let currentGen = 0;
-        for (let i = 1; i <= 57; i++) {
-            if (!publicSeats[i] && currentGen < generalCount) {
-                publicSeats[i] = 'g';
-                currentGen++;
-            }
-        }
-        set(ref(db, 'seats'), publicSeats);
-    };
-
-    // --- WAITLIST ENGINE ---
-    function setupWaitlistSync() {
-        onValue(ref(db, 'waiting_list'), (snap) => {
-            waitlistData = snap.val() || {};
-            window.renderWaitlist();
-        });
-    }
-
-    window.renderWaitlist = () => {
-        const container = document.getElementById('waitlist-container');
-        const keys = Object.keys(waitlistData);
-        document.getElementById('wCount').innerText = keys.length;
-        
-        if(keys.length === 0) {
-            container.innerHTML = "<center style='padding:20px; color:#666;'>Abhi koi waitlist mein nahi hai.</center>";
-            return;
-        }
-
-        let html = "";
-        // Reverse taaki naya banda upar aaye
-        keys.reverse().forEach(k => {
-            const w = waitlistData[k];
-            html += `
-            <div class="record-item" style="border-left: 5px solid var(--gold); background: #fffcf2;">
-                <b>${w.name}</b> <span style="float:right; font-size:10px; color:#666;">${w.time}</span><br>
-                <small style="color:var(--navy); font-weight:bold;">📞 ${w.phone}</small><br>
-                <div style="margin-top:10px; display:flex; gap:10px;">
-                    <button onclick="window.waWaitlist('${w.phone}', '${w.name}')" class="btn-main" style="background:#28a745; padding:8px; font-size:11px; margin:0; flex:1;">💬 Message (Seat Free)</button>
-                    <button onclick="window.delWaitlist('${k}')" class="btn-main" style="background:#dc3545; padding:8px; font-size:11px; margin:0; width:30%;">✖ Clear</button>
+        <div id="manage-students" class="section">
+            <h2>Add New Student Record</h2>
+            <div style="max-width: 400px; margin-bottom: 30px;">
+                <div class="form-group">
+                    <label for="new-student-name">Student Full Name:</label>
+                    <input type="text" id="new-student-name" placeholder="Enter Full Name...">
                 </div>
-            </div>`;
-        });
-        container.innerHTML = html;
-    };
+                <button class="btn" onclick="addNewStudent()">Register Student</button>
+            </div>
+            <h2>Active Registered List</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Student ID</th>
+                        <th>Registered Name</th>
+                    </tr>
+                </thead>
+                <tbody id="students-list-tbody">
+                    </tbody>
+            </table>
+        </div>
+    </div>
 
-    window.waWaitlist = (phone, name) => {
-        const msg = `Namaste ${name}! Good news from Bapora Library. A seat is now available for you. Please confirm if you would like to join today! 📚`;
-        window.open(`https://wa.me/91${phone}?text=${encodeURIComponent(msg)}`, '_blank');
-    };
+    <script>
+        // Core Database Initialization
+        let students = JSON.parse(localStorage.getItem('lib_students')) || [
+            { id: "101", name: "Amit Kumar" },
+            { id: "102", name: "Priya Sharma" },
+            { id: "103", name: "Sandeep Singh" }
+        ];
 
-    window.delWaitlist = (key) => {
-        if(confirm("Commander, is student ko waitlist se hatana hai?")) {
-            set(ref(db, `waiting_list/${key}`), null);
-        }
-    };
+        let attendanceData = JSON.parse(localStorage.getItem('lib_attendance')) || {};
 
-    // --- MARQUEE ---
-    window.setMarquee = () => {
-        const txt = document.getElementById('marqueeText').value;
-        set(ref(db, 'broadcast'), { text: txt });
-        alert("Public Dashboard Marquee Updated! 📢");
-    };
-
-    window.clearMarquee = () => {
-        set(ref(db, 'broadcast'), { text: "" });
-        document.getElementById('marqueeText').value = "";
-        alert("Marquee Cleared! 🛑");
-    };
-
-    // --- NEW LOGIC FOR DYNAMIC DAILY TOTALS SYNC ---
-    window.renderDailyLogHTML = function() {
-        const displayBox = document.getElementById('dailyLogDisplay');
-        let dailyCounts = {};
-        students.forEach(s => { 
-            if (s.attendanceHistory) { 
-                s.attendanceHistory.forEach(date => { 
-                    dailyCounts[date] = (dailyCounts[date] || 0) + 1; 
-                }); 
-            } 
-        });
-        
-        let resultHTML = "<b style='color:#0277bd;'>Daily Present Report:</b><br><ul style='padding-left:20px; margin-top:5px; color:#333;'>";
-        let dates = Object.keys(dailyCounts).sort().reverse(); 
-        
-        if (dates.length === 0) { 
-            resultHTML += "<li>Abhi tak koi attendance data nahi hai.</li>"; 
-        } else { 
-            dates.forEach(d => { 
-                resultHTML += `<li style="margin-bottom:3px;">${d} : <b>${dailyCounts[d]} Students Present</b></li>`; 
-            }); 
-        }
-        resultHTML += "</ul>"; 
-        displayBox.innerHTML = resultHTML;
-    };
-
-    window.showDailyLog = function() {
-        const displayBox = document.getElementById('dailyLogDisplay');
-        if (displayBox.style.display === 'block') { 
-            displayBox.style.display = 'none'; 
-        } else { 
-            window.renderDailyLogHTML();
-            displayBox.style.display = 'block'; 
-        }
-    };
-
-    window.logout = () => signOut(auth);
-
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            document.getElementById('login-screen').style.display = "none";
-            document.getElementById('app-screen').style.display = "block";
-            setupCloudSync();
-            setupWaitlistSync(); // Initialize Waitlist fetch
-        } else {
-            document.getElementById('login-screen').style.display = "flex";
-            document.getElementById('app-screen').style.display = "none";
-            document.getElementById('loginBtn').innerText = "UNLOCK SYSTEM";
-        }
-    });
-
-    function setupCloudSync() {
-        onValue(ref(db, 'admin_data'), (snap) => {
-            const data = snap.val();
-            if (data) { students = data.students || []; expenses = data.expenses || []; history = data.history || []; }
-            window.render();
-            window.syncSeatsToPublic();
-        });
-    }
-
-    function saveToCloud() { 
-        set(ref(db, 'admin_data'), { students, expenses, history }); 
-        window.syncSeatsToPublic(); 
-    }
-
-    window.switchTab = (t) => {
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(t).classList.add('active');
-        if(t === 'lib-tab') document.getElementById('tabLBtn').classList.add('active');
-        if(t === 'wait-tab') document.getElementById('tabWBtn').classList.add('active');
-        if(t === 'exp-tab') document.getElementById('tabEBtn').classList.add('active');
-    };
-
-    window.setF = (f) => {
-        curF = f;
-        document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
-        if(f=='all') document.getElementById('fAll').classList.add('active');
-        if(f=='due') document.getElementById('fDue').classList.add('active');
-        if(f=='fol') document.getElementById('fFol').classList.add('active');
-        if(f=='exp') document.getElementById('fExp').classList.add('active');
-        window.render();
-    };
-
-    window.startMegaphone = function() {
-        const q = document.getElementById('stuSearch').value.toLowerCase();
-        const now = new Date(); now.setHours(0,0,0,0);
-        megaQueue = [];
-
-        students.forEach(s => {
-            let feeDate = new Date(s.fee); feeDate.setHours(0,0,0,0);
-            const isDue = (s.fee && now > feeDate);
-            let isFol = false, isExp = false;
+        window.onload = function() {
+            const todayStr = getTodayDateString();
+            document.getElementById('attendance-date').value = todayStr;
+            document.getElementById('current-date-display').innerText = "System Date: " + todayStr;
             
-            const daysOverdue = isDue ? Math.floor((now - feeDate) / (1000 * 60 * 60 * 24)) : 0;
-            if(daysOverdue > 5) isExp = true; 
-            
-            if(s.lastRemind) { 
-                let lrDate = new Date(s.lastRemind); lrDate.setHours(0,0,0,0);
-                const diff = Math.floor((now - lrDate) / (1000 * 60 * 60 * 24)); 
-                isFol = isDue && diff >= 3; 
-            }
-            
-            let matchName = s.name.toLowerCase().includes(q); let matchPhone = s.phone && s.phone.includes(q); let matchSeat = s.seat && s.seat.toString().toLowerCase().includes(q);
-
-            if((matchName || matchPhone || matchSeat) && (curF=='all' || (curF=='due' && isDue && !isExp) || (curF=='fol' && isFol) || (curF=='exp' && isExp))) {
-                if(s.phone) megaQueue.push(s);
-            }
-        });
-
-        if(megaQueue.length === 0) return alert("No valid students found in current filter!");
-
-        let defaultTemplate = "";
-        if (curF === 'exp') { defaultTemplate = "your library membership expired on [DATE]. We haven't heard from you! Please confirm if you are taking a break or planning to continue. Thank you! 📚 - Admin, Bapora Library"; } 
-        else if (curF === 'due' || curF === 'fol') { defaultTemplate = "your fee is pending since [DATE]. Please update soon."; } 
-        else { defaultTemplate = "Please type your general announcement here..."; }
-
-        let inputMsg = prompt(`Broadcast to ${megaQueue.length} students.\n\nKeep [DATE] in the text, and the system will automatically change it to their exact expiry date!`, defaultTemplate);
-        
-        if(inputMsg && inputMsg.trim() !== "") { megaMessage = inputMsg; updateMegaUI(); document.getElementById('mega-panel').style.display = 'block'; }
-    };
-
-    function updateMegaUI() {
-        document.getElementById('megaCount').innerText = megaQueue.length;
-        if(megaQueue.length > 0) { document.getElementById('megaNextName').innerText = megaQueue[0].name + " (Seat " + megaQueue[0].seat + ")"; } 
-        else { document.getElementById('mega-panel').style.display = 'none'; alert("📢 WhatsApp Broadcast Complete!"); }
-    }
-
-    window.fireMegaphone = function() {
-        if(megaQueue.length > 0) {
-            let s = megaQueue.shift(); 
-            let displayDate = "N/A";
-            if(s.fee) { let parts = s.fee.split('-'); displayDate = `${parts[2]}/${parts[1]}/${parts[0]}`; }
-            let customizedBody = megaMessage.replace(/\[DATE\]/g, displayDate);
-            let finalMsg = `Namaste ${s.name},\n\n${customizedBody}`;
-            
-            window.open(`https://wa.me/91${s.phone}?text=${encodeURIComponent(finalMsg)}`, '_blank');
-            const idx = students.findIndex(x => x.id == s.id);
-            if(idx > -1) { students[idx].lastRemind = new Date().toISOString(); saveToCloud(); }
-            updateMegaUI();
-        }
-    };
-
-    window.stopMegaphone = function() { megaQueue = []; document.getElementById('mega-panel').style.display = 'none'; };
-
-    window.markPresent = (id) => {
-        const idx = students.findIndex(x => x.id == id);
-        const todayStr = new Date().toLocaleDateString('en-GB'); 
-        if (!students[idx].attendanceHistory) students[idx].attendanceHistory = [];
-        const dateIndex = students[idx].attendanceHistory.indexOf(todayStr);
-        if (dateIndex > -1) { students[idx].attendanceHistory.splice(dateIndex, 1); } else { students[idx].attendanceHistory.push(todayStr); }
-        saveToCloud();
-    };
-    
-    // MODIFIED TO SHOW NEWEST DATE AT THE TOP (REVERSED)
-    window.viewAttendance = (id) => {
-        const s = students.find(x => x.id == id);
-        const hist = s.attendanceHistory || [];
-        if (hist.length === 0) { 
-            alert(`⚠️ No attendance record found for ${s.name} yet.`); 
-        } else { 
-            document.getElementById('histModalTitle').innerText = `📅 HISTORY: ${s.name.toUpperCase()}`;
-            
-            // 🚨 TACTICAL FIX: Creating a reversed copy so latest date is on top
-            let reversedHist = [...hist].reverse(); 
-            
-            document.getElementById('histModalContent').innerText = `Total Days Present: ${hist.length}\n\nDates Present:\n${reversedHist.join("\n")}`;
-            document.getElementById('historyModal').style.display = 'flex';
-        }
-    };
-
-    window.toggleActions = (id) => {
-        const div = document.getElementById(`actions-${id}`);
-        if(div.style.display === 'none') { div.style.display = 'flex'; } else { div.style.display = 'none'; }
-    };
-
-    window.saveStudent = () => {
-        const id = document.getElementById('editId').value || Date.now();
-        const name = document.getElementById('stuName').value;
-        const phone = document.getElementById('stuPhone').value;
-        const fee = document.getElementById('stuFeeDate').value;
-        const amount = document.getElementById('stuAmt').value;
-        const seat = document.getElementById('stuSeat').value;
-        const shift = document.getElementById('stuShift').value;
-        
-        if(!name || !phone || !fee) return alert("Fill Name, Phone and Date");
-        const idx = students.findIndex(s => s.id == id);
-        
-        const data = { 
-            id: parseInt(id), name, phone, fee, amount, seat, shift, 
-            lastRemind: students[idx]?.lastRemind || null, lastAmount: students[idx]?.lastAmount || "0", attendanceHistory: students[idx]?.attendanceHistory || [], isCounted: true 
+            saveToStorage();
+            refreshAllViews();
         };
-        
-        if(idx > -1) students[idx] = data; else students.push(data);
-        saveToCloud(); 
 
-        if(amount && confirm(`Record Saved! ✅\nDo you want to send a WhatsApp receipt to ${name} for ₹${amount}?`)) { window.wa(data.id, 1); } 
-        else if (amount && confirm(`Do you want to alert the Management Team about this payment?`)) { window.wa(data.id, 4); }
-        window.clearForms();
-    };
-
-    window.render = () => {
-        const q = document.getElementById('stuSearch').value.toLowerCase();
-        let sH = "", dCnt = 0, tFees = 0, pCnt = 0, activeCount = 0;
-        
-        const now = new Date(); now.setHours(0,0,0,0);
-        const todayStr = new Date().toLocaleDateString('en-GB'); 
-        
-        students.forEach(s => {
-            if(s.isCounted !== false) tFees += parseFloat(s.amount) || 0;
-            
-            let feeDate = new Date(s.fee); feeDate.setHours(0,0,0,0);
-            const isDue = (s.fee && now > feeDate);
-            let daysOverdue = 0;
-            if(isDue) { daysOverdue = Math.floor((now - feeDate) / (1000 * 60 * 60 * 24)); }
-
-            let isFol = false, isExp = false, folHTML = "", rDateHTML = "";
-            
-            if(daysOverdue > 5) {
-                isExp = true; 
-                folHTML = `<div class="follow-up" style="background:#ffcdd2; color:#b71c1c; border-color:#ef9a9a;">🚨 AWOL: Seat Vacated (${daysOverdue} days overdue)</div>`; 
-            } else {
-                activeCount++;
-                if(isDue) dCnt++;
-            }
-
-            let histArray = s.attendanceHistory || []; let isPresent = histArray.includes(todayStr); if(isPresent) pCnt++;
-
-            if(s.lastRemind) { 
-                let lrDate = new Date(s.lastRemind); lrDate.setHours(0,0,0,0);
-                const diff = Math.floor((now - lrDate) / (1000 * 60 * 60 * 24)); 
-                if(isDue && diff >= 3 && !isExp) { 
-                    isFol = true; 
-                    folHTML = `<div class="follow-up">⚠️ Follow-up Needed (${diff}d ago)</div>`; 
-                } 
-                rDateHTML = `<span class="remind-date">Last Sent: ${new Date(s.lastRemind).toLocaleDateString()}</span>`; 
-            }
-
-            let feeDisplayHTML = "";
-            if (s.amount > 0) { feeDisplayHTML = `<span style="float:right; color:var(--safe); font-weight:bold;">₹${s.amount}</span>`; } else { let prevInfo = s.lastAmount > 0 ? `(Last: ₹${s.lastAmount})` : ""; feeDisplayHTML = `<span style="float:right; color:var(--danger); font-weight:bold;">₹0</span><br><span style="float:right; color:#9e9e9e; font-size:10px; margin-top:2px;">${prevInfo}</span>`; }
-
-            let presentBtn = `<button onclick="window.markPresent(${s.id})" style="border:1px solid ${isPresent ? '#28a745' : '#aaa'}; background:${isPresent ? '#c8e6c9' : '#fff'}; color:${isPresent ? '#1b5e20' : '#444'}; border-radius:4px; padding:2px 6px; font-size:10px; cursor:pointer; margin-left:10px;">${isPresent ? '✅ Present' : '☑️ Mark Present'}</button>`;
-            let histLink = `<span style="font-size:10px; color:#1976d2; cursor:pointer; margin-left:8px; text-decoration:underline;" onclick="window.viewAttendance(${s.id})">📅 History (${histArray.length})</span>`;
-
-            let matchName = s.name.toLowerCase().includes(q); let matchPhone = s.phone && s.phone.includes(q); let matchSeat = s.seat && s.seat.toString().toLowerCase().includes(q);
-
-            if((matchName || matchPhone || matchSeat) && (curF=='all' || (curF=='due' && isDue && !isExp) || (curF=='fol' && isFol) || (curF=='exp' && isExp))) {
-                let cardBgColor = isDue ? '#ffebee' : '#e8f5e9'; let leftBorderColor = isDue ? '#b71c1c' : '#1b5e20';
-                
-                let seatHtml = isExp ? `<strike>${s.seat || 'Gen'}</strike> <b style="color:var(--danger)">(Vacated)</b>` : `<b>${s.seat || 'Gen'}</b>`;
-                
-                sH += `<div class="record-item" style="background-color: ${cardBgColor}; border-left: 5px solid ${leftBorderColor};">
-                    <b>${s.name}</b> ${presentBtn} ${histLink} ${feeDisplayHTML}<br>
-                    <small>Seat: ${seatHtml} <span style="background:rgba(0,0,0,0.1); padding:1px 5px; border-radius:3px; font-size:9px;">${s.shift || 'Full'}</span> | Valid: <b>${s.fee}</b></small><br>
-                    ${rDateHTML} ${folHTML}
-                    
-                    <div style="text-align: right; margin-top: -15px;">
-                        <span onclick="window.toggleActions(${s.id})" style="cursor:pointer; font-size:24px; color:#444; padding: 0 10px; font-weight:bold;">⋮</span>
-                    </div>
-                    
-                    <div id="actions-${s.id}" class="wa-btn-group" style="display:none; border-top:1px solid rgba(0,0,0,0.1); padding-top:8px; margin-top:5px;">
-                        <button onclick="window.wa(${s.id}, 1)" class="wa-btn btn-rcpt">Receipt</button>
-                        <button onclick="window.wa(${s.id}, 2)" class="wa-btn btn-due">Due</button>
-                        <button onclick="window.wa(${s.id}, 3)" class="wa-btn btn-lunch">Lunch</button>
-                        <button onclick="window.wa(${s.id}, 4)" class="wa-btn btn-alert">Mgmt Alert</button>
-                        <button onclick="window.wa(${s.id}, 5)" class="wa-btn btn-exp">Final Call</button>
-                    </div>
-                    <span class="action-link" style="color:#0d47a1" onclick="window.editStu(${s.id})">✎ EDIT</span>
-                    <span class="action-link" style="color:#b71c1c" onclick="window.delStu(${s.id})">✖ DELETE</span>
-                </div>`;
-            }
-        });
-
-        const tE = expenses.reduce((a, b) => a + (parseFloat(b.amt) || 0), 0);
-        document.getElementById('countTotal').innerText = activeCount; 
-        document.getElementById('countPresent').innerText = pCnt; 
-        document.getElementById('countDue').innerText = dCnt; 
-        document.getElementById('sumFees').innerText = '₹' + tFees; 
-        document.getElementById('sumExp').innerText = '₹' + tE; 
-        document.getElementById('netProfit').innerText = '₹' + (tFees - tE); 
-        document.getElementById('stuList').innerHTML = sH || "<center style='padding:20px'>No records found</center>";
-        
-        let eH = ""; let sortedExp = [...expenses].sort((a,b) => new Date(b.date) - new Date(a.date));
-        sortedExp.forEach(e => { eH += `<div class="record-item" style="border-left-color:red"><b>${e.note}</b> <span style="float:right;">₹${e.amt}</span><br><small>${new Date(e.date).toLocaleDateString('en-GB')}</small><br><span class="action-link" style="color:blue" onclick="window.editExp(${e.id})">✎ EDIT</span><span class="action-link" style="color:red" onclick="window.delExp(${e.id})">✖ DELETE</span></div>`; });
-        document.getElementById('expList').innerHTML = eH || "<small><br>No expenses logged.</small>";
-
-        let hH = "<b>📜 MONTHLY REPORTS & TACTICAL CHARTS</b>"; let maxVal = Math.max(...history.map(h => Math.max(h.fee, h.exp)), 1); 
-        [...history].reverse().forEach(h => { let wF = (h.fee / maxVal) * 100; let wE = (h.exp / maxVal) * 100; hH += `<div class="history-card"><b>${h.month}</b><br><div style="font-size:10px; display:flex; justify-content:space-between; margin-top:4px;"><span>Income: ₹${h.fee}</span><span>Cost: ₹${h.exp}</span></div><div style="background:#ddd; height:5px; margin:2px 0; border-radius:2px;"><div style="width:${wF}%; background:var(--safe); height:100%; border-radius:2px;"></div></div><div style="background:#ddd; height:5px; margin:2px 0 6px 0; border-radius:2px;"><div style="width:${wE}%; background:var(--danger); height:100%; border-radius:2px;"></div></div><b>Profit: ₹${h.profit}</b></div>`; });
-        document.getElementById('historyList').innerHTML = hH;
-
-        // 👇 THIS ENSURES DAILY LOG REFRESHES AUTOMATICALLY 👇
-        if (document.getElementById('dailyLogDisplay').style.display === 'block') {
-            window.renderDailyLogHTML();
+        function getTodayDateString() {
+            const d = new Date();
+            const offset = d.getTimezoneOffset();
+            const localDate = new Date(d.getTime() - (offset * 60 * 1000));
+            return localDate.toISOString().split('T')[0];
         }
-    };
 
-    window.wa = (id, type) => {
-        const idx = students.findIndex(x => x.id == id); const s = students[idx]; let parts = s.fee.split('-'); let displayDate = `${parts[2]}/${parts[1]}/${parts[0]}`; let msg = "";
-        if(type == 1) { msg = `Namaste ${s.name}, fee amount ₹${s.amount} received. Valid till ${displayDate}. Thank you! Happy Studying 📖 - Bapora Library`; } else if(type == 2) { msg = `Namaste ${s.name}, your fee is pending since ${displayDate}. Please update soon.`; } else if(type == 3) { msg = `Namaste ${s.name}, your lunch has been arrived. Please collect it from reception. 🍱🥄`; } else if(type == 4) { msg = `📢 *Seat Payment Alert*\n\nStudent: *${s.name}*\nSeat No: *${s.seat}* (Shift: ${s.shift || 'Full'})\nAmount Paid: *₹${s.amount}*\nValid Till: *${displayDate}*`; return window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`); } else if(type == 5) { msg = `Namaste ${s.name}, your library membership expired on ${displayDate}. We haven't heard from you! Please confirm if you are taking a break or planning to continue, so we can manage your seat accordingly. Thank you! 📚 - Admin, Bapora Library`; }
-        students[idx].lastRemind = new Date().toISOString(); saveToCloud(); window.open(`https://wa.me/91${s.phone}?text=${encodeURIComponent(msg)}`);
-    };
+        function switchTab(tabId) {
+            document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+            document.querySelectorAll('.sidebar button').forEach(btn => btn.classList.remove('active'));
+            
+            document.getElementById(tabId).classList.add('active');
+            event.target.classList.add('active');
+            
+            refreshAllViews();
+        }
 
-    window.addExpense = () => { const id = document.getElementById('editExpId').value || Date.now(); const amt = document.getElementById('expAmt').value; const note = document.getElementById('expNote').value; const date = document.getElementById('expDate').value; if(!amt || !date) return alert("Enter Amt/Date"); const idx = expenses.findIndex(e => e.id == id); const data = { id: parseInt(id), amt: parseFloat(amt), note, date }; if(idx > -1) expenses[idx] = data; else expenses.push(data); saveToCloud(); window.clearExpForm(); };
-    window.editExp = (id) => { const e = expenses.find(x => x.id == id); document.getElementById('editExpId').value = e.id; document.getElementById('expAmt').value = e.amt; document.getElementById('expNote').value = e.note; document.getElementById('expDate').value = e.date; document.getElementById('saveExpBtn').innerText = "UPDATE CLOUD EXPENSE"; document.getElementById('cancelExpBtn').style.display = "block"; window.scrollTo(0,0); };
-    window.delExp = (id) => { if(confirm("Delete expense?")) { expenses = expenses.filter(e => e.id != id); saveToCloud(); } };
-    window.delStu = (id) => { if(confirm("Delete student?")) { students = students.filter(s => s.id != id); saveToCloud(); } };
-    window.editStu = (id) => { const s = students.find(x => x.id == id); document.getElementById('editId').value = s.id; document.getElementById('stuName').value = s.name; document.getElementById('stuPhone').value = s.phone; document.getElementById('stuFeeDate').value = s.fee; document.getElementById('stuAmt').value = s.amount; document.getElementById('stuSeat').value = s.seat; document.getElementById('stuShift').value = s.shift || 'Full'; document.getElementById('saveBtn').innerText = "UPDATE CLOUD RECORD"; document.getElementById('cancelBtn').style.display = "block"; window.scrollTo(0,0); };
-    window.clearForms = () => { document.querySelectorAll('#lib-tab input').forEach(i => i.value = ''); document.getElementById('stuShift').value = 'Full'; document.getElementById('saveBtn').innerText = "SAVE & SYNC TO PUBLIC"; document.getElementById('cancelBtn').style.display = "none"; };
-    window.clearExpForm = () => { document.querySelectorAll('#exp-tab input').forEach(i => i.value = ''); document.getElementById('saveExpBtn').innerText = "LOG EXPENSE"; document.getElementById('cancelExpBtn').style.display = "none"; };
-    window.importData = () => { const f = document.getElementById('importFile').files[0]; if(!f) { alert("Pehle file select karein!"); return; } const r = new FileReader(); r.onload = (e) => { try { const d = JSON.parse(e.target.result); if(d.Students_Snapshot) { students = d.Students_Snapshot; expenses = d.Detailed_Expenses || []; } else if (d.students) { students = d.students; expenses = d.expenses || []; history = d.history || []; } else { alert("Galat file format!"); return; } saveToCloud(); alert("System Successfully Restored from Backup! ✅"); } catch(err) { alert("Format Error!"); } }; r.readAsText(f); };
-    window.exportData = () => { const blob = new Blob([JSON.stringify({students, expenses, history})], {type: 'text/plain'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = "bapora_master_backup.txt"; a.click(); };
-    window.exportToExcel = () => { let csv = "Name,Seat,Shift,Phone,Fee,Amount\n"; students.forEach(s => { csv += `${s.name},${s.seat},${s.shift || 'Full'},${s.phone},${s.fee},${s.amount}\n`; }); const blob = new Blob([csv], { type: 'text/csv' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = "Library_Report.csv"; a.click(); };
-    window.closeMonthlyLedger = function() { if (!confirm("Commander, kya aap sure hain? Is mahine ka financial data reset ho jayega!")) return; try { window.exportData(); const now = new Date(); const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]; const currentMonthName = monthNames[now.getMonth()]; const totalFees = students.reduce((a, b) => a + (parseFloat(b.amount) || 0), 0); const totalExp = expenses.reduce((a, b) => a + (parseFloat(b.amt) || 0), 0); history.push({ month: currentMonthName + " " + now.getFullYear(), fee: totalFees, exp: totalExp, profit: (totalFees - totalExp) }); students = students.map(s => ({ ...s, lastAmount: (parseFloat(s.amount) > 0) ? s.amount : (s.lastAmount || "0"), amount: "0", lastRemind: null })); expenses = []; saveToCloud(); alert(`Mission Successful! Ledger closed.`); location.reload(); } catch (err) { alert("Error: " + err.message); } };
-</script>
+        function saveToStorage() {
+            localStorage.setItem('lib_students', JSON.stringify(students));
+            localStorage.setItem('lib_attendance', JSON.stringify(attendanceData));
+        }
+
+        function refreshAllViews() {
+            updateDashboardCounters();
+            loadMarkAttendanceTable();
+            renderHistoryTable();
+            renderDailyTotalsTable();
+            renderStudentsTable();
+        }
+
+        function updateDashboardCounters() {
+            const todayStr = getTodayDateString();
+            document.getElementById('stat-total-students').innerText = students.length;
+
+            let presentCount = 0;
+            let absentCount = 0;
+
+            if(attendanceData[todayStr]) {
+                Object.values(attendanceData[todayStr]).forEach(status => {
+                    if(status === 'Present') presentCount++;
+                    if(status === 'Absent') absentCount++;
+                });
+            }
+
+            document.getElementById('stat-present-today').innerText = presentCount;
+            document.getElementById('stat-absent-today').innerText = absentCount;
+        }
+
+        // CRITICAL FIX: Safe Date Parser for perfect chronological sorting (Handles YYYY-MM-DD, DD-MM-YYYY, DD/MM/YYYY)
+        function parseDateToTimestamp(dateStr) {
+            if (!dateStr) return 0;
+            
+            // Format YYYY-MM-DD
+            if (dateStr.includes('-') && dateStr.split('-')[0].length === 4) {
+                return new Date(dateStr).getTime();
+            }
+            
+            // Format DD-MM-YYYY or DD/MM/YYYY
+            const separator = dateStr.includes('-') ? '-' : '/';
+            const parts = dateStr.split(separator);
+            if (parts.length === 3) {
+                if (parts[0].length === 4) {
+                    return new Date(parts[0], parts[1] - 1, parts[2]).getTime();
+                }
+                // Convert DD-MM-YYYY to true Javascript Date Object
+                return new Date(parts[2], parts[1] - 1, parts[0]).getTime();
+            }
+            
+            return new Date(dateStr).getTime() || 0;
+        }
+
+        function loadMarkAttendanceTable() {
+            const targetDate = document.getElementById('attendance-date').value;
+            const tbody = document.getElementById('mark-attendance-tbody');
+            tbody.innerHTML = '';
+
+            if(!targetDate) return;
+
+            const existingDayRecord = attendanceData[targetDate] || {};
+
+            students.forEach(student => {
+                const currentStatus = existingDayRecord[student.id] || 'Present';
+                
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${student.id}</td>
+                    <td>${student.name}</td>
+                    <td>
+                        <select class="status-select ${currentStatus}" data-sid="${student.id}">
+                            <option value="Present" ${currentStatus === 'Present' ? 'selected' : ''}>Present</option>
+                            <option value="Absent" ${currentStatus === 'Absent' ? 'selected' : ''}>Absent</option>
+                        </select>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            tbody.querySelectorAll('select').forEach(select => {
+                select.addEventListener('change', function() {
+                    this.className = `status-select ${this.value}`;
+                });
+            });
+        }
+
+        function saveDailyAttendance() {
+            const targetDate = document.getElementById('attendance-date').value;
+            if(!targetDate) return alert('Please select a valid date form option first.');
+
+            if(!attendanceData[targetDate]) {
+                attendanceData[targetDate] = {};
+            }
+
+            document.querySelectorAll('#mark-attendance-tbody select').forEach(select => {
+                const studentId = select.getAttribute('data-sid');
+                attendanceData[targetDate][studentId] = select.value;
+            });
+
+            saveToStorage();
+            refreshAllViews();
+            alert('Attendance records configured successfully!');
+        }
+
+        // Renders History logs sorted chronologically (Newest first)
+        function renderHistoryTable() {
+            const tbody = document.getElementById('history-tbody');
+            tbody.innerHTML = '';
+
+            // Sorted using parsed timestamps
+            const datesSorted = Object.keys(attendanceData).sort((a, b) => parseDateToTimestamp(b) - parseDateToTimestamp(a));
+
+            if(datesSorted.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#7f8c8d;">No historical logs discovered yet.</td></tr>`;
+                return;
+            }
+
+            datesSorted.forEach(dateStr => {
+                const studentIdMap = attendanceData[dateStr];
+                
+                Object.keys(studentIdMap).forEach(studentId => {
+                    const studentObj = students.find(s => s.id === studentId);
+                    const studentName = studentObj ? studentObj.name : "Unknown Student";
+                    const statusValue = studentIdMap[studentId];
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${dateStr}</strong></td>
+                        <td>${studentId}</td>
+                        <td>${studentName}</td>
+                        <td>
+                            <select class="status-select ${statusValue}" onchange="modifyHistoryRecord('${dateStr}', '${studentId}', this.value)">
+                                <option value="Present" ${statusValue === 'Present' ? 'selected' : ''}>Present</option>
+                                <option value="Absent" ${statusValue === 'Absent' ? 'selected' : ''}>Absent</option>
+                            </select>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            });
+        }
+
+        function modifyHistoryRecord(dateStr, studentId, newStatus) {
+            if (attendanceData[dateStr] && attendanceData[dateStr][studentId] !== undefined) {
+                attendanceData[dateStr][studentId] = newStatus;
+                saveToStorage();
+                updateDashboardCounters();
+                renderDailyTotalsTable();
+                event.target.className = `status-select ${newStatus}`;
+            }
+        }
+
+        // FIXED: Daily Totals now perfectly orders June above May in sequence
+        function renderDailyTotalsTable() {
+            const tbody = document.getElementById('daily-totals-tbody');
+            tbody.innerHTML = '';
+
+            // Corrected Sorting Mechanism using parsed date objects
+            const datesSorted = Object.keys(attendanceData).sort((a, b) => parseDateToTimestamp(b) - parseDateToTimestamp(a));
+
+            if(datesSorted.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#7f8c8d;">No daily tracking calculations found.</td></tr>`;
+                return;
+            }
+
+            datesSorted.forEach(dateStr => {
+                let presentCount = 0;
+                let absentCount = 0;
+
+                Object.values(attendanceData[dateStr]).forEach(status => {
+                    if(status === 'Present') presentCount++;
+                    if(status === 'Absent') absentCount++;
+                });
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${dateStr}</strong></td>
+                    <td style="color:#155724; font-weight:600;">${presentCount} Present</td>
+                    <td style="color:#721c24; font-weight:600;">${absentCount} Absent</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderStudentsTable() {
+            const tbody = document.getElementById('students-list-tbody');
+            tbody.innerHTML = '';
+            students.forEach(student => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${student.id}</td><td>${student.name}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function addNewStudent() {
+            const nameInput = document.getElementById('new-student-name');
+            const name = nameInput.value.trim();
+            
+            if(!name) return alert('Please enter a valid student name.');
+
+            const nextId = students.length > 0 ? (Math.max(...students.map(s => parseInt(s.id))) + 1).toString() : "101";
+
+            students.push({ id: nextId, name: name });
+            nameInput.value = '';
+            
+            saveToStorage();
+            refreshAllViews();
+            alert(`Student successfully generated under ID token: ${nextId}`);
+        }
+    </script>
 </body>
 </html>
