@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>B 220 Rent Record - Admin Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+        }
+        h2 {
+            text-align: center;
+            background-color: #007bff;
+            color: white;
+            padding: 15px;
+            margin-bottom: 0;
+            border-radius: 5px 5px 0 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: #ffeb3b; /* Yellow header from your sheet */
+            color: #333;
+            font-weight: bold;
+        }
+        input[type="number"] {
+            width: 80px;
+            padding: 5px;
+            text-align: center;
+        }
+        .highlight-row {
+            background-color: #e9ecef;
+            font-weight: bold;
+        }
+        button {
+            display: block;
+            width: 200px;
+            margin: 20px auto;
+            padding: 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>B 220 RENT RECORD (Admin View)</h2>
+    
+    <table id="rentTable">
+        <thead>
+            <tr>
+                <th>Ser No</th>
+                <th>Name</th>
+                <th>Old Reading</th>
+                <th>New Reading</th>
+                <th>Total Units</th>
+                <th>Electricity Bill (Rs 9/unit)</th>
+                <th>Water Share (Rs)</th>
+                <th>Base Rent</th>
+                <th>Total Monthly Rent</th>
+            </tr>
+        </thead>
+        <tbody id="tenantBody">
+            </tbody>
+        <tfoot>
+            <tr class="highlight-row">
+                <td colspan="4" style="text-align: right;"><strong>TOTALS:</strong></td>
+                <td id="grandTotalUnits">0</td>
+                <td id="grandTotalElec">0</td>
+                <td id="grandTotalWater">0</td>
+                <td id="grandTotalBase">0</td>
+                <td id="grandTotalFinal">0</td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <button onclick="calculateAll()">Calculate & Update</button>
+
+    <script>
+        // Initial Data (This will eventually come from your Google Sheet API)
+        const ratePerUnit = 9;
+        
+        const tenants = [
+            { id: 1, name: "Mukesh", oldReading: 3161, baseRent: 2000 },
+            { id: 2, name: "Ganesh Sharma", oldReading: 3293, baseRent: 2900 },
+            { id: 3, name: "Sunil (Ganesh)", oldReading: 10580, baseRent: 3800 },
+            { id: 4, name: "Sandeep", oldReading: 2399, baseRent: 2900 },
+            { id: 5, name: "Vishwanath", oldReading: 1299, baseRent: 2300 },
+            { id: 6, name: "Vinod", oldReading: 2879, baseRent: 2900 },
+            { id: 7, name: "Saroj Chaupal (Sai)", oldReading: 3096, baseRent: 3800 },
+            { id: 8, name: "Munna Mukhiya", oldReading: 1383, baseRent: 2900 }
+        ];
+
+        const waterMotor = { oldReading: 4648, newReading: 4845 }; // Example initial data
+
+        function renderTable() {
+            const tbody = document.getElementById("tenantBody");
+            let html = "";
+
+            // Render Tenant Rows
+            tenants.forEach((t) => {
+                html += `
+                    <tr id="row-${t.id}">
+                        <td>${t.id}</td>
+                        <td>${t.name}</td>
+                        <td>${t.oldReading}</td>
+                        <td><input type="number" id="newRead-${t.id}" placeholder="Enter"></td>
+                        <td id="units-${t.id}">0</td>
+                        <td id="elec-${t.id}">0</td>
+                        <td id="waterShare-${t.id}">0</td>
+                        <td>${t.baseRent}</td>
+                        <td id="totalRent-${t.id}" style="font-weight:bold;">0</td>
+                    </tr>
+                `;
+            });
+
+            // Render Water Motor Row at the bottom
+            html += `
+                <tr style="background-color: #d1ecf1; font-weight: bold;">
+                    <td>9</td>
+                    <td>Water Motor</td>
+                    <td>${waterMotor.oldReading}</td>
+                    <td><input type="number" id="newRead-water" value="${waterMotor.newReading}"></td>
+                    <td id="units-water">0</td>
+                    <td id="elec-water">0</td>
+                    <td colspan="3" style="text-align:left; font-size: 0.9em; color: #666;">
+                        *Total Motor units divide by ${tenants.length} tenants
+                    </td>
+                </tr>
+            `;
+
+            tbody.innerHTML = html;
+        }
+
+        function calculateAll() {
+            let grandUnits = 0, grandElec = 0, grandBase = 0, grandFinal = 0;
+
+            // 1. Calculate Water Motor First (to get the split)
+            const waterNew = parseInt(document.getElementById("newRead-water").value) || waterMotor.oldReading;
+            const waterUnits = waterNew - waterMotor.oldReading;
+            const sharedWaterUnitsPerTenant = waterUnits / tenants.length;
+            const waterCostPerTenant = Math.round(sharedWaterUnitsPerTenant * ratePerUnit);
+
+            document.getElementById("units-water").innerText = waterUnits;
+            document.getElementById("elec-water").innerText = waterUnits * ratePerUnit;
+
+            // 2. Calculate Individual Tenants
+            tenants.forEach(t => {
+                const newRead = parseInt(document.getElementById(`newRead-${t.id}`).value) || t.oldReading;
+                const unitsUsed = newRead - t.oldReading;
+                const elecBill = unitsUsed * ratePerUnit;
+                
+                const totalMonthly = elecBill + waterCostPerTenant + t.baseRent;
+
+                // Update DOM
+                document.getElementById(`units-${t.id}`).innerText = unitsUsed;
+                document.getElementById(`elec-${t.id}`).innerText = elecBill;
+                document.getElementById(`waterShare-${t.id}`).innerText = waterCostPerTenant;
+                document.getElementById(`totalRent-${t.id}`).innerText = totalMonthly;
+
+                // Add to Grand Totals
+                grandUnits += unitsUsed;
+                grandElec += elecBill;
+                grandBase += t.baseRent;
+                grandFinal += totalMonthly;
+            });
+
+            // Update Footer Totals
+            document.getElementById("grandTotalUnits").innerText = grandUnits + waterUnits;
+            document.getElementById("grandTotalElec").innerText = grandElec + (waterUnits * ratePerUnit);
+            document.getElementById("grandTotalWater").innerText = (waterCostPerTenant * tenants.length);
+            document.getElementById("grandTotalBase").innerText = grandBase;
+            document.getElementById("grandTotalFinal").innerText = grandFinal;
+        }
+
+        // Initialize table on load
+        window.onload = renderTable;
+    </script>
+</body>
+</html>
