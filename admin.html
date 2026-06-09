@@ -109,7 +109,8 @@
             <input type="text" id="stuSearch" placeholder="🔍 Search by Name, Seat, or Mobile..." onkeyup="window.render()">
             
             <div class="filter-bar">
-                <button id="fAll" class="btn-filter active" onclick="window.setF('all')">ALL</button>
+                <!-- 🚨 TACTICAL UPDATE: "ALL" IS NOW "ACTIVE" -->
+                <button id="fAll" class="btn-filter active" onclick="window.setF('all')">ACTIVE</button>
                 <button id="fDue" class="btn-filter" onclick="window.setF('due')">DUE</button>
                 <button id="fFol" class="btn-filter" style="border-color:#ef6c00;" onclick="window.setF('fol')">⚠️ FOLLOW UP</button>
                 <button id="fExp" class="btn-filter" style="border-color:#b71c1c; color:#b71c1c;" onclick="window.setF('exp')">🚨 EXPIRED</button>
@@ -337,14 +338,20 @@
             if(daysOverdue > 5) isExp = true; 
             if(s.lastRemind) { let lrDate = new Date(s.lastRemind); lrDate.setHours(0,0,0,0); const diff = Math.floor((now - lrDate) / (1000 * 60 * 60 * 24)); isFol = isDue && diff >= 3; }
             let matchName = s.name.toLowerCase().includes(q); let matchPhone = s.phone && s.phone.includes(q); let matchSeat = s.seat && s.seat.toString().toLowerCase().includes(q);
-            if((matchName || matchPhone || matchSeat) && (curF=='all' || (curF=='due' && isDue && !isExp) || (curF=='fol' && isFol) || (curF=='exp' && isExp))) { if(s.phone) megaQueue.push(s); }
+            
+            // 🚨 TACTICAL UPDATE: Filter now blocks 'isExp' (Expired) from being added to the Active (previously 'all') queue.
+            if((matchName || matchPhone || matchSeat) && ((curF=='all' && !isExp) || (curF=='due' && isDue && !isExp) || (curF=='fol' && isFol) || (curF=='exp' && isExp))) { 
+                if(s.phone) megaQueue.push(s); 
+            }
         });
+        
         if(megaQueue.length === 0) return alert("No valid students found in current filter!");
         let defaultTemplate = "";
         if (curF === 'exp') { defaultTemplate = "your library membership expired on [DATE]. We haven't heard from you! Please confirm if you are taking a break or planning to continue. Thank you! 📚 - Admin, Bapora Library"; } 
         else if (curF === 'due' || curF === 'fol') { defaultTemplate = "your fee is pending since [DATE]. Please update soon."; } 
         else { defaultTemplate = "Please type your general announcement here..."; }
-        let inputMsg = prompt(`Broadcast to ${megaQueue.length} students.\n\nKeep [DATE] in the text, and the system will automatically change it to their exact expiry date!`, defaultTemplate);
+        
+        let inputMsg = prompt(`Broadcast to ${megaQueue.length} ACTIVE students.\n\nKeep [DATE] in the text, and the system will automatically change it to their exact expiry date!`, defaultTemplate);
         if(inputMsg && inputMsg.trim() !== "") { megaMessage = inputMsg; updateMegaUI(); document.getElementById('mega-panel').style.display = 'block'; }
     };
 
@@ -401,7 +408,6 @@
         if(!name || !phone || !fee) return alert("Fill Name, Phone and Date");
         const idx = students.findIndex(s => s.id == id);
         
-        // 🚨 TACTICAL UPDATE: Smart Merge Logic - Prevents duplicates!
         const oldAmt = idx > -1 ? (parseFloat(students[idx].amount) || 0) : 0;
         const newAmt = parseFloat(amount) || 0;
         
@@ -409,11 +415,10 @@
             const diff = newAmt - oldAmt;
             const todayStr = new Date().toLocaleDateString('en-GB');
             
-            // Find if this student already has an entry TODAY
             let existingIdx = collections.findIndex(c => c.name === name && c.date === todayStr);
             if (existingIdx > -1) {
                 collections[existingIdx].amt += diff;
-                if (collections[existingIdx].amt === 0) collections.splice(existingIdx, 1); // Clean up if diff goes back to 0
+                if (collections[existingIdx].amt === 0) collections.splice(existingIdx, 1); 
             } else {
                 if (diff !== 0) collections.push({ id: Date.now(), name: name, amt: diff, date: todayStr });
             }
@@ -462,7 +467,8 @@
 
             let matchName = s.name.toLowerCase().includes(q); let matchPhone = s.phone && s.phone.includes(q); let matchSeat = s.seat && s.seat.toString().toLowerCase().includes(q);
 
-            if((matchName || matchPhone || matchSeat) && (curF=='all' || (curF=='due' && isDue && !isExp) || (curF=='fol' && isFol) || (curF=='exp' && isExp))) {
+            // 🚨 TACTICAL UPDATE: Filter blocks 'isExp' (Expired) from being rendered in the Active (previously 'all') tab view.
+            if((matchName || matchPhone || matchSeat) && ((curF=='all' && !isExp) || (curF=='due' && isDue && !isExp) || (curF=='fol' && isFol) || (curF=='exp' && isExp))) {
                 let cardBgColor = isDue ? '#ffebee' : '#e8f5e9'; let leftBorderColor = isDue ? '#b71c1c' : '#1b5e20';
                 let seatHtml = isExp ? `<strike>${s.seat || 'Gen'}</strike> <b style="color:var(--danger)">(Vacated)</b>` : `<b>${s.seat || 'Gen'}</b>`;
                 
@@ -495,7 +501,7 @@
         document.getElementById('sumFees').innerText = '₹' + tFees; 
         document.getElementById('sumExp').innerText = '₹' + tE; 
         document.getElementById('netProfit').innerText = '₹' + (tFees - tE); 
-        document.getElementById('stuList').innerHTML = sH || "<center style='padding:20px'>No records found</center>";
+        document.getElementById('stuList').innerHTML = sH || "<center style='padding:20px'>No active records found</center>";
         
         let eH = ""; let sortedExp = [...expenses].sort((a,b) => new Date(b.date) - new Date(a.date));
         sortedExp.forEach(e => { eH += `<div class="record-item" style="border-left-color:red"><b>${e.note}</b> <span style="float:right;">₹${e.amt}</span><br><small>${new Date(e.date).toLocaleDateString('en-GB')}</small><br><span class="action-link" style="color:blue" onclick="window.editExp(${e.id})">✎ EDIT</span><span class="action-link" style="color:red" onclick="window.delExp(${e.id})">✖ DELETE</span></div>`; });
@@ -505,7 +511,6 @@
         [...history].reverse().forEach(h => { let wF = (h.fee / maxVal) * 100; let wE = (h.exp / maxVal) * 100; hH += `<div class="history-card"><b>${h.month}</b><br><div style="font-size:10px; display:flex; justify-content:space-between; margin-top:4px;"><span>Income: ₹${h.fee}</span><span>Cost: ₹${h.exp}</span></div><div style="background:#ddd; height:5px; margin:2px 0; border-radius:2px;"><div style="width:${wF}%; background:var(--safe); height:100%; border-radius:2px;"></div></div><div style="background:#ddd; height:5px; margin:2px 0 6px 0; border-radius:2px;"><div style="width:${wE}%; background:var(--danger); height:100%; border-radius:2px;"></div></div><b>Profit: ₹${h.profit}</b></div>`; });
         document.getElementById('historyList').innerHTML = hH;
         
-        // 🚨 TACTICAL UPDATE: Render & Aggregate existing messy data cleanly 🚨
         let colByDate = {};
         collections.forEach(c => {
             if (!colByDate[c.date]) colByDate[c.date] = { total: 0, studentMap: {} };
