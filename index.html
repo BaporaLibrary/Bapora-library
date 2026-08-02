@@ -7,7 +7,6 @@
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; }
         
-        /* --- SECURITY LOGIN SHIELD --- */
         #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #343a40; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .login-box { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); text-align: center; width: 100%; max-width: 320px; }
         .login-box h2 { color: #007bff; margin-top: 0; margin-bottom: 5px; }
@@ -16,7 +15,6 @@
         .btn-login { background-color: #28a745; color: white; padding: 12px; width: 100%; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .btn-login:hover { background-color: #218838; }
         #loginError { color: red; font-size: 14px; display: none; margin-top: 15px; font-weight: bold; }
-        /* ----------------------------- */
 
         .header-controls { display: flex; justify-content: space-between; align-items: center; background-color: #007bff; color: white; padding: 15px; border-radius: 5px 5px 0 0; flex-wrap: wrap; gap: 10px;}
         .header-controls h2 { margin: 0; }
@@ -60,7 +58,6 @@
 </head>
 <body>
 
-    <!-- SECURITY LOCK SCREEN -->
     <div id="login-overlay">
         <div class="login-box">
             <h2>B-220 Admin</h2>
@@ -130,7 +127,6 @@
         <button class="btn-history" onclick="openHistoryModal()">View Tenant History</button>
     </div>
 
-    <!-- HISTORY POP-UP MODAL -->
     <div id="historyModal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeHistoryModal()">&times;</span>
@@ -177,11 +173,9 @@
     </div>
 
     <script>
-        // --- SECURE CIPHER AUTHENTICATION ---
         function checkLogin() {
             const emailInput = btoa(document.getElementById('adminEmail').value.trim());
             const passInput = btoa(document.getElementById('adminPassword').value.trim());
-            
             if (emailInput === 'bWFoZXNoYmFwb3JhOTM5M0BnbWFpbC5jb20=' && passInput === 'MjIxNDc2QEtva3U=') {
                 document.getElementById('login-overlay').style.display = 'none';
                 loadHistory(); 
@@ -193,20 +187,19 @@
         function handleLoginEnter(e) {
             if (e.key === 'Enter') { checkLogin(); }
         }
-        // ------------------------------------
 
         const API_URL = "https://script.google.com/macros/s/AKfycbyz33X7_igtKrvQPl87jPzI3keKOqEgYN6k7bl4YMlHcWN68FuqEh2Wta98wmtkZfHb/exec"; 
         const ratePerUnit = 9;
         
         const defaultTenants = [
-            { id: 1, name: "Mukesh", mobile: "", oldReading: 3161, baseRent: 2000, prevPending: 0 },
-            { id: 2, name: "Ganesh Sharma", mobile: "", oldReading: 3293, baseRent: 2900, prevPending: 0 },
-            { id: 3, name: "Sunil (Ganesh)", mobile: "", oldReading: 10580, baseRent: 3800, prevPending: 0 },
-            { id: 4, name: "Sandeep", mobile: "", oldReading: 2399, baseRent: 2900, prevPending: 0 },
-            { id: 5, name: "Vishwanath", mobile: "", oldReading: 1299, baseRent: 2300, prevPending: 0 },
-            { id: 6, name: "Vinod", mobile: "", oldReading: 2879, baseRent: 2900, prevPending: 0 },
-            { id: 7, name: "Saroj Chaupal", mobile: "", oldReading: 3096, baseRent: 3800, prevPending: 0 },
-            { id: 8, name: "Munna Mukhiya", mobile: "", oldReading: 1383, baseRent: 2900, prevPending: 0 }
+            { id: 1, name: "Mukesh", mobile: "", oldReading: 0, baseRent: 2000, prevPending: 0 },
+            { id: 2, name: "Ganesh Sharma", mobile: "", oldReading: 0, baseRent: 2900, prevPending: 0 },
+            { id: 3, name: "Sunil (Ganesh)", mobile: "", oldReading: 0, baseRent: 3800, prevPending: 0 },
+            { id: 4, name: "Sandeep", mobile: "", oldReading: 0, baseRent: 2900, prevPending: 0 },
+            { id: 5, name: "Vishwanath", mobile: "", oldReading: 0, baseRent: 2300, prevPending: 0 },
+            { id: 6, name: "Vinod", mobile: "", oldReading: 0, baseRent: 2900, prevPending: 0 },
+            { id: 7, name: "Saroj Chaupal", mobile: "", oldReading: 0, baseRent: 3800, prevPending: 0 },
+            { id: 8, name: "Munna Mukhiya", mobile: "", oldReading: 0, baseRent: 2900, prevPending: 0 }
         ];
 
         let tenants = JSON.parse(localStorage.getItem('b220_tenants_list')) || defaultTenants;
@@ -228,28 +221,16 @@
                 if (historyData && historyData.length > 0) {
                     fullDatabaseHistory = historyData; 
                     
+                    // IRONCLAD SHIELD: We NO LONGER overwrite your base rent or old reading from the broken Google Sheet.
+                    // LocalStorage is now the absolute master. We only pull missing mobile numbers.
                     tenants.forEach(t => {
                         const tenantHistory = historyData.filter(row => row.id == t.id);
                         if (tenantHistory.length > 0) {
                             const lastRecord = tenantHistory[tenantHistory.length - 1];
-                            t.oldReading = lastRecord.newReading; 
-                            t.name = lastRecord.name; 
-                            t.baseRent = lastRecord.baseRent; 
-                            
-                            let safeNewPending = lastRecord.newPending || 0;
-                            if (typeof safeNewPending === 'string' && safeNewPending.includes('T')) safeNewPending = 0;
-                            t.prevPending = safeNewPending; 
-                            
                             if(!t.mobile && lastRecord.mobile) t.mobile = lastRecord.mobile;
                         }
                     });
                     saveMemory(); 
-
-                    const waterHistory = historyData.filter(row => row.id == 9);
-                    if (waterHistory.length > 0) {
-                        const lastWater = waterHistory[waterHistory.length - 1];
-                        waterMotor.oldReading = lastWater.newReading;
-                    }
                 }
             } catch (error) {
                 console.error("No history found or error loading.", error);
@@ -301,9 +282,8 @@
                         <td>${t.id}</td>
                         <td><input type="text" id="name-${t.id}" value="${t.name}" class="name-input" onchange="updateLocalData(${t.id})"></td>
                         <td><input type="tel" id="mobile-${t.id}" value="${t.mobile || ''}" class="mobile-input" placeholder="98765..." onchange="updateLocalData(${t.id})"></td>
-                        <td id="oldRead-${t.id}">${t.oldReading}</td>
+                        <td id="oldRead-${t.id}" style="font-weight:bold;">${t.oldReading}</td>
                         
-                        <!-- NEW MOBILE AUTO-CALCULATE SHIELDS (oninput added) -->
                         <td><input type="number" id="newRead-${t.id}" placeholder="Enter" class="read-input calc-trigger" oninput="calculateAll()"></td>
                         <td id="units-${t.id}">0</td>
                         <td id="elec-${t.id}">0</td>
@@ -397,7 +377,6 @@
                     const newRead = rawNewRead !== "" ? parseInt(rawNewRead) : t.oldReading;
                     const unitsUsed = newRead - t.oldReading;
                     
-                    // NEW: Highlight Units in RED if the new reading is typed smaller than the old reading
                     if (unitsUsed < 0 && rawNewRead !== "") {
                         document.getElementById(`units-${t.id}`).style.color = "red";
                         document.getElementById(`units-${t.id}`).style.fontWeight = "bold";
@@ -490,8 +469,28 @@
 
             try {
                 await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(dataToSave) });
-                alert(`SUCCESS: Data sent for ${selectedMonth}!`);
-                loadHistory(); 
+                
+                // MONTHLY CYCLE ENGINE: Instantly update readings and clear the board!
+                tenants.forEach(t => {
+                    const isActive = document.getElementById(`active-${t.id}`).checked;
+                    const newReadInput = parseInt(document.getElementById(`newRead-${t.id}`).value);
+                    if(isActive && newReadInput > 0) {
+                        t.oldReading = newReadInput;
+                        t.prevPending = parseInt(document.getElementById(`newBal-${t.id}`).innerText) || 0;
+                    }
+                });
+                const waterNewRead = parseInt(document.getElementById(`newRead-water`).value);
+                if(waterNewRead > 0) waterMotor.oldReading = waterNewRead;
+                
+                saveMemory();
+                renderTable(); // This automatically wipes the input boxes clean
+                calculateAll(); // Resets totals to zero
+
+                alert(`SUCCESS: Data sent for ${selectedMonth}! Board reset for next month.`);
+                
+                // Quietly reload history data for the modal in the background
+                fetch(API_URL).then(res => res.json()).then(data => { if(data.length > 0) fullDatabaseHistory = data; });
+                
             } catch (error) { alert("Network error. Could not reach Google Sheets."); }
             document.getElementById('loading').style.display = 'none';
         }
