@@ -1,564 +1,290 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>B 220 Rent Record - Admin Dashboard</title>
+    <title>Bapora Library - Live Dashboard</title>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; }
+        :root { --navy: #002b5b; --gold: #c5a059; --green: #2ecc71; --blue: #3498db; --red: #e74c3c; --bg-light: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%); --card-light: #ffffff; --text-light: #222; }
         
-        #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #343a40; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .login-box { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); text-align: center; width: 100%; max-width: 320px; }
-        .login-box h2 { color: #007bff; margin-top: 0; margin-bottom: 5px; }
-        .login-box p { color: #666; font-size: 14px; margin-bottom: 20px; }
-        .login-box input { width: 90%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; font-size: 15px; }
-        .btn-login { background-color: #28a745; color: white; padding: 12px; width: 100%; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        .btn-login:hover { background-color: #218838; }
-        #loginError { color: red; font-size: 14px; display: none; margin-top: 15px; font-weight: bold; }
+        /* NIGHT VISION VARIABLES */
+        body.dark-mode { --bg-light: #121212; --card-light: #1e1e1e; --text-light: #e0e0e0; }
+        body.dark-mode .header { background: radial-gradient(circle at center, #001a33 0%, #000000 100%); border-bottom: 5px solid #555; }
+        body.dark-mode .stat-card { border-color: #333; box-shadow: 0 4px 10px rgba(255,255,255,0.05); background: #1e1e1e;}
+        body.dark-mode .lbl { color: #aaa; }
+        body.dark-mode #live-status-box { background: rgba(30, 30, 30, 0.9); }
+        body.dark-mode .section-box { background: rgba(30, 30, 30, 0.8); border-color: #444; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5); }
+        body.dark-mode .st-vacant { background: #222; border-color: #2ecc71; }
+        body.dark-mode .st-vacant:hover { background: #196f3d; }
+        body.dark-mode .notice-board { background: rgba(30, 30, 30, 0.9); border-color: #444; }
+        body.dark-mode .notice-board h3 { color: var(--gold); border-bottom-color: #444;}
+        body.dark-mode .notice-board ul { color: #ccc; }
+        body.dark-mode input { background: #333; color: white; border-color: #555; }
 
-        .header-controls { display: flex; justify-content: space-between; align-items: center; background-color: #007bff; color: white; padding: 15px; border-radius: 5px 5px 0 0; flex-wrap: wrap; gap: 10px;}
-        .header-controls h2 { margin: 0; }
-        .month-selector { padding: 5px; font-size: 16px; }
-        table { width: 100%; border-collapse: collapse; background-color: white; box-shadow: 0 0 10px rgba(0,0,0,0.1); font-size: 14px; }
-        th, td { border: 1px solid #ddd; padding: 4px; text-align: center; }
-        th { background-color: #ffeb3b; color: #333; font-weight: bold; }
-        input[type="number"], input[type="text"], input[type="tel"] { padding: 4px; text-align: center; border: 1px solid #ccc; border-radius: 3px; }
-        .read-input { width: 55px; }
-        .name-input { width: 100px; }
-        .mobile-input { width: 100px; }
-        .rent-input { width: 60px; font-weight: bold;}
-        .highlight-row { background-color: #e9ecef; font-weight: bold; }
-        .inactive-row { opacity: 0.4; background-color: #f8f9fa; }
-        .balance-col { background-color: #fff3cd; } 
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: var(--bg-light); 
+            color: var(--text-light);
+            margin: 0; 
+            padding-bottom: 50px; 
+            text-align: center; 
+            min-height: 100vh;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
         
-        .btn-container { display: flex; justify-content: center; gap: 15px; margin-top: 20px; flex-wrap: wrap; }
-        button { padding: 10px 20px; border: none; border-radius: 5px; font-size: 15px; cursor: pointer; font-weight: bold; }
-        .btn-calc { background-color: #ffc107; color: #333; }
-        .btn-save { background-color: #28a745; color: white; }
-        .btn-history { background-color: #17a2b8; color: white; }
-        .btn-add { background-color: #6c757d; color: white; }
+        /* HEADER TWEAKS: Increased top padding so text moves down slightly */
+        .header { background: radial-gradient(circle at center, #003366 0%, #001a33 100%); color: white; padding: 45px 20px 25px; border-bottom: 5px solid var(--gold); box-shadow: 0 4px 10px rgba(0,0,0,0.3); border-radius: 0 0 15px 15px; margin-bottom: 20px; position: relative;}
+        .header h2 { margin: 0; font-size: 32px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; text-shadow: 2px 2px 4px rgba(0,0,0,0.5), 0 0 10px rgba(255,255,255,0.1); }
+        .tagline { font-size: 12px; color: var(--gold); font-weight: bold; margin-top: 10px; letter-spacing: 1.5px; text-transform: uppercase; background-color: rgba(0,0,0,0.4); display: inline-block; padding: 5px 15px; border-radius: 20px; border: 1px solid rgba(197, 160, 89, 0.3); box-shadow: inset 0 1px 3px rgba(0,0,0,0.5); }
         
-        .action-btns { display: flex; gap: 5px; justify-content: center; }
-        .btn-wa { background-color: #25D366; color: white; padding: 5px 8px; font-size: 12px; border-radius: 3px; border: none; cursor: pointer; }
-        .btn-del { background-color: #dc3545; color: white; padding: 5px 8px; font-size: 12px; border-radius: 3px; border: none; cursor: pointer; }
-        button:hover { opacity: 0.8; }
-        
-        #loading { text-align: center; color: #007bff; font-weight: bold; margin: 10px; display: none; }
-        input[type="checkbox"] { transform: scale(1.3); cursor: pointer; }
+        /* BUTTON TWEAKS: Moved up, slightly smaller for perfect mobile fit */
+        #dark-mode-btn { position: absolute; top: 10px; right: 15px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); border-radius: 50%; width: 36px; height: 36px; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.3s; z-index: 10; backdrop-filter: blur(5px);}
+        #dark-mode-btn:hover { transform: scale(1.1); background: rgba(255,255,255,0.4); }
 
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
-        .modal-content { background-color: #fff; margin: 2% auto; padding: 20px; border-radius: 8px; width: 98%; max-width: 1400px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
-        .close-btn { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
-        .close-btn:hover { color: black; }
-        .history-controls { margin-bottom: 15px; text-align: center; display: flex; justify-content: center; gap: 20px; align-items: center;}
-        .history-controls select, .history-controls input { padding: 8px; font-size: 16px; border-radius: 4px; border: 1px solid #ccc; }
-        .history-table-container { max-height: 500px; overflow-y: auto; }
-        #historyTable th { background-color: #17a2b8; color: white; position: sticky; top: 0; }
+        .dash { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin: 15px 20px; }
+        .stat-card { background: var(--card-light); padding: 15px 10px; border-radius: 16px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); border: 1px solid #e0e0e0; display: flex; flex-direction: column; align-items: center; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
+        .stat-card.total { border-bottom: 4px solid #555; }
+        .stat-card.general { border-bottom: 4px solid var(--blue); }
+        .stat-card.reserved { border-bottom: 4px solid var(--red); }
+        .stat-card.vacant { border-bottom: 4px solid var(--green); }
+        .stat-icon { font-size: 24px; margin-bottom: 5px; filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.2)); }
+        .num { font-size: 26px; font-weight: 900; margin-bottom: 2px; }
+        .lbl { font-size: 11px; color: #555; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;}
+
+        @keyframes breathing { 0% { transform: scale(1); box-shadow: 0 4px 10px rgba(0,0,0,0.1); } 50% { transform: scale(1.02); box-shadow: 0 8px 20px rgba(0,0,0,0.15); } 100% { transform: scale(1); box-shadow: 0 4px 10px rgba(0,0,0,0.1); } }
+        #live-status-box { text-align:center; margin: 20px; padding: 15px; border-radius: 12px; font-weight: bold; font-size: 1.1rem; transition: background 0.3s ease; animation: breathing 3s infinite ease-in-out; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(5px); }
+
+        .section-box { background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.5); margin: 15px 20px; padding: 20px; border-radius: 16px; box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1); transition: background 0.3s ease; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); gap: 12px; }
+        
+        .seat { width: 50px; height: 55px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
+        .st-vacant { background: #fff; color: var(--green); border: 2px dashed var(--green); }
+        .st-general { background: linear-gradient(145deg, #3498db, #2980b9); color: white; border: none; box-shadow: 3px 5px 10px rgba(0,0,0,0.2), inset 1px 1px 2px rgba(255,255,255,0.4); }
+        .st-reserved { background: linear-gradient(145deg, #e74c3c, #c0392b); color: white; border: none; box-shadow: 3px 5px 10px rgba(0,0,0,0.2), inset 1px 1px 2px rgba(255,255,255,0.4); }
+
+        .icon-stu { font-size: 18px; margin-bottom: 2px; line-height: 1; filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.3)); }
+        .seat-no { font-size: 12px; line-height: 1; }
+
+        /* DIGITAL NOTICE BOARD & WAITLIST */
+        .notice-board { background: rgba(255,255,255,0.8); margin: 20px; padding: 15px 20px; border-radius: 12px; text-align: left; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border-left: 5px solid var(--navy); backdrop-filter: blur(5px); transition: background 0.3s ease;}
+        .notice-board h3 { margin-top: 0; color: var(--navy); border-bottom: 1px solid #ccc; padding-bottom: 8px; font-size: 16px; display: flex; align-items: center; gap: 8px;}
+        .notice-board ul { padding-left: 20px; font-size: 13px; color: inherit; line-height: 1.8; margin-bottom: 0;}
+        .btn { padding: 12px 25px; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.3); }
+
+        /* WhatsApp */
+        .whatsapp-float { position: fixed; width: 60px; height: 60px; bottom: 20px; right: 20px; background-color: #25d366; color: #FFF; border-radius: 50px; box-shadow: 2px 4px 15px rgba(37, 211, 102, 0.4); z-index: 1000; display: flex; justify-content: center; align-items: center; text-decoration: none; transition: all 0.3s ease; }
+        .whatsapp-float:hover { transform: scale(1.1) rotate(-5deg); }
+        .whatsapp-icon { width: 35px; height: 35px; }
     </style>
 </head>
 <body>
 
-    <div id="login-overlay">
-        <div class="login-box">
-            <h2>B-220 Admin</h2>
-            <p>Authorized Personnel Only</p>
-            <input type="email" id="adminEmail" placeholder="Email Address" onkeypress="handleLoginEnter(event)">
-            <input type="password" id="adminPassword" placeholder="Password" onkeypress="handleLoginEnter(event)">
-            <button class="btn-login" onclick="checkLogin()">Login to Dashboard</button>
-            <p id="loginError">Access Denied. Incorrect credentials.</p>
+    <div id="megaphone-alert" style="display:none; background: linear-gradient(145deg, #e74c3c, #c0392b); color: white; padding: 10px; text-align: center; font-weight: bold; font-size: 15px; position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 10px rgba(0,0,0,0.3); border-bottom: 2px solid #fff;">
+        📢 <marquee id="megaphone-text" scrollamount="6" style="width: 85%; vertical-align: middle;">Standby for message...</marquee>
+    </div>
+
+    <div class="header">
+        <button id="dark-mode-btn" onclick="toggleDarkMode()">🌙</button>
+        <h2>BAPORA LIBRARY</h2>
+        <div class="tagline">⚓ REAL-TIME SEAT STATUS ⚓</div>
+    </div>
+
+    <div class="dash">
+        <div class="stat-card total">
+            <div class="stat-icon">🏛️</div>
+            <span id="total-count" class="num" style="color:#2c3e50">57</span>
+            <span class="lbl">Total Seats</span>
+        </div>
+        <div class="stat-card general">
+            <div class="stat-icon">📘</div>
+            <span id="gen-count" class="num" style="color:var(--blue)">0</span>
+            <span class="lbl">General</span>
+        </div>
+        <div class="stat-card reserved">
+            <div class="stat-icon">📕</div>
+            <span id="res-count" class="num" style="color:var(--red)">0</span>
+            <span class="lbl">Reserved</span>
+        </div>
+        <div class="stat-card vacant">
+            <div class="stat-icon">✅</div>
+            <span id="vac-count" class="num" style="color:var(--green)">0</span>
+            <span class="lbl">Vacant</span>
         </div>
     </div>
 
-    <div class="header-controls">
-        <h2>B 220 RENT RECORD (Admin View)</h2>
-        <div>
-            <label for="monthSelect"><strong>Billing Month: </strong></label>
-            <input type="month" id="monthSelect" class="month-selector">
+    <div id="live-status-box">
+        <span id="seat-status">Syncing with Command Center...</span>
+    </div>
+
+    <div class="section-box">
+        <div class="grid" id="seat-grid"></div>
+    </div>
+
+    <div class="notice-board">
+        <h3>📌 Base Rules & Information</h3>
+        <ul>
+            <li><b>Timings:</b> Mon-Sat: 08:00 AM to 08:00 PM | Sun: 08:00 AM to 06:00 PM</li>
+            <li><b>Wi-Fi Networks:</b> <i>One Hot Spot, Bapora Library, FTTH</i></li>
+            <li><b>Wi-Fi Password:</b> <i>Available at Reception</i></li>
+            <li><b>Water Facility:</b> RO Water (Hot, Normal & Cold) is available.</li>
+            <li><b>Discipline:</b> Keep phones on silent mode. Take calls outside.</li>
+            <li><b>Cleanliness:</b> Use designated areas for lunch. Keep your desk clean.</li>
+        </ul>
+    </div>
+
+    <div class="notice-board" id="waitlist-section" style="display:none; border-left-color: var(--gold); margin-top: 10px;">
+        <h3 style="color: var(--gold);">📝 Seats Full! Join Waiting List</h3>
+        <p style="font-size:12px; color:#555; margin-top:0;">We will notify you on WhatsApp as soon as a seat becomes available.</p>
+        <div id="waitlist-form">
+            <input type="text" id="waitName" placeholder="Your Full Name" style="width: 90%; margin: 5px 0; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-family: inherit;">
+            <input type="tel" id="waitPhone" placeholder="WhatsApp Number" style="width: 90%; margin: 5px 0; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-family: inherit;">
+            <button class="btn" style="background: var(--navy); width: 96%; margin-top: 10px; margin-left: 2%;" onclick="joinWaitlist()">SUBMIT REQUEST 🚀</button>
         </div>
-    </div>
-    
-    <div id="loading">Connecting to Database... Please wait.</div>
-
-    <table id="rentTable">
-        <thead>
-            <tr>
-                <th>Act</th>
-                <th>Ser</th>
-                <th>Name</th>
-                <th>Mobile No</th>
-                <th>Old Read</th>
-                <th>New Read</th>
-                <th>Units</th>
-                <th>Elec</th>
-                <th>Water</th>
-                <th>Base Rent</th>
-                <th class="balance-col" style="color:#fd7e14;">Extra</th>
-                <th class="balance-col">Prev Bal</th>
-                <th class="balance-col" style="color:red;">Total Due</th>
-                <th class="balance-col" style="color:green;">Paid</th>
-                <th class="balance-col" style="color:blue;">New Bal</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody id="tenantBody">
-            <!-- Populated by JS -->
-        </tbody>
-        <tfoot>
-            <tr class="highlight-row">
-                <td colspan="6" style="text-align: right;"><strong>TOTALS:</strong></td>
-                <td id="grandTotalUnits">0</td>
-                <td id="grandTotalElec">0</td>
-                <td id="grandTotalWater">0</td>
-                <td id="grandTotalBase">0</td>
-                <td id="grandTotalExtra" class="balance-col" style="color:#fd7e14;">0</td>
-                <td id="grandPrevBal" class="balance-col">0</td>
-                <td id="grandTotalDue" class="balance-col" style="color:red;">0</td>
-                <td id="grandTotalPaid" class="balance-col" style="color:green;">0</td>
-                <td id="grandNewBal" class="balance-col" style="color:blue;">0</td>
-                <td>-</td>
-            </tr>
-        </tfoot>
-    </table>
-
-    <div class="btn-container">
-        <button class="btn-add" onclick="addNewTenant()">➕ Add New Tenant</button>
-        <button class="btn-calc" onclick="calculateAll()">Recalculate Totals</button>
-        <button class="btn-save" onclick="saveToDatabase()">Save Month to History</button>
-        <button class="btn-history" onclick="openHistoryModal()">View Tenant History</button>
+        <p id="wait-msg" style="display:none; color: var(--green); font-weight: bold; font-size: 14px; margin-top: 10px; text-align: center;">✅ Request Sent! Admin will contact you soon.</p>
     </div>
 
-    <div id="historyModal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn" onclick="closeHistoryModal()">&times;</span>
-            <h2 style="text-align: center; color: #17a2b8; margin-top:0;">Tenant History Record</h2>
-            
-            <div class="history-controls">
-                <div>
-                    <label for="historyTenantSelect"><strong>Select Tenant: </strong></label>
-                    <select id="historyTenantSelect" onchange="renderHistoryTable()">
-                        <option value="">-- Choose Tenant --</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="historyMonthFilter"><strong>Search Month: </strong></label>
-                    <input type="month" id="historyMonthFilter" onchange="renderHistoryTable()">
-                    <button onclick="clearMonthFilter()" style="padding: 6px 10px; font-size: 14px; width: auto; background-color: #6c757d; margin-left: 5px; color:white; border:none; border-radius:3px;">Clear</button>
-                </div>
-            </div>
-
-            <div class="history-table-container">
-                <table id="historyTable">
-                    <thead>
-                        <tr>
-                            <th>Month</th>
-                            <th>Old Rd</th>
-                            <th>New Rd</th>
-                            <th>Units</th>
-                            <th>Elec</th>
-                            <th>Water</th>
-                            <th>Base Rent</th>
-                            <th style="background-color:#fd7e14;">Extra</th>
-                            <th style="background-color:#d39e00;">Prev Bal</th>
-                            <th style="background-color:#c82333;">Total Due</th>
-                            <th style="background-color:#218838;">Paid</th>
-                            <th style="background-color:#0056b3;">New Bal</th>
-                        </tr>
-                    </thead>
-                    <tbody id="historyBody">
-                        <tr><td colspan="12">Select a tenant to view history.</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+    <a href="https://wa.me/919393681565?text=Hello%20Sir!%20I%20have%20a%20query%20regarding%20the%20Bapora%20Library." class="whatsapp-float" target="_blank">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="Chat on WhatsApp" class="whatsapp-icon">
+    </a>
 
     <script>
-        function checkLogin() {
-            const emailInput = btoa(document.getElementById('adminEmail').value.trim());
-            const passInput = btoa(document.getElementById('adminPassword').value.trim());
-            if (emailInput === 'bWFoZXNoYmFwb3JhOTM5M0BnbWFpbC5jb20=' && passInput === 'MjIxNDc2QEtva3U=') {
-                document.getElementById('login-overlay').style.display = 'none';
-                loadHistory(); 
+        const firebaseConfig = { 
+            apiKey: "AIzaSyAsF3o3S7fpvTumwVVL_exuqMlAUS5MKXE", 
+            authDomain: "baporalibrary-fea16.firebaseapp.com",
+            databaseURL: "https://baporalibrary-fea16-default-rtdb.firebaseio.com/",
+            projectId: "baporalibrary-fea16"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        let seatData = {};
+
+        // Listen for Seat Changes
+        db.ref('seats').on('value', (snap) => {
+            seatData = snap.val() || {};
+            render();
+        });
+
+        // Listen for Megaphone
+        db.ref('broadcast').on('value', (snap) => {
+            let msg = snap.val();
+            let alertBox = document.getElementById('megaphone-alert');
+            let alertText = document.getElementById('megaphone-text');
+            if (msg && msg.text !== "") {
+                alertText.innerText = "UPDATE: " + msg.text;
+                alertBox.style.display = 'block'; 
             } else {
-                document.getElementById('loginError').style.display = 'block';
+                alertBox.style.display = 'none'; 
             }
-        }
+        });
 
-        function handleLoginEnter(e) {
-            if (e.key === 'Enter') { checkLogin(); }
-        }
+        // Main Render Engine
+        function render() {
+            const grid = document.getElementById('seat-grid'); 
+            grid.innerHTML = "";
+            let g=0, r=0;
+            const total = 57;
 
-        const API_URL = "https://script.google.com/macros/s/AKfycbyz33X7_igtKrvQPl87jPzI3keKOqEgYN6k7bl4YMlHcWN68FuqEh2Wta98wmtkZfHb/exec"; 
-        const ratePerUnit = 9;
-        
-        const defaultTenants = [
-            { id: 1, name: "Mukesh", mobile: "", oldReading: 0, baseRent: 2000, prevPending: 0 },
-            { id: 2, name: "Ganesh Sharma", mobile: "", oldReading: 0, baseRent: 2900, prevPending: 0 },
-            { id: 3, name: "Sunil (Ganesh)", mobile: "", oldReading: 0, baseRent: 3800, prevPending: 0 },
-            { id: 4, name: "Sandeep", mobile: "", oldReading: 0, baseRent: 2900, prevPending: 0 },
-            { id: 5, name: "Vishwanath", mobile: "", oldReading: 0, baseRent: 2300, prevPending: 0 },
-            { id: 6, name: "Vinod", mobile: "", oldReading: 0, baseRent: 2900, prevPending: 0 },
-            { id: 7, name: "Saroj Chaupal", mobile: "", oldReading: 0, baseRent: 3800, prevPending: 0 },
-            { id: 8, name: "Munna Mukhiya", mobile: "", oldReading: 0, baseRent: 2900, prevPending: 0 }
-        ];
-
-        let tenants = JSON.parse(localStorage.getItem('b220_tenants_list')) || defaultTenants;
-        let waterMotor = { oldReading: 4648, newReading: 4845 };
-        let fullDatabaseHistory = []; 
-
-        document.getElementById('monthSelect').value = new Date().toISOString().slice(0, 7);
-
-        function saveMemory() {
-            localStorage.setItem('b220_tenants_list', JSON.stringify(tenants));
-        }
-
-        async function loadHistory() {
-            document.getElementById('loading').style.display = 'block';
-            try {
-                const response = await fetch(API_URL);
-                const historyData = await response.json();
+            for(let i=1; i<=total; i++){
+                let div = document.createElement('div');
+                let status = seatData[i] || 'v';
+                div.className = status==='g'?'seat st-general':status==='r'?'seat st-reserved':'seat st-vacant';
                 
-                if (historyData && historyData.length > 0) {
-                    fullDatabaseHistory = historyData; 
-                    
-                    // IRONCLAD SHIELD: We NO LONGER overwrite your base rent or old reading from the broken Google Sheet.
-                    // LocalStorage is now the absolute master. We only pull missing mobile numbers.
-                    tenants.forEach(t => {
-                        const tenantHistory = historyData.filter(row => row.id == t.id);
-                        if (tenantHistory.length > 0) {
-                            const lastRecord = tenantHistory[tenantHistory.length - 1];
-                            if(!t.mobile && lastRecord.mobile) t.mobile = lastRecord.mobile;
-                        }
-                    });
-                    saveMemory(); 
-                }
-            } catch (error) {
-                console.error("No history found or error loading.", error);
-            }
-            document.getElementById('loading').style.display = 'none';
-            renderTable();
-            populateHistoryDropdown();
-        }
-
-        function addNewTenant() {
-            const newName = prompt("Enter the new tenant's name (e.g. Room 9 - Rahul):");
-            if (!newName) return;
-            const newRent = parseInt(prompt("Enter their Base Rent amount:")) || 0;
-            const newMobile = prompt("Enter their WhatsApp Mobile Number:") || "";
-            
-            let maxId = tenants.length > 0 ? Math.max(...tenants.map(t => t.id)) : 0;
-            let nextId = maxId + 1;
-            if (nextId === 9) nextId = 10; 
-
-            tenants.push({ id: nextId, name: newName, mobile: newMobile, oldReading: 0, baseRent: newRent, prevPending: 0 });
-            saveMemory(); renderTable(); populateHistoryDropdown();
-        }
-
-        function deleteTenant(id) {
-            if(confirm("Are you sure you want to remove this tenant from the dashboard?")) {
-                tenants = tenants.filter(t => t.id !== id);
-                saveMemory(); renderTable(); calculateAll(); populateHistoryDropdown();
-            }
-        }
-
-        function updateLocalData(id) {
-            const t = tenants.find(t => t.id === id);
-            if(t) {
-                t.name = document.getElementById(`name-${id}`).value;
-                t.mobile = document.getElementById(`mobile-${id}`).value;
-                t.baseRent = parseInt(document.getElementById(`baseRent-${id}`).value) || 0;
-                saveMemory();
-            }
-        }
-
-        function renderTable() {
-            const tbody = document.getElementById("tenantBody");
-            let html = "";
-
-            tenants.forEach((t) => {
-                html += `
-                    <tr id="row-${t.id}">
-                        <td><input type="checkbox" id="active-${t.id}" checked onchange="calculateAll()"></td>
-                        <td>${t.id}</td>
-                        <td><input type="text" id="name-${t.id}" value="${t.name}" class="name-input" onchange="updateLocalData(${t.id})"></td>
-                        <td><input type="tel" id="mobile-${t.id}" value="${t.mobile || ''}" class="mobile-input" placeholder="98765..." onchange="updateLocalData(${t.id})"></td>
-                        <td id="oldRead-${t.id}" style="font-weight:bold;">${t.oldReading}</td>
-                        
-                        <td><input type="number" id="newRead-${t.id}" placeholder="Enter" class="read-input calc-trigger" oninput="calculateAll()"></td>
-                        <td id="units-${t.id}">0</td>
-                        <td id="elec-${t.id}">0</td>
-                        <td id="waterShare-${t.id}">0</td>
-                        <td><input type="number" id="baseRent-${t.id}" value="${t.baseRent}" class="rent-input calc-trigger" oninput="calculateAll()" onchange="updateLocalData(${t.id})"></td>
-                        
-                        <td class="balance-col"><input type="number" id="extra-${t.id}" placeholder="0" class="rent-input calc-trigger" style="border-color:#fd7e14;" oninput="calculateAll()"></td>
-                        <td class="balance-col" id="prevBal-${t.id}" style="font-weight:bold;">${t.prevPending}</td>
-                        <td class="balance-col" id="totalDue-${t.id}" style="font-weight:bold; color:red; font-size:1.1em;">0</td>
-                        <td class="balance-col"><input type="number" id="paid-${t.id}" placeholder="Paid?" class="rent-input calc-trigger" style="border-color:green;" oninput="calculateAll()"></td>
-                        <td class="balance-col" id="newBal-${t.id}" style="font-weight:bold; color:blue; font-size:1.1em;">0</td>
-                        
-                        <td class="action-btns">
-                            <button class="btn-wa" onclick="sendWhatsApp(${t.id})" title="Send Direct WhatsApp">📲</button>
-                            <button class="btn-del" onclick="deleteTenant(${t.id})" title="Delete Tenant">🗑️</button>
-                        </td>
-                    </tr>
-                `;
-            });
-
-            html += `
-                <tr style="background-color: #d1ecf1; font-weight: bold;">
-                    <td>-</td><td>9</td><td>Water Motor</td><td>-</td>
-                    <td id="oldRead-water">${waterMotor.oldReading}</td>
-                    <td><input type="number" id="newRead-water" placeholder="Enter" class="read-input calc-trigger" oninput="calculateAll()"></td>
-                    <td id="units-water">0</td><td id="elec-water">0</td>
-                    <td colspan="7" id="water-split-text" style="text-align:left; font-size: 0.9em; color: #666;">
-                        *Total Motor units divided by ${tenants.length} tenants
-                    </td>
-                    <td>-</td>
-                </tr>
-            `;
-
-            tbody.innerHTML = html;
-        }
-
-        function sendWhatsApp(id) {
-            calculateAll();
-            let rawMobile = document.getElementById(`mobile-${id}`).value;
-            let cleanMobile = rawMobile.replace(/[^0-9]/g, '');
-            if(!cleanMobile) { alert("Please enter a mobile number for this tenant first!"); return; }
-            if(cleanMobile.length === 10) cleanMobile = "91" + cleanMobile;
-
-            const tenantName = document.getElementById(`name-${id}`).value;
-            const month = document.getElementById("monthSelect").value;
-            const totalDue = document.getElementById(`totalDue-${id}`).innerText;
-            const amountPaid = document.getElementById(`paid-${id}`).value || 0;
-            const newBal = document.getElementById(`newBal-${id}`).innerText;
-            
-            const message = `Hello ${tenantName},\n\nYour B-220 rent details for *${month}* have been updated.\n\n*Total Due:* ₹${totalDue}\n*Amount Paid:* ₹${amountPaid}\n*Remaining Balance:* ₹${newBal}\n\nView your full digital receipt here:\nhttps://baporalibrary.github.io/B-220-Rent-System/tenant.html\n\nThank you!`;
-            window.open(`https://wa.me/${cleanMobile}?text=${encodeURIComponent(message)}`, '_blank');
-        }
-
-        function calculateAll() {
-            let grandUnits = 0, grandElec = 0, grandBase = 0, grandExtra = 0;
-            let grandPrev = 0, grandDue = 0, grandPaid = 0, grandNewBal = 0;
-            let activeCount = 0;
-
-            tenants.forEach(t => {
-                if (document.getElementById(`active-${t.id}`).checked) {
-                    activeCount++;
-                    document.getElementById(`row-${t.id}`).classList.remove('inactive-row');
+                if(status === 'g' || status === 'r') {
+                    div.innerHTML = `<div class="icon-stu">👤</div><div class="seat-no">${i}</div>`;
                 } else {
-                    document.getElementById(`row-${t.id}`).classList.add('inactive-row');
+                    div.innerHTML = `<div class="seat-no" style="font-size:16px;">${i}</div>`;
                 }
-            });
 
-            let rawWaterNew = document.getElementById("newRead-water").value;
-            const waterNew = rawWaterNew !== "" ? parseInt(rawWaterNew) : waterMotor.oldReading;
-            const waterUnits = waterNew - waterMotor.oldReading;
+                if(status==='g') g++; if(status==='r') r++;
+                grid.appendChild(div);
+            }
             
-            if (waterUnits < 0 && rawWaterNew !== "") {
-                document.getElementById("units-water").style.color = "red";
-                document.getElementById("units-water").style.fontWeight = "bold";
+            document.getElementById('total-count').innerText = total;
+            document.getElementById('gen-count').innerText = g;
+            document.getElementById('res-count').innerText = r;
+            document.getElementById('vac-count').innerText = total - (g+r);
+
+            updateLiveStatus(g + r);
+        }
+
+        // Live Status logic & Auto-Hide Waitlist
+        function updateLiveStatus(totalOccupied) {
+            const totalSeats = 57;
+            const available = totalSeats - totalOccupied;
+            const statusText = document.getElementById("seat-status");
+            const statusBox = document.getElementById("live-status-box");
+            const isDark = document.body.classList.contains('dark-mode');
+            const waitlistSection = document.getElementById("waitlist-section");
+
+            if (available > 10) {
+                statusText.innerText = "🟢 STATUS: SEATS AVAILABLE";
+                statusText.style.color = isDark ? "#2ecc71" : "#196f3d"; 
+                statusBox.style.border = "2px solid rgba(46, 204, 113, 0.5)";
+                waitlistSection.style.display = "none"; // Hide Waitlist
+            } else if (available > 0) {
+                statusText.innerText = "🟡 STATUS: FILLING FAST (Only " + available + " Left)";
+                statusText.style.color = isDark ? "#f1c40f" : "#d68910"; 
+                statusBox.style.border = "2px solid rgba(243, 156, 18, 0.5)";
+                waitlistSection.style.display = "none"; // Hide Waitlist
             } else {
-                document.getElementById("units-water").style.color = "black";
-                document.getElementById("units-water").style.fontWeight = "bold";
-            }
-
-            const sharedWaterUnitsPerTenant = activeCount > 0 ? (waterUnits / activeCount) : 0;
-            const waterCostPerTenant = Math.round(sharedWaterUnitsPerTenant * ratePerUnit);
-
-            document.getElementById("units-water").innerText = waterUnits;
-            document.getElementById("elec-water").innerText = waterUnits * ratePerUnit;
-            document.getElementById("water-split-text").innerText = `*Total Motor units divided by ${activeCount} active tenants`;
-
-            tenants.forEach(t => {
-                const isActive = document.getElementById(`active-${t.id}`).checked;
-                if (isActive) {
-                    let rawNewRead = document.getElementById(`newRead-${t.id}`).value;
-                    const newRead = rawNewRead !== "" ? parseInt(rawNewRead) : t.oldReading;
-                    const unitsUsed = newRead - t.oldReading;
-                    
-                    if (unitsUsed < 0 && rawNewRead !== "") {
-                        document.getElementById(`units-${t.id}`).style.color = "red";
-                        document.getElementById(`units-${t.id}`).style.fontWeight = "bold";
-                    } else {
-                        document.getElementById(`units-${t.id}`).style.color = "#333";
-                        document.getElementById(`units-${t.id}`).style.fontWeight = "normal";
-                    }
-
-                    const elecBill = unitsUsed * ratePerUnit;
-                    const currentBaseRent = parseInt(document.getElementById(`baseRent-${t.id}`).value) || 0;
-                    const extraCharges = parseInt(document.getElementById(`extra-${t.id}`).value) || 0;
-                    
-                    const thisMonthRent = elecBill + waterCostPerTenant + currentBaseRent + extraCharges;
-                    const totalDue = thisMonthRent + t.prevPending;
-                    const amountPaid = parseInt(document.getElementById(`paid-${t.id}`).value) || 0;
-                    const newBalance = totalDue - amountPaid;
-
-                    document.getElementById(`units-${t.id}`).innerText = unitsUsed;
-                    document.getElementById(`elec-${t.id}`).innerText = elecBill;
-                    document.getElementById(`waterShare-${t.id}`).innerText = waterCostPerTenant;
-                    
-                    document.getElementById(`totalDue-${t.id}`).innerText = totalDue;
-                    document.getElementById(`newBal-${t.id}`).innerText = newBalance;
-
-                    grandUnits += unitsUsed; grandElec += elecBill; grandBase += currentBaseRent; grandExtra += extraCharges;
-                    grandPrev += t.prevPending; grandDue += totalDue; grandPaid += amountPaid; grandNewBal += newBalance;
-                } else {
-                    document.getElementById(`units-${t.id}`).innerText = 0; document.getElementById(`elec-${t.id}`).innerText = 0;
-                    document.getElementById(`waterShare-${t.id}`).innerText = 0; document.getElementById(`totalDue-${t.id}`).innerText = 0;
-                    document.getElementById(`newBal-${t.id}`).innerText = 0;
-                }
-            });
-
-            document.getElementById("grandTotalUnits").innerText = grandUnits + waterUnits;
-            document.getElementById("grandTotalElec").innerText = grandElec + (waterUnits * ratePerUnit);
-            document.getElementById("grandTotalWater").innerText = (waterCostPerTenant * activeCount);
-            document.getElementById("grandTotalBase").innerText = grandBase;
-            document.getElementById("grandTotalExtra").innerText = grandExtra;
-            document.getElementById("grandPrevBal").innerText = grandPrev;
-            document.getElementById("grandTotalDue").innerText = grandDue;
-            document.getElementById("grandTotalPaid").innerText = grandPaid;
-            document.getElementById("grandNewBal").innerText = grandNewBal;
-        }
-
-        async function saveToDatabase() {
-            calculateAll();
-            const selectedMonth = document.getElementById("monthSelect").value;
-            if (!selectedMonth) { alert("Please select a billing month at the top!"); return; }
-
-            document.getElementById('loading').innerText = "Sending data to Google Sheet...";
-            document.getElementById('loading').style.display = 'block';
-
-            let dataToSave = [];
-            tenants.forEach(t => {
-                const isActive = document.getElementById(`active-${t.id}`).checked;
-                const newReadInput = parseInt(document.getElementById(`newRead-${t.id}`).value);
-                
-                if(isActive && newReadInput > 0) {
-                    const unitsUsed = newReadInput - t.oldReading;
-                    const elecBill = unitsUsed * ratePerUnit;
-                    const waterShare = parseInt(document.getElementById(`waterShare-${t.id}`).innerText) || 0;
-                    const baseRent = parseInt(document.getElementById(`baseRent-${t.id}`).value) || 0;
-                    const extraCharges = parseInt(document.getElementById(`extra-${t.id}`).value) || 0;
-                    const thisMonthRent = elecBill + waterShare + baseRent + extraCharges;
-
-                    dataToSave.push({
-                        id: t.id, name: document.getElementById(`name-${t.id}`).value, mobile: document.getElementById(`mobile-${t.id}`).value, 
-                        baseRent: baseRent, oldReading: t.oldReading, newReading: newReadInput, units: unitsUsed, elecBill: elecBill,
-                        waterShare: waterShare, totalRent: thisMonthRent, month: selectedMonth, prevPending: t.prevPending,
-                        extraCharges: extraCharges, amountPaid: parseInt(document.getElementById(`paid-${t.id}`).value) || 0,
-                        newPending: parseInt(document.getElementById(`newBal-${t.id}`).innerText) || 0
-                    });
-                }
-            });
-
-            const waterNewReadInput = parseInt(document.getElementById(`newRead-water`).value);
-            if(waterNewReadInput > 0) {
-                dataToSave.push({
-                    id: 9, name: "Water Motor", mobile: "", baseRent: 0, oldReading: waterMotor.oldReading, newReading: waterNewReadInput,
-                    units: document.getElementById(`units-water`).innerText, elecBill: document.getElementById(`elec-water`).innerText,
-                    waterShare: 0, totalRent: document.getElementById(`elec-water`).innerText, month: selectedMonth,
-                    prevPending: 0, extraCharges: 0, amountPaid: 0, newPending: 0
-                });
-            }
-
-            if(dataToSave.length === 0) {
-                alert("Error: You must type a number into the 'New Reading' boxes before saving!");
-                document.getElementById('loading').style.display = 'none'; return;
-            }
-
-            try {
-                await fetch(API_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(dataToSave) });
-                
-                // MONTHLY CYCLE ENGINE: Instantly update readings and clear the board!
-                tenants.forEach(t => {
-                    const isActive = document.getElementById(`active-${t.id}`).checked;
-                    const newReadInput = parseInt(document.getElementById(`newRead-${t.id}`).value);
-                    if(isActive && newReadInput > 0) {
-                        t.oldReading = newReadInput;
-                        t.prevPending = parseInt(document.getElementById(`newBal-${t.id}`).innerText) || 0;
-                    }
-                });
-                const waterNewRead = parseInt(document.getElementById(`newRead-water`).value);
-                if(waterNewRead > 0) waterMotor.oldReading = waterNewRead;
-                
-                saveMemory();
-                renderTable(); // This automatically wipes the input boxes clean
-                calculateAll(); // Resets totals to zero
-
-                alert(`SUCCESS: Data sent for ${selectedMonth}! Board reset for next month.`);
-                
-                // Quietly reload history data for the modal in the background
-                fetch(API_URL).then(res => res.json()).then(data => { if(data.length > 0) fullDatabaseHistory = data; });
-                
-            } catch (error) { alert("Network error. Could not reach Google Sheets."); }
-            document.getElementById('loading').style.display = 'none';
-        }
-
-        function populateHistoryDropdown() {
-            const select = document.getElementById("historyTenantSelect");
-            select.innerHTML = '<option value="">-- Choose Tenant --</option>';
-            tenants.forEach(t => { select.innerHTML += `<option value="${t.id}">${t.name} (Room ${t.id})</option>`; });
-            select.innerHTML += `<option value="9">Water Motor Record</option>`;
-        }
-
-        function openHistoryModal() {
-            document.getElementById("historyModal").style.display = "block";
-            if(fullDatabaseHistory.length === 0) {
-                document.getElementById("historyBody").innerHTML = `<tr><td colspan="12">No history found in database yet. Save a month first!</td></tr>`;
+                statusText.innerText = "🔴 STATUS: FULLY OCCUPIED";
+                statusText.style.color = isDark ? "#e74c3c" : "#c0392b"; 
+                statusBox.style.border = "2px solid rgba(231, 76, 60, 0.5)";
+                waitlistSection.style.display = "block"; // SHOW Waitlist automatically!
             }
         }
-        function closeHistoryModal() { document.getElementById("historyModal").style.display = "none"; }
-        function clearMonthFilter() { document.getElementById("historyMonthFilter").value = ""; renderHistoryTable(); }
 
-        function renderHistoryTable() {
-            const selectedId = document.getElementById("historyTenantSelect").value;
-            const searchMonth = document.getElementById("historyMonthFilter").value;
-            const tbody = document.getElementById("historyBody");
-            tbody.innerHTML = "";
+        // Night Vision Toggle
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const btn = document.getElementById('dark-mode-btn');
+            if(document.body.classList.contains('dark-mode')) {
+                btn.innerText = '☀️'; 
+            } else {
+                btn.innerText = '🌙'; 
+            }
+            const total = parseInt(document.getElementById('gen-count').innerText) + parseInt(document.getElementById('res-count').innerText);
+            updateLiveStatus(total || 0);
+        }
 
-            if (!selectedId) { tbody.innerHTML = `<tr><td colspan="12">Select a tenant to view history.</td></tr>`; return; }
+        // Waiting List Submission
+        function joinWaitlist() {
+            const name = document.getElementById('waitName').value;
+            const phone = document.getElementById('waitPhone').value;
+            
+            if(!name || !phone) {
+                alert("Please enter both Name and WhatsApp Number!");
+                return;
+            }
 
-            let tenantRecords = fullDatabaseHistory.filter(row => row.id == selectedId);
-            if (searchMonth) tenantRecords = tenantRecords.filter(row => row.month === searchMonth);
+            const waitData = {
+                name: name,
+                phone: phone,
+                time: new Date().toLocaleString(),
+                status: "Pending"
+            };
 
-            if (tenantRecords.length === 0) { tbody.innerHTML = `<tr><td colspan="12" style="color:red;">No historical data found.</td></tr>`; return; }
-
-            tenantRecords.reverse().forEach(record => {
-                let safeMonth = record.month || "Unknown";
-                if (typeof safeMonth === 'string' && safeMonth.includes('T')) safeMonth = safeMonth.substring(0, 7);
-
-                let safePrev = record.prevPending || 0;
-                if (typeof safePrev === 'string' && safePrev.includes('T')) safePrev = 0;
-
-                let safeExtra = record.extraCharges || 0;
-                if (typeof safeExtra === 'string' && safeExtra.includes('T')) safeExtra = 0;
-
-                let safePaid = record.amountPaid || 0;
-                if (typeof safePaid === 'string' && safePaid.includes('T')) safePaid = 0;
-
-                let safeNew = record.newPending || 0;
-                if (typeof safeNew === 'string' && safeNew.includes('T')) safeNew = 0;
-
-                const totalDueCalc = (Number(record.totalRent) || 0) + (Number(safePrev) || 0);
-                
-                tbody.innerHTML += `
-                    <tr>
-                        <td style="font-weight:bold;">${safeMonth}</td>
-                        <td>${record.oldReading || 0}</td>
-                        <td>${record.newReading || 0}</td>
-                        <td>${record.units || 0}</td>
-                        <td>₹${record.elecBill || 0}</td>
-                        <td>₹${record.waterShare || 0}</td>
-                        <td>₹${record.baseRent || 0}</td>
-                        <td style="font-weight:bold; color:#fd7e14;">₹${safeExtra}</td>
-                        <td style="font-weight:bold; color:#d39e00;">₹${safePrev}</td>
-                        <td style="font-weight:bold; color:#c82333;">₹${totalDueCalc}</td>
-                        <td style="font-weight:bold; color:#218838;">₹${safePaid}</td>
-                        <td style="font-weight:bold; color:#0056b3;">₹${safeNew}</td>
-                    </tr>`;
+            db.ref('waiting_list').push(waitData).then(() => {
+                document.getElementById('waitlist-form').style.display = 'none';
+                document.getElementById('wait-msg').style.display = 'block';
+            }).catch((error) => {
+                alert("Network error, please try again.");
             });
         }
+
+        // Security Lock
+        document.addEventListener('contextmenu', event => event.preventDefault()); 
+        document.onkeydown = function(e) {
+            if(e.keyCode == 123) { return false; } 
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) { return false; } 
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) { return false; } 
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) { return false; } 
+            if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) { return false; } 
+        };
     </script>
 </body>
 </html>
